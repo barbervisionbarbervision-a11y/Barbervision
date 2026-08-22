@@ -1,0 +1,14 @@
+-- Arquivo histórico preservado apenas como ponto de entrada documental.
+--
+-- O rascunho inseguro que existia aqui foi aposentado em 08/08/2026.
+-- A fonte de verdade do banco agora são, nesta ordem:
+--
+--   supabase/migrations/20260808010000_tenant_core.sql
+--   supabase/migrations/20260808011000_tenant_rls.sql
+--   supabase/migrations/20260808012000_private_storage.sql
+--   supabase/migrations/20260808013000_auth_assurance.sql
+--   supabase/migrations/20260813010000_onboarding_invites_lifecycle_audit.sql
+--
+-- Não cole este arquivo no SQL Editor e não replique DDL fora das migrations.
+-- Use `npm run db:reset` no ambiente local ou `supabase db push` num projeto
+-- explicitamente vinculado, depois de revisar o diff e possuir backup.

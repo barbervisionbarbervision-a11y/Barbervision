@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #000000;
+  color: #EDE3D0;
+}
+
+/* Elemento de assinatura: faixa diagonal inspirada no poste de barbearia.
+   Usada como divisor e, animada, como indicador de carregamento. */
+.pole-stripe {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #8C2F39 0px,
+    #8C2F39 10px,
+    #EDE3D0 10px,
+    #EDE3D0 20px,
+    #C6963B 20px,
+    #C6963B 30px
+  );
+  background-size: 80px 80px;
+}
+
+.pole-stripe-thin {
+  height: 6px;
+  border-radius: 999px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    #8C2F39 0px,
+    #8C2F39 6px,
+    #EDE3D0 6px,
+    #EDE3D0 12px,
+    #C6963B 12px,
+    #C6963B 18px
+  );
+  background-size: 36px 36px;
+}
+
+/* Foco visível para acessibilidade de teclado */
+:focus-visible {
+  outline: 2px solid #C6963B;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

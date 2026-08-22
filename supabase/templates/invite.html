@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="font-family: Arial, sans-serif; color: #181512; line-height: 1.5">
+    <h1 style="font-size: 22px">Você recebeu um convite</h1>
+    <p>Confirme este endereço e crie sua senha individual para acessar o painel da barbearia.</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&convite={{ .Data.barbervision_convite_id }}"
+        style="display: inline-block; border-radius: 8px; background: #c6963b; color: #000; padding: 12px 18px; text-decoration: none; font-weight: 700"
+      >Aceitar convite</a>
+    </p>
+    <p>Se você não esperava este convite, ignore a mensagem.</p>
+  </body>
+</html>
