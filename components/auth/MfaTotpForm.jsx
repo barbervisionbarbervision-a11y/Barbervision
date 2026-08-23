@@ -1,7 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import AuthShell from "./AuthShell";
@@ -11,7 +10,6 @@ import { criarClienteSupabaseBrowser } from "@/lib/supabase/client";
 
 export default function MfaTotpForm() {
   const router = useRouter();
-  const iniciou = useRef(false);
   const [carregando, setCarregando] = useState(true);
   const [verificando, setVerificando] = useState(false);
   const [modo, setModo] = useState("enrollment");
@@ -22,8 +20,6 @@ export default function MfaTotpForm() {
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    if (iniciou.current) return;
-    iniciou.current = true;
     let ativo = true;
 
     async function preparar() {
@@ -136,7 +132,9 @@ export default function MfaTotpForm() {
         <form onSubmit={confirmar} className="flex flex-col gap-4">
           {modo === "enrollment" && qrCode && (
             <div className="flex flex-col items-center gap-3 rounded-xl bg-parchment p-4 text-ink">
-              <Image src={qrCode} alt="QR Code para configurar o autenticador" width={220} height={220} unoptimized />
+              {/* O Supabase gera este QR Code como data:image/svg+xml, formato intencionalmente bloqueado por next/image. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrCode} alt="QR Code para configurar o autenticador" width={220} height={220} />
               <p className="text-center text-xs">Se não puder escanear, use esta chave:</p>
               <code className="max-w-full break-all rounded bg-black/10 px-2 py-1 text-center text-xs">{segredo}</code>
             </div>

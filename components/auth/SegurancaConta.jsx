@@ -9,12 +9,15 @@ import { criarClienteSupabaseBrowser } from "@/lib/supabase/client";
 export default function SegurancaConta({ sessao }) {
   const router = useRouter();
   const [saindo, setSaindo] = useState(false);
+  const [erroSaida, setErroSaida] = useState("");
 
   async function sairDeTodos() {
     if (saindo) return;
+    setErroSaida("");
     setSaindo(true);
     const { error } = await criarClienteSupabaseBrowser().auth.signOut({ scope: "global" });
     if (error) {
+      setErroSaida("Não foi possível encerrar todas as sessões. Tente novamente antes de considerar a conta protegida.");
       setSaindo(false);
       return;
     }
@@ -54,6 +57,7 @@ export default function SegurancaConta({ sessao }) {
         <Button type="button" variant="danger" className="mt-4" onClick={sairDeTodos} disabled={saindo}>
           <span className="flex items-center gap-2"><LogOut size={17} /> {saindo ? "Encerrando..." : "Sair de todos os aparelhos"}</span>
         </Button>
+        {erroSaida && <p className="mt-3 text-sm text-parchment" role="alert">{erroSaida}</p>}
       </section>
     </div>
   );

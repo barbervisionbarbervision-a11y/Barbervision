@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { MailPlus, UserRoundCheck, XCircle } from "lucide-react";
+import { MailPlus, PauseCircle, PlayCircle, UserRoundCheck, XCircle } from "lucide-react";
 import Button from "@/components/Button";
 import {
   convidarFuncionarioAction,
+  alterarStatusFuncionarioAction,
   revogarConviteAction
 } from "@/app/barbeiro/(painel)/equipe/actions";
 
@@ -15,6 +16,12 @@ const ROTULOS_STATUS = {
   revogado: "Revogado",
   expirado: "Expirado",
   falhou: "Falha no envio"
+};
+
+const ROTULOS_MEMBRO = {
+  ativo: "Ativo",
+  suspenso: "Suspenso",
+  revogado: "Revogado"
 };
 
 export default function EquipeClient({ membros, convites, modoDemo = false }) {
@@ -41,6 +48,15 @@ export default function EquipeClient({ membros, convites, modoDemo = false }) {
   async function revogar(id) {
     setProcessando(true);
     setMensagem(await revogarConviteAction(id));
+    setProcessando(false);
+  }
+
+  async function alterarFuncionario(usuarioId, comando) {
+    if (processando) return;
+    if (comando === "revogar" && !window.confirm("Revogar este funcionário definitivamente? As atribuições atuais serão removidas.")) return;
+
+    setProcessando(true);
+    setMensagem(await alterarStatusFuncionarioAction({ usuarioId, comando }));
     setProcessando(false);
   }
 
@@ -100,19 +116,38 @@ export default function EquipeClient({ membros, convites, modoDemo = false }) {
 
       <section className="rounded-xl border border-steel/20 bg-white/5 p-5">
         <h2 className="flex items-center gap-2 font-display text-sm uppercase tracking-widest2 text-parchment">
-          <UserRoundCheck size={18} className="text-brass" /> Membros ativos
+          <UserRoundCheck size={18} className="text-brass" /> Membros da equipe
         </h2>
         <div className="mt-4 divide-y divide-steel/15">
           {membros.map((membro) => (
-            <div key={membro.usuarioId} className="flex items-center justify-between gap-4 py-3">
+            <div key={membro.usuarioId} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-semibold text-parchment">{membro.nome}</p>
                 <p className="text-xs uppercase tracking-widest2 text-steel">{membro.papel === "dono" ? "Dono" : "Funcionário"}</p>
               </div>
-              <span className="rounded-full border border-brass/30 px-3 py-1 text-xs text-brass">Ativo</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-brass/30 px-3 py-1 text-xs text-brass">
+                  {ROTULOS_MEMBRO[membro.status] ?? membro.status}
+                </span>
+                {!modoDemo && membro.papel === "funcionario" && membro.status === "ativo" && (
+                  <button type="button" disabled={processando} onClick={() => alterarFuncionario(membro.usuarioId, "suspender")} className="flex items-center gap-2 rounded-lg border border-brass/40 px-3 py-2 text-xs text-parchment hover:bg-brass/10 disabled:opacity-50">
+                    <PauseCircle size={15} /> Suspender
+                  </button>
+                )}
+                {!modoDemo && membro.papel === "funcionario" && membro.status === "suspenso" && (
+                  <button type="button" disabled={processando} onClick={() => alterarFuncionario(membro.usuarioId, "reativar")} className="flex items-center gap-2 rounded-lg border border-brass/40 px-3 py-2 text-xs text-parchment hover:bg-brass/10 disabled:opacity-50">
+                    <PlayCircle size={15} /> Reativar
+                  </button>
+                )}
+                {!modoDemo && membro.papel === "funcionario" && membro.status !== "revogado" && (
+                  <button type="button" disabled={processando} onClick={() => alterarFuncionario(membro.usuarioId, "revogar")} className="flex items-center gap-2 rounded-lg border border-barber/50 px-3 py-2 text-xs text-parchment hover:bg-barber/10 disabled:opacity-50">
+                    <XCircle size={15} /> Revogar funcionário
+                  </button>
+                )}
+              </div>
             </div>
           ))}
-          {membros.length === 0 && <p className="py-4 text-sm text-steel">Nenhum membro ativo.</p>}
+          {membros.length === 0 && <p className="py-4 text-sm text-steel">Nenhum membro registrado.</p>}
         </div>
       </section>
 

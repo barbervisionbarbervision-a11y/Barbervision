@@ -1,6 +1,6 @@
 # Produtos e pós-venda
 
-Última atualização documental: **21/08/2026**.
+Última atualização documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -21,9 +21,9 @@ O projeto possui uma **demonstração local de dados de negócio**, sem backend 
 
 Não existem estoque transacional, interesse/reserva persistido, pedido, checkout, pagamento, entrega, baixa de quantidade, nota fiscal ou integração com a API oficial do WhatsApp.
 
-A autenticação deixou de ser totalmente fictícia, mas ainda está parcial: quando o Supabase está configurado, sessão SSR, membership e um layout de servidor exclusivo do dono com AAL2 protegem `/barbeiro/produtos`; esse caminho ainda não foi validado de ponta a ponta. Sem configuração, o desenvolvimento usa o fallback demonstrativo e, em produção, o painel fica bloqueado por padrão, salvo opt-in inseguro para a demo interna. Em ambos os modos, o catálogo, as recomendações, a avaliação e o contato comercial permanecem locais e não passam por RLS ou operações server-side de negócio.
+A autenticação e o lifecycle foram validados localmente: quando o Supabase está configurado, sessão SSR, membership e layout de servidor do dono AAL2 protegem `/barbeiro/produtos`. Sem configuração, o desenvolvimento usa o fallback demonstrativo e, em produção, o painel fica bloqueado por padrão. Em ambos os modos, catálogo, recomendações, avaliação e contato comercial permanecem locais e não passam por operações server-side de negócio.
 
-As cinco migrations estão versionadas. Em **14/08/2026**, um bootstrap transitório aplicou todas elas, executou o seed e iniciou containers; o health check do Storage retornou `502` e o CLI encerrou a pilha. Em **21/08/2026**, Docker/Supabase estão inativos. `db:reset`, lint SQL, 168 asserções pgTAP, Data API/Storage com JWT, rollback/roll-forward, concorrência e Auth E2E não foram executados. O passo 3 de Auth/MFA continua parcial: os contratos de convite, provisionamento, lifecycle de funcionário e auditoria de domínio existem em fonte, sem validação operacional. Os passos 4 (privacidade) e 5 (fluxo público persistido) ainda não foram implementados. Portanto, esta tela continua adequada somente para dados fictícios e demonstração controlada.
+As oito migrations estão versionadas e a baseline atual de banco passa 192/192. As demais evidências estão centralizadas em `ESTADO-VALIDACAO.md`. Os passos 4 e 5 ainda não foram implementados.
 
 O novo fechamento em `/barbeiro/financeiro` também não transforma a vitrine em venda: produtos vendidos precisam ser lançados manualmente como `produto`. Catálogo, quantidade demonstrativa, clique no WhatsApp e fechamento local são fontes separadas; nenhuma ação na vitrine cria lançamento financeiro automático.
 

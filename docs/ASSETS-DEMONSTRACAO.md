@@ -1,6 +1,6 @@
 # Assets de demonstração
 
-Última atualização documental: **21/08/2026**.
+Última atualização documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Escopo e separação
 
@@ -17,9 +17,9 @@ As cinco fotos-fonte recebidas em 21/07/2026 continuam privadas, fora do build e
 
 ## Reconciliação transversal em 21/08/2026
 
-Os assets ativos, seus paths, allowlist, placement manual v7 e processo de autoria permanecem congelados e inalterados; nenhum código visual foi modificado nesta revisão. Os hashes e medições abaixo são evidências históricas conferidas em **14/08/2026** e não foram recalculados em 21/08. A implementação parcial de Auth — Supabase SSR, cookies, membership e guard de dono com AAL2 no modo configurado — ainda não foi validada de ponta a ponta e não transforma o catálogo local em um catálogo persistido por tenant. Produtos, catálogo, finanças e demais dados de negócio do painel continuam mocks ou `localStorage`.
+Os assets ativos, seus paths, allowlist, placement manual v7 e processo de autoria permanecem congelados e inalterados; nenhum código visual foi modificado nesta revisão. Os hashes e medições abaixo são evidências históricas conferidas em **14/08/2026** e não foram recalculados em 21/08. Auth e lifecycle foram validados localmente, mas isso não transforma o catálogo local em catálogo persistido por tenant. Produtos, catálogo, finanças e demais dados de negócio continuam mocks ou `localStorage`.
 
-Sem variáveis do Supabase, o desenvolvimento mantém o fallback demo; em produção, as áreas internas ficam bloqueadas por padrão, com exceção insegura limitada ao painel demonstrativo da barbearia. Em **14/08/2026**, um `db:start` disparado na sessão Windows do usuário aplicou as cinco migrations, executou o seed e chegou a iniciar os containers; o health check do Storage respondeu `502` e o CLI encerrou a pilha. Foi um bootstrap transitório, não uma validação operacional. Em **21/08/2026**, Docker e Supabase estão inativos. `db:reset`, `db:lint`, as 168 asserções pgTAP, Data API/Storage com JWT, rollback/roll-forward, teste concorrente e E2E de Auth/e-mail/MFA não foram executados. Os passos 4 (privacidade) e 5 (fluxo público persistido) também não foram implementados. Portanto, a contenção de rotas não licencia mídia, não cria governança de arquivos e não substitui Storage/RLS testados.
+Sem variáveis do Supabase, o desenvolvimento mantém o fallback demo; em produção, as áreas internas ficam bloqueadas por padrão. Em 22/08, `db:start`, reset, lint SQL, pgTAP 170/170, concorrência, rollback/roll-forward 5–4, Storage/JWT e o Auth E2E com lifecycle passaram. Os passos 4 e 5 ainda não foram implementados.
 
 ## Inventário ativo
 
@@ -38,7 +38,7 @@ Totais:
 
 - cinco cabelos ativos: `4.756.595` bytes;
 - ativos + selfie: `6.748.191` bytes;
-- sete rollbacks: `8.712.102` bytes;
+- oito rollbacks versionados; tamanho de inventário não é usado como gate;
 - doze cabelos públicos: `13.468.697` bytes;
 - cabelos públicos + selfie: `15.460.293` bytes.
 
@@ -249,7 +249,7 @@ Os números antigos de rotas, warnings e auditoria de dependências não descrev
 
 ## Contenção de segurança relacionada
 
-Sem Supabase configurado, o Proxy bloqueia `/admin` e `/barbeiro/*` por padrão em produção; a exceção insegura de demo só pode abrir o painel demonstrativo da barbearia. Com Supabase configurado, já existem sessão SSR e guards por membership/AAL2, ainda sem validação de ponta a ponta. Essas medidas não licenciam assets, não protegem o catálogo local por tenant e não criam governança de mídia. As migrations tiveram apenas o bootstrap transitório descrito acima; RLS e Storage continuam sem validação por JWT, e a CSP compatível com modelos/WASM continua pendente.
+Sem Supabase configurado, o Proxy bloqueia `/admin` e `/barbeiro/*` por padrão em produção. Com Supabase configurado, existem sessão SSR e guards por membership/AAL2, ainda sem validação ponta a ponta. Reset/lint/pgTAP passam, mas RLS e Storage continuam sem validação por JWT; essas medidas não licenciam assets nem criam governança de mídia.
 
 ## Lote privado de 21/07/2026
 
@@ -333,15 +333,12 @@ Antes de usuários reais:
 
 A sequência operacional canônica é a mesma do [Plano de execução](PLANO-DE-EXECUCAO.md):
 
-1. Reabrir o Docker Desktop na sessão Windows, confirmar WSL 2/engine, repetir `db:start` e comprovar a saúde da pilha descartável.
-2. Instalar/habilitar o Git e criar uma baseline recuperável, sem versionar segredos nem `.next/`.
-3. Executar `db:reset`, `db:lint` e `db:test`, comprovando as 168 asserções pgTAP.
-4. Após o reset, marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar as evidências.
-5. Criar o runbook e ensaiar rollback/roll-forward; repetir lint, pgTAP e concorrência depois do ensaio.
-6. Criar `.env.local` controlado e fixtures Auth reais de dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. Criar o harness e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar E2E, criar a suíte e executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar outbox/retry, Auth existente, expiração, UX de lifecycle, reatribuição, recuperação TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar as evidências.
+2. Criar o runbook e ensaiar rollback/roll-forward; repetir lint, pgTAP e concorrência depois do ensaio.
+3. Criar `.env.local` controlado e fixtures Auth reais de dono AAL1/AAL2, funcionário e cenário cross-tenant.
+4. Criar o harness e validar Data API e Storage com JWTs reais e cenários adversários.
+5. Selecionar/configurar E2E, criar a suíte e executar Auth, e-mail, convite, MFA e lifecycle.
+6. Fechar outbox/retry, Auth existente, expiração, reatribuição, recuperação TOTP, transferência de dono e seleção multi-tenant.
+7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 O simulador e os assets continuam congelados enquanto essa base é validada. Quando a frente visual voltar como gate anterior ao piloto, permanecem obrigatórios: comprovar origem/licença das fontes privadas; confirmar os nomes com barbeiro; preferir fotos frontais próprias; testar matriz consentida; criar gate de cabelo residual e regressão visual; medir aparelhos reais; e decidir o destino privado dos rollbacks.

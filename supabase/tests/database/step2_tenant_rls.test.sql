@@ -199,7 +199,7 @@ set local "request.jwt.claims" = '{"sub":"90000000-0000-4000-8000-000000000001",
 select is((select count(*)::bigint from public.barbearias), 1::bigint, 'dono A vê somente a barbearia A');
 select is((select count(*)::bigint from public.clientes), 2::bigint, 'dono A vê todos os clientes do tenant A');
 select is((select count(*)::bigint from public.membros_barbearia), 3::bigint, 'dono A vê a equipe do tenant A');
-select is((select count(*)::bigint from public.perfis), 2::bigint, 'dono A vê o próprio perfil e o funcionário ativo');
+select is((select count(*)::bigint from public.perfis), 3::bigint, 'dono A vê perfis vinculados ao tenant A, inclusive membership inativa');
 select is((select count(*)::bigint from public.atribuicoes_cliente), 1::bigint, 'dono A vê atribuições do tenant A');
 
 select lives_ok(
@@ -242,31 +242,43 @@ select throws_ok(
   'dono A não cria cliente no tenant B'
 );
 
-select is(
-  (
-    with alteradas as (
+select lives_ok(
+  $$
+    do $teste$
+    declare
+      quantidade_alterada integer;
+    begin
       update public.clientes
       set observacoes = 'Atualizado pelo dono A'
-      where id = '92000000-0000-4000-8000-000000000001'
-      returning 1
-    )
-    select count(*)::bigint from alteradas
-  ),
-  1::bigint,
+      where id = '92000000-0000-4000-8000-000000000001';
+
+      get diagnostics quantidade_alterada = row_count;
+      if quantidade_alterada <> 1 then
+        raise exception 'esperava alterar 1 cliente, alterou %', quantidade_alterada;
+      end if;
+    end
+    $teste$
+  $$,
   'dono A altera cliente do próprio tenant'
 );
 
-select is(
-  (
-    with alteradas as (
+select lives_ok(
+  $$
+    do $teste$
+    declare
+      quantidade_alterada integer;
+    begin
       update public.clientes
       set observacoes = 'Tentativa cross tenant'
-      where id = '92000000-0000-4000-8000-000000000003'
-      returning 1
-    )
-    select count(*)::bigint from alteradas
-  ),
-  0::bigint,
+      where id = '92000000-0000-4000-8000-000000000003';
+
+      get diagnostics quantidade_alterada = row_count;
+      if quantidade_alterada <> 0 then
+        raise exception 'esperava alterar 0 clientes, alterou %', quantidade_alterada;
+      end if;
+    end
+    $teste$
+  $$,
   'dono A não altera cliente do tenant B'
 );
 
@@ -299,17 +311,23 @@ select is((select count(*)::bigint from public.membros_barbearia), 1::bigint, 'f
 select is((select count(*)::bigint from public.perfis), 1::bigint, 'funcionário vê somente o próprio perfil');
 select is((select count(*)::bigint from public.atribuicoes_cliente), 1::bigint, 'funcionário vê somente a própria atribuição');
 
-select is(
-  (
-    with alteradas as (
+select lives_ok(
+  $$
+    do $teste$
+    declare
+      quantidade_alterada integer;
+    begin
       update public.clientes
       set observacoes = 'Funcionário tentou alterar'
-      where id = '92000000-0000-4000-8000-000000000001'
-      returning 1
-    )
-    select count(*)::bigint from alteradas
-  ),
-  0::bigint,
+      where id = '92000000-0000-4000-8000-000000000001';
+
+      get diagnostics quantidade_alterada = row_count;
+      if quantidade_alterada <> 0 then
+        raise exception 'esperava alterar 0 clientes, alterou %', quantidade_alterada;
+      end if;
+    end
+    $teste$
+  $$,
   'funcionário não altera nem o cliente atribuído'
 );
 
@@ -497,8 +515,8 @@ select throws_ok(
     ) values (
       '91000000-0000-4000-8000-000000000001',
       'Telefone inválido',
-      'telefone invalido',
-      'abc'
+      '123',
+      '123'
     )
   $$,
   '23514',

@@ -3,11 +3,19 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(109);
+select plan(112);
 
 -- Estrutura, RLS, ACLs e contratos da migration 5.
 select has_table('public', 'convites_barbearia', 'convites_barbearia existe');
 select has_table('public', 'eventos_auditoria', 'eventos_auditoria existe');
+select function_privs_are(
+  'public',
+  'localizar_usuario_auth_por_email',
+  array['text'],
+  'service_role',
+  array['EXECUTE'],
+  'somente service_role resolve identidade Auth por e-mail'
+);
 
 select ok(
   (select relrowsecurity from pg_class where oid = 'public.convites_barbearia'::regclass),
@@ -710,6 +718,11 @@ select is(
   'membership fica suspensa'
 );
 select is(
+  (select nome from public.perfis where usuario_id = '94000000-0000-4000-8000-000000000002'),
+  'Employee Step 3',
+  'dono AAL2 mantém leitura do perfil do funcionário suspenso'
+);
+select is(
   (
     select count(*)::bigint
     from public.eventos_auditoria
@@ -794,6 +807,11 @@ select is(
   ),
   'revogado',
   'membership fica revogada'
+);
+select is(
+  (select nome from public.perfis where usuario_id = '94000000-0000-4000-8000-000000000002'),
+  'Employee Step 3',
+  'dono AAL2 mantém leitura do perfil do funcionário revogado'
 );
 select is(
   (

@@ -1,6 +1,6 @@
 # Privacidade e fluxo persistido
 
-> Estado em **21/08/2026**: os passos 4 e 5 não foram implementados. Este documento define o contrato antes de usar dados reais.
+> Estado em **22/08/2026**: os passos 4 e 5 não foram implementados. Este documento define o contrato antes de usar dados reais. Evidência operacional: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -30,9 +30,9 @@ Características:
 - não existe consentimento afirmativo/versionado;
 - não existe TTL de abandono nem exclusão verificável;
 - o bucket de selfies é privado e sem policy pública; o fluxo atual não faz upload;
-- a quinta migration versiona auditoria de domínio para comandos de Auth/onboarding/lifecycle; ela foi aplicada somente no bootstrap transitório descrito abaixo e não existem eventos persistidos da jornada pública.
+- a quinta migration versiona auditoria de Auth/onboarding/lifecycle, foi aplicada por reset e coberta em pgTAP; não existem eventos persistidos da jornada pública.
 
-Em **14/08/2026**, um `db:start` aplicou transitoriamente as cinco migrations, executou o seed e iniciou containers. O health check do Storage respondeu `502` e a pilha foi encerrada. Em **21/08/2026**, Docker/Supabase estão inativos; `db:reset`, `db:lint`, 168 asserções pgTAP, Data API/Storage com JWT, rollback/roll-forward, teste concorrente e E2E de Auth/e-mail/MFA não foram executados. Esse bootstrap não implementa nem valida privacidade ou persistência da jornada.
+Em 23/08, reset, lint SQL e pgTAP 192/192 passaram; concorrência, rollback 5–4, Data API/Storage e o E2E anterior permanecem evidências históricas.
 
 Processamento local reduz transferência, mas a Data URL ainda é dado pessoal armazenado no aparelho. “Não enviamos à IA” não substitui política de privacidade.
 
@@ -54,7 +54,7 @@ Processamento local reduz transferência, mas a Data URL ainda é dado pessoal a
 | Horário/barbeiro | mock | agenda | disponibilidade e anti-overbooking |
 | Avaliação | local | opinião ligada ao cliente | verificação e moderação |
 | Interesse em produto | local | dado comercial | opt-in e histórico |
-| Auditoria de Auth/onboarding/lifecycle | somente SQL versionado, ainda não executado | evento de domínio privilegiado; não é evento da jornada | aplicar/testar, definir retenção e acesso |
+| Auditoria de Auth/onboarding/lifecycle | SQL aplicado e coberto por pgTAP; aplicação não exercitada | evento de domínio privilegiado; não é evento da jornada | integrar, definir retenção e acesso |
 | Eventos da jornada/logs operacionais | ausentes | podem vazar PII | modelar minimização, retenção e acesso |
 
 ## Passo 4 — contrato de privacidade
@@ -160,7 +160,7 @@ Nunca registrar:
 
 Sanitizar erros, replay de sessão, gravações de suporte e ferramentas de analytics. Definir acesso, retenção e auditoria dos logs.
 
-A auditoria append-only de domínio versionada na quinta migration passou somente pelo bootstrap efêmero, sem teste funcional ou E2E, e não autoriza registrar mídia ou PII desnecessária. Eventos da jornada pública permanecem ausentes e precisam de contrato próprio de finalidade, conteúdo, retenção e acesso antes do passo 5.
+A auditoria append-only de domínio versionada na quinta migration foi reaplicada por reset e coberta estruturalmente por pgTAP, mas segue sem teste funcional ou E2E e não autoriza registrar mídia ou PII desnecessária. Eventos da jornada pública permanecem ausentes e precisam de contrato próprio de finalidade, conteúdo, retenção e acesso antes do passo 5.
 
 ### Critério de conclusão do passo 4
 

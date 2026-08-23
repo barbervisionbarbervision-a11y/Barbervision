@@ -18,7 +18,7 @@ export default function RecuperarSenhaForm() {
     setEnviando(true);
     const supabase = criarClienteSupabaseBrowser();
     await supabase.auth.resetPasswordForEmail(email.trim().toLocaleLowerCase("pt-BR"), {
-      redirectTo: `${window.location.origin}/auth/callback?next=/barbeiro/redefinir-senha`
+      redirectTo: `${window.location.origin}/auth/confirm?type=recovery`
     });
     setConcluido(true);
     setEnviando(false);

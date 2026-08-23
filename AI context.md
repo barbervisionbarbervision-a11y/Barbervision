@@ -2,7 +2,7 @@
 
 Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 
-> Última revisão integral: **21/08/2026**. Leia este arquivo, `README.md`, `pendências.md`, `docs/PLANO-DE-EXECUCAO.md` e `AGENTS.md` antes de alterar o projeto. Presença de código — ou uma inicialização transitória — não equivale a funcionalidade validada.
+> Última revisão integral: **22/08/2026**. Leia este arquivo, `README.md`, `pendências.md`, `docs/ESTADO-VALIDACAO.md`, `docs/PLANO-DE-EXECUCAO.md` e `AGENTS.md` antes de alterar o projeto. Presença de código — ou uma inicialização transitória — não equivale a funcionalidade validada.
 
 ## Resumo em 30 segundos
 
@@ -12,9 +12,9 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O simulador atual usa preparação automática da foto e **placement manual** do cabelo.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
-- O passo 2, fundação Supabase/RLS, teve execução parcial: em 14/08 o CLI aplicou as cinco migrations e o seed em PostgreSQL 15.8, mas a pilha encerrou e ainda faltam reset reproduzível, lint, pgTAP, RLS/JWT e Storage saudável.
-- O passo 3, Auth, está parcialmente implementado e não funciona ponta a ponta. O SQL foi aplicado na inicialização transitória; rollbacks, 168 asserções declaradas, teste concorrente e jornadas Auth continuam sem execução funcional.
-- A correção do bootstrap AAL1 → TOTP do dono está versionada em `lib/auth/context.js`, mas ainda não foi testada com JWT real.
+- O passo 2, fundação Supabase/RLS, está validado localmente: CLI 2.115.0, `db:start`, `db:reset`, oito migrations, seed, lint, pgTAP 192/192, concorrência histórica, rollback/roll-forward histórico, JWT/RLS e Storage com blob real passaram.
+- O passo 3, Auth, tem jornada e outbox comprovadas. A infraestrutura gratuita Render + Cloudflare + Supabase está versionada, mas ainda não vinculada às contas; faltam validação remota e comandos administrativos.
+- A correção do bootstrap AAL1 → TOTP do dono foi comprovada com JWT real e E2E. O formulário MFA também foi corrigido para React Strict Mode, e o QR SVG do Supabase usa `<img>` nativo sem liberar SVG globalmente no Next.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
@@ -57,11 +57,11 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 
 ## Estado oficial dos nove passos
 
-| Passo | Estado em 21/08/2026 |
+| Passo | Estado em 22/08/2026 |
 |---|---|
 | 1 — Segurança da demo | Concluído para demo controlada |
-| 2 — Supabase, tenant e RLS | Migrations e seed aplicados transitoriamente; estabilidade e validação pendentes |
-| 3 — Auth real | SQL aplicado transitoriamente; jornadas parciais, não validadas e incompletas |
+| 2 — Supabase, tenant e RLS | Validação local completa: SQL, concorrência, rollback, JWT/RLS e Storage |
+| 3 — Auth real | Auth e lifecycle de funcionário aprovados em E2E; hardening operacional pendente |
 | 4 — Privacidade e consentimento | Não iniciado |
 | 5 — Fluxo vertical persistido | Não iniciado |
 | 6 — Painel operacional real | Não iniciado |
@@ -81,7 +81,7 @@ Não avance o status apenas porque uma tela, migration ou scaffold existe. O cri
 - MediaPipe Tasks Vision 0.10.35;
 - `@supabase/ssr` 0.12.4;
 - `@supabase/supabase-js` 2.112.2;
-- Supabase CLI 2.112.0;
+- Supabase CLI 2.115.0;
 - `pg` 8.23.0, usado somente pelo runner concorrente descartável;
 - Lucide React 0.383.0.
 
@@ -89,12 +89,12 @@ Não avance o status apenas porque uma tela, migration ou scaffold existe. O cri
 
 Após a revisão documental:
 
-- 166 arquivos versionáveis/visíveis retornados por `rg --files`, respeitando os ignores; diretórios ignorados como `tmp/` e `private-assets/` não entram nessa contagem;
+- 167 arquivos versionáveis/visíveis retornados por `rg --files`, respeitando os ignores; diretórios ignorados como `tmp/` e `private-assets/` não entram nessa contagem;
 - 31 arquivos `page.js`;
 - 2 Route Handlers;
 - 11 layouts;
-- 24 arquivos Markdown, dos quais 16 ficam em `docs/`;
-- 5 migrations, 5 rollbacks, seed, schema-aviso e 2 pgTAPs com 168 asserções declaradas;
+- 25 arquivos Markdown, dos quais 17 ficam em `docs/`;
+- 8 migrations, 8 rollbacks, seed, schema-aviso e 3 pgTAPs com 192 asserções declaradas;
 - código JS/JSX e SQL distribuído entre `app`, `components`, `lib` e Supabase; a contagem de linhas é deliberadamente omitida porque muda a cada migration e não representa avanço funcional.
 
 Os documentos especializados de Auth e dos passos 4–5 são `docs/AUTENTICACAO-E-SESSOES.md` e `docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md`. Contagens são inventário, não critério de qualidade.
@@ -122,7 +122,7 @@ Supabase versionado e aplicado transitoriamente
 └─ Storage privado: fontes, recortes e selfies
 ```
 
-O bloco Supabase está parcialmente versionado e suas cinco migrations mais o seed chegaram a ser aplicados localmente em 14/08. A pilha encerrou, o Storage respondeu `502` e não existe evidência de operação estável ou de validação comportamental.
+O bloco Supabase está versionado e foi recriado de forma limpa em 23/08 com CLI 2.115.0. Reset, lint, pgTAP 192/192, rollback/roll-forward 8–4, concorrência de domínio/outbox e E2E atualizado passam.
 
 ## Dois modos de runtime
 
@@ -147,7 +147,7 @@ O bloco Supabase está parcialmente versionado e suas cinco migrations mais o se
 - Server Actions repetem a autorização sensível; esconder item no menu nunca é autorização.
 - `/admin` permanece bloqueado.
 
-A lógica de bootstrap MFA acima foi corrigida no código, mas ainda não há teste com migration `13000` e JWT real.
+A lógica de bootstrap MFA acima foi comprovada pelo harness JWT e pela jornada E2E local.
 
 ## Mapa de rotas
 
@@ -297,7 +297,7 @@ No contrato atual do MVP, cliente exige nome e telefone/WhatsApp. A deduplicaç�
 
 O bucket de selfies não possui policy de usuário público; o fluxo atual não envia selfies ao Storage.
 
-### Contratos do passo 3 aplicados transitoriamente, ainda não validados
+### Contratos do passo 3 aplicados e validados em pgTAP, ainda sem integração ponta a ponta
 
 - tabela `public.convites_barbearia`, com estados `pendente_envio`, `enviado`, `aceito`, `revogado`, `expirado` e `falhou`;
 - tabela append-only `public.eventos_auditoria`;
@@ -310,20 +310,20 @@ Os UUIDs de proveniência em `barbearias.criado_por`, `clientes.criado_por`, `me
 
 O check de metadados rejeita chaves sensíveis conhecidas somente no primeiro nível do JSON. Hoje as RPCs constroem objetos pequenos internamente, mas uma validação recursiva deve preceder qualquer aceitação de payload arbitrário.
 
-As nove RPCs e as duas tabelas existem em fonte e foram criadas durante a inicialização transitória de 14/08; isso não é evidência operacional. A migration não passou por `db:lint`, pgTAP, rollback/roll-forward ou fluxos reais. `/barbeiro/equipe`, callbacks de aceite e `npm run auth:provision-owner` continuam sem validação ponta a ponta. A UI não chama as três RPCs de lifecycle e lista somente memberships ativas. A action de equipe ignora o erro das compensações `revogar_convite_barbearia` e `marcar_convite_falhou`, podendo afirmar sucesso enquanto resta um convite aberto; também precisa reler o estado autoritativo, pois um convite vencido pode virar `expirado` enquanto a mensagem atual diz “revogado”. Outbox/retry, reconciliação automática de convites expirados, transferência ou promoção de dono, recuperação de TOTP, reatribuição transacional de cliente e a orquestração do convite quando o usuário Auth já existe permanecem pendentes. O provisionamento inicial não é atômico entre Auth e banco nem retomável: se o convite Auth for criado e a RPC falhar, o script ainda não possui preflight, validação de URL equivalente à aplicação, retomada segura por UUID ou compensação explícita. O callback de confirmação aceita a membership antes de a tela gravar a senha; é preciso decidir e testar se o link de confirmação basta como autenticação ou se deve existir um estado de onboarding incompleto.
+As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As suítes do passo 3 somam 133/133 (112 + 21); o E2E comprova entrega, falha definitiva e expiração, e dois workers reais reivindicam itens distintos sem duplicação. Continuam pendentes scheduler hospedado, transferência de dono, reatribuição transacional e seleção multi-tenant.
 
 ### Evidência disponível
 
-- O teste transacional `step2_tenant_rls.test.sql` declara `plan(59)` e 59 asserções; a expectativa cross-tenant foi alinhada ao trigger atual, mas a suíte não foi executada.
-- `step3_auth_onboarding_lifecycle.test.sql` declara 109 asserções para estrutura/ACL, owner AAL1/AAL2, confirmação de e-mail, convites, lifecycle e auditoria; nenhuma foi executada.
+- O teste transacional `step2_tenant_rls.test.sql` declara `plan(59)` e passou 59/59 em 22/08 após a correção dos três cenários de `UPDATE` e do dado que isola a constraint de formato do telefone.
+- `step3_auth_onboarding_lifecycle.test.sql` passou 112/112; `step3_invite_email_outbox.test.sql` passou 21/21 para estrutura/ACL, enqueue, lease, retry, idempotência e expiração.
 - `provisionar_dono_controlado` e `marcar_convite_falhou` entram apenas nas verificações estruturais/ACL dessa suíte; seus comportamentos funcionais ainda não possuem cenário pgTAP.
 - As migrations `13000` e `20260813010000` possuem rollbacks manuais defensivos. Eles preservam dados, recusam estado incompatível, não usam `CASCADE` e não reconciliam automaticamente `supabase_migrations.schema_migrations`.
 - `scripts/test-db-concurrency.mjs` usa duas sessões concorrentes e uma terceira conexão observadora/administrativa para último dono e atribuição/revogação. Exige confirmação exata e comentário marcador no banco descartável; passou em análise estática, mas não conectou por ausência de PostgreSQL local.
 - Ainda não há JWT, callback, e-mail, TOTP, Data API autorizada ou Storage saudável em teste integrado.
-- Em 14/08, `leoto` executou `npm.cmd run db:start`. O CLI inicializou PostgreSQL 15.8, aplicou as cinco migrations, executou `supabase/seed.sql` e chegou a iniciar os containers. Durante a janela transitória, as portas `54321`, `54322`, `54323`, `54324` e `54327` responderam; o catálogo registrava as cinco migrations, as tabelas esperadas e duas barbearias do seed. Auth health, REST sem cenário JWT e Studio responderam `200`; Storage respondeu `502`.
-- A pilha encerrou e a saída final do CLI não foi preservada. O `502` indica problema de saúde/infra ainda sem causa; as policies do bucket de selfies poderiam produzir `401/403`, não explicam por si só um `502`. O aviso do Analytics sobre `2375` também não foi provado como causa e não autoriza expor o daemon Docker sem proteção.
-- Na auditoria de 21/08, Docker/Supabase estão inativos: serviço parado, pipe ausente e portas locais fechadas. WSL 2 está instalado, mas `wsl --status/list` retornam `E_ACCESSDENIED` na sandbox; isso não prova o estado da sessão interativa. Não há `.env.local` nem projeto Supabase remoto vinculado.
-- A execução corrigiu a afirmação “nunca aplicado”, mas não prova estado persistente, `db:reset`, `db:lint`, os 168 pgTAPs, RLS com JWT, Data API autorizada, Storage funcional, rollback, concorrência, e-mail, recuperação ou MFA.
+- Em 22/08, a atualização do CLI 2.112.0 para 2.115.0 e a desativação explícita de Analytics/Vector opcionais eliminaram a corrida de health check sem expor o daemon Docker em `2375`.
+- `db:start` e `db:reset` encerram com exit `0`; oito migrations, seed, lint e pgTAP 192/192 foram comprovados. Auth, Storage e Studio respondem `200` e os containers necessários estão saudáveis.
+- Na auditoria de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Não há `.env.local` nem projeto remoto vinculado.
+- O reset encerrou com exit `0`; `db:lint` e pgTAP 192/192 passaram, e as oito migrations foram confirmadas. RLS/JWT, Data API, Storage real, e-mail, recuperação, MFA, lifecycle e provisionamento foram exercitados anteriormente.
 
 ## Auth: arquivos e contratos
 
@@ -400,13 +400,13 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 
 ### P0 — antes de chamar Auth de funcional
 
-1. Disponibilizar um Supabase descartável e executar as cinco migrations do zero, seed, lint e 168 testes.
+1. Preservar o Supabase descartável e executar as oito migrations do zero, seed, lint e 192 testes sempre que o schema mudar.
 2. Executar o runner de concorrência em banco marcado e guardar a evidência das duas corridas.
 3. Ensaiar os dois novos rollbacks/roll-forward e definir o tratamento do histórico `supabase_migrations`.
 4. Provar o bootstrap AAL1 → TOTP do dono com JWT real.
 5. Executar Data API e Storage em dois tenants e todos os papéis/AALs relevantes.
 6. Configurar redirects, templates, SMTP e segredos em ambiente descartável.
-7. Fechar outbox/retry, usuário Auth existente, expiração, UX da equipe, transferência de dono, reatribuição e recuperação de fator.
+7. Operacionalizar a outbox com scheduler/alertas e fechar transferência de dono, reatribuição e seleção multi-tenant.
 
 ### P0 — antes de usar clientes reais
 
@@ -420,43 +420,36 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 
 - reautenticação para operações sensíveis;
 - rate limit/CAPTCHA contra abuso;
-- tratar e exibir falhas das compensações de convite; nunca anunciar que não há convite ativo sem confirmação do banco;
+- preservar a releitura autoritativa das compensações de convite e ampliar sua cobertura adversária;
 - tornar o provisionamento inicial retomável e reconciliável entre Auth e banco, com preflight e validação estrita da URL;
 - decidir e testar o estado de onboarding entre confirmação do link, criação da membership e definição da senha;
-- integrar suspensão, reativação e revogação de funcionário à UI e provar o corte imediato com JWT ainda válido;
+- [concluído] suspensão, reativação e revogação estão na UI; Playwright prova corte imediato, retomada e revogação com a mesma sessão;
 - redução dos 18 warnings de lint;
 - manifesto reproduzível dos arquivos congelados do simulador.
 
-## Validação reconciliada em 21/08/2026
+## Validação reconciliada em 22/08/2026
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
 - `npm audit`: 0 vulnerabilidades em 14/08; não foi repetido nesta revisão;
 - `launcher.bat --check`: aprovado em 21/08; o atalho da Área de Trabalho permanece como evidência validada em 14/08;
 - documentos: UTF-8 válido, links locais e fences íntegros;
-- `npm run build`: aprovado novamente em 14/08/2026, com 31 páginas, 2 Route Handlers e Proxy;
+- `npm run build`: aprovado em 22/08/2026, com 31 páginas, 2 Route Handlers e Proxy; requer rede enquanto Anton e Manrope vierem do Google Fonts;
 - smoke HTTP: evidência histórica de 13/08/2026, com páginas públicas `200` e superfícies internas `307` para o modo seguro;
-- Git CLI e Podman: indisponíveis; existe apenas um diretório `.git/` vazio, sem repositório operacional. Docker Desktop 4.86.0 está instalado, mas serviço/daemon estão parados no snapshot de 21/08;
-- banco/Supabase: o bootstrap transitório de 14/08 aplicou cinco migrations e o seed e permitiu inspeção do catálogo; Storage respondeu `502` e a pilha encerrou. `db:lint` e `db:test` não completaram e terminaram em `ECONNREFUSED 127.0.0.1:54322` quando a porta já estava fechada;
-- migrations 4–5: rollbacks defensivos presentes e comparados à baseline; sem execução PostgreSQL;
-- pgTAP: duas suítes transacionais declaram 59 + 109 asserções; a contagem entre `plan(...)` e chamadas foi conferida em fonte, mas nenhuma suíte foi executada;
-- concorrência: runner com duas sessões concorrentes e uma conexão observadora passou em `node --check` e nas guardas de destino; conexão local terminou em `ECONNREFUSED` por ausência do banco;
+- Git: repositório operacional, árvore limpa antes desta revisão e baseline `7c34dab` confirmado;
+- banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 192/192 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
+- migrations 4–5: rollbacks defensivos ensaiados no PostgreSQL local, histórico reconciliado e roll-forward reaplicado pelo CLI; lint, pgTAP e concorrência passaram depois;
+- pgTAP: três suítes transacionais passaram 59 + 112 + 21, totalizando 192/192 asserções;
+- concorrência: runner executado em 22/08 no banco local marcado; as corridas de último dono e atribuição/revogação passaram, e os fixtures foram removidos;
 - simulador: arquivos permaneceram sem alteração nesta rodada documental.
 
 O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou de rede para obter Anton e Manrope do Google Fonts; isso deve virar fonte auto-hospedada antes de exigir builds offline/reproduzíveis.
 
 ## Próxima sequência oficial
 
-1. Estabilizar o Supabase local na sessão `leoto`: reproduzir com diagnóstico, corrigir o `502` do Storage/encerramento e comprovar `supabase status` e as portas `54321`, `54322` e `54323` persistentes.
-2. Instalar/habilitar o Git e criar uma baseline recuperável antes de correções de código ou SQL, excluindo secrets, `.next` e resíduos locais do Supabase.
-3. Aplicar/recriar o banco e executar `db:reset`, `db:lint` e os 168 testes pgTAP.
-4. Depois do `db:reset`, marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-5. Escrever um runbook reproduzível para rollback/roll-forward e `supabase_migrations`; ensaiar os rollbacks 4–5 e o roll-forward e, ao final, repetir `db:lint`, os 168 pgTAPs e o runner concorrente.
-6. Criar `.env.local` somente no ambiente controlado e preparar fixtures/identidades Auth reais para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. Criar o harness de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, UX do lifecycle, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Vincular o Blueprint Render, projeto Supabase e Worker Cloudflare; cadastrar segredos e validar o cron remoto.
+2. Completar reatribuição, transferência de dono e seleção multi-tenant.
+3. Implementar privacidade antes de persistir dados reais.
 
 Depois desses gates, persistir o fluxo vertical do passo 5 e só então migrar painel, catálogo/produtos, financeiro e operação.
 
@@ -473,6 +466,7 @@ Depois desses gates, persistir o fluxo vertical do passo 5 e só então migrar p
 9. Não exponha secret/service role ao navegador.
 10. Não use selfie real enquanto privacidade e retenção estiverem incompletas.
 11. Não descreva o módulo financeiro como cálculo tributário exato.
+12. Ao trabalhar em convites, leia `docs/OUTBOX-DE-CONVITES.md`; não volte a enviar e-mail de forma síncrona na Server Action.
 12. Preserve alterações do usuário e não faça ações destrutivas.
 13. Ao concluir uma etapa, registre: arquivos, contratos, evidência executada, limitações e rollback.
 14. Atualize README, AI context, pendências e documentos afetados na mesma entrega.

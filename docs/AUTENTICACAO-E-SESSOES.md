@@ -1,6 +1,6 @@
 # Autenticação e sessões
 
-> Estado reconciliado em **21/08/2026**: implementação parcial; contratos SQL aplicados apenas em inicializações transitórias e Auth ainda não operacional ponta a ponta.
+> Estado reconciliado em **22/08/2026**: Auth, lifecycle e provisionamento retomável do primeiro dono aprovados localmente; hardening operacional permanece parcial. O pgTAP do passo 3 passa 112/112. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -120,6 +120,8 @@ Isso não configura automaticamente o projeto hospedado. Antes do uso real:
 
 O TOTP é gerenciado pelas APIs do Supabase Auth. O segredo não deve ser salvo em tabela de aplicação nem lido diretamente de `auth.mfa_factors`.
 
+Quando o dono perde o autenticador, não existe remoção self-service do último fator. Um operador privilegiado deve verificar a identidade fora do sistema e executar `npm run auth:recover-owner-totp -- --usuario-id UUID --confirmar-email EMAIL --confirmar-remocao-totp`. O comando confirma que UUID/e-mail correspondem, exige membership ativa de dono e remove fatores pela Admin API; `--enviar-acesso` também envia recuperação de senha. Access tokens já emitidos podem sobreviver até o TTL, por isso incidentes exigem também logout global/monitoramento. No próximo login, o dono volta a AAL1 e precisa matricular novo TOTP.
+
 Fluxo esperado:
 
 1. dono confirma e-mail e entra em AAL1;
@@ -146,9 +148,9 @@ A migration `20260813010000_onboarding_invites_lifecycle_audit.sql` adiciona:
 - UUIDs históricos de autoria/proveniência sem FK destrutiva em `barbearias.criado_por`, `clientes.criado_por`, `membros_barbearia.convidado_por`, `atribuicoes_cliente.atribuido_por`, convites e ator/alvo da auditoria;
 - `UPDATE` direto de `atribuicoes_cliente.usuario_id` revogado de `authenticated` e todo `UPDATE` da tabela revogado de `service_role`; a reatribuição ainda precisa de uma RPC estreita própria.
 
-A UI/Actions de equipe já consulta/cria/revoga convites, os callbacks chamam o aceite e `scripts/provision-owner.mjs` chama o provisionamento. As RPCs de suspender, reativar e revogar funcionário ainda não possuem UX completa no painel.
+A UI/Actions de equipe consulta/cria/revoga convites e expõe suspensão, reativação e revogação de funcionários. Os callbacks chamam o aceite e `scripts/provision-owner.mjs` chama o provisionamento.
 
-Em 14/08/2026, duas inicializações transitórias com PostgreSQL `15.8.1.085` aplicaram as cinco migrations e o seed. Auth, REST e Studio responderam `200` brevemente; o Storage respondeu HTTP `502`, a pilha encerrou e, em 21/08, Docker e as portas `54321`, `54322` e `54323` estão inativos. Isso prova apenas que o SQL chegou a ser aplicado durante o startup. O rollback defensivo, o pgTAP de 109 asserções e o runner com duas sessões concorrentes mais uma conexão observadora/administrativa não foram executados. Convite, aceite, provisionamento e lifecycle continuam não comprovados e não devem ser tratados como operacionais.
+Em 22/08/2026, lint, pgTAP 112/112, convite, aceite, e-mail, TOTP e lifecycle foram aprovados localmente. O provisionamento inicial também foi exercitado por CLI com criação, reutilização por e-mail e retomada explícita por UUID sobre o mesmo tenant.
 
 ## Arquitetura e lacunas remanescentes dos convites
 
@@ -159,7 +161,7 @@ O fluxo versionado usa onboarding controlado/invite-only:
 - `scripts/provision-owner.mjs` normaliza o e-mail e envia o convite pela Admin API no servidor;
 - em seguida, o script chama `provisionar_dono_controlado` com `service_role`; a RPC cria perfil, tenant e membership de dono na mesma transação;
 - o usuário ainda precisa confirmar o e-mail, definir a senha e matricular o TOTP antes de acessar os dados de negócio;
-- se o convite Auth for criado e a RPC falhar, o script apenas informa o UUID para reconciliação manual; não há preflight completo, compensação automática nem modo seguro de retomada por UUID;
+- se o convite Auth for criado e a RPC falhar, o script informa o UUID e aceita retomada segura com `--usuario-id`; todo input, origem HTTPS/loopback e conflito de slug são verificados antes da criação da identidade;
 - o script constrói `new URL(BARBERVISION_APP_URL).origin` fora do contrato central de URL segura; uma URL inválida pode interromper o processo e uma origem HTTP não loopback ainda precisa ser recusada;
 - falta uma decisão explícita, com threat model e teste de recuperação, sobre criar a membership do primeiro dono antes de ele confirmar o e-mail e definir a senha;
 - contas Auth já existentes não possuem caminho de provisionamento comprovado, porque `inviteUserByEmail` pode não criar um novo convite;
@@ -176,10 +178,10 @@ Separar convite de membership:
 - aceite exige identidade autenticada, e-mail confirmado e correspondência exata;
 - constraints, locks e transições da RPC foram desenhados para controlar duplicidade, replay e expiração, mas ainda não foram testados em PostgreSQL real;
 - usuário já existente deve seguir fluxo de login e aceite pelo mesmo e-mail, porém esse caminho ainda não está comprovado ponta a ponta;
-- envio de e-mail deve migrar para outbox/retry server-only. A implementação atual chama a Admin API de forma síncrona depois de criar o convite e apenas marca envio/falha; não há fila, retentativa durável ou reconciliação automática;
-- usuário Auth já existente precisa de um caminho testado de vinculação/aceite. A chamada atual a `inviteUserByEmail` não demonstra esse caso.
+- envio de e-mail usa outbox/retry server-only com enqueue transacional, lease, backoff, conclusão idempotente e reconciliação automática; ainda faltam scheduler/alertas hospedados e reexecução do E2E atualizado;
+- usuário Auth já existente é resolvido por e-mail via RPC exclusiva de `service_role`, provisionado idempotentemente e pode receber acesso com `--enviar-acesso` sem novo convite Auth.
 - a revogação precisa reler ou receber da RPC o estado final: ao tocar um convite vencido, o banco pode marcá-lo `expirado`, mas a action atual sempre anuncia “Convite revogado”.
-- se a criação do cliente admin/URL falha, a action chama `revogar_convite_barbearia` sem conferir o retorno; se o envio falha, chama `marcar_convite_falhou` e também ignora o retorno. Essas compensações precisam ser observáveis e só podem anunciar o estado realmente persistido.
+- se a criação do cliente admin/URL ou o envio falha, a action executa a compensação e relê o estado por `id + barbearia_id`; ela só anuncia revogação, expiração ou falha persistida quando esse estado é confirmado. Erro/divergência é registrado sem PII e apresentado como estado não confirmado.
 
 ### Lifecycle
 
@@ -190,7 +192,7 @@ Separar convite de membership:
 - transferência de dono é um fluxo separado com AAL2 do alvo;
 - toda alteração de owner adquire lock do tenant antes da mutation.
 
-A tela de equipe ainda lista somente memberships ativas e não expõe os comandos de suspensão, reativação ou revogação. Também não existe RPC estreita de reatribuição de cliente; o bloqueio do `UPDATE` direto é uma contenção temporária até esse comando ser desenhado e testado.
+A tela de equipe lista memberships ativas, suspensas e revogadas e expõe os comandos válidos por estado. Também não existe RPC estreita de reatribuição de cliente; o bloqueio do `UPDATE` direto é uma contenção temporária até esse comando ser desenhado e testado.
 
 ## Auditoria
 
@@ -256,39 +258,36 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 - AAL1 → cadastro/challenge TOTP → AAL2;
 - recuperação de senha;
 - logout local/global;
-- refresh/expiração;
+- refresh válido, expiração e revogação global estão cobertos no harness de integração;
 - suspensão/revogação com JWT existente;
 - REST e Storage em dois tenants;
 - redirects válidos e inválidos.
 
 ## Evidência atual
 
-- cinco migrations e cinco rollbacks presentes;
-- duas inicializações transitórias de 14/08 aplicaram as cinco migrations e o seed em PostgreSQL `15.8.1.085`; Auth, REST e Studio responderam `200`, Storage respondeu `502` e a pilha encerrou;
-- rollbacks de Auth assurance e onboarding/lifecycle comparados estaticamente à baseline, ainda sem ensaio no banco;
-- dois pgTAPs com 168 asserções declaradas: 59 do passo 2 e 109 do passo 3;
-- runner com duas sessões concorrentes, uma conexão observadora, marcador obrigatório e cleanup independente; tentativa local bloqueada por ausência de PostgreSQL;
+- oito migrations e oito rollbacks presentes;
+- CLI 2.115.0, `db:start`, reset, lint e pgTAP 192/192 aprovados; Auth, Storage e Studio respondem `200`;
+- rollbacks de Auth assurance e onboarding/lifecycle ensaiados, com roll-forward e repetição dos gates aprovados;
+- três pgTAPs com 192 asserções: 59 do passo 2, 112 de onboarding/lifecycle e 21 da outbox;
+- runner com duas sessões concorrentes, uma conexão observadora, marcador obrigatório e cleanup independente; as duas corridas passaram localmente;
 - `.env.local` ausente;
-- o engine foi comprovado apenas durante as inicializações transitórias; em 21/08, Docker e `54321`/`54322`/`54323` estão inativos;
-- nenhum fluxo Auth do Barber Vision foi executado; os `200` de saúde da plataforma não comprovam login, convite, callback, senha ou TOTP;
+- serviços necessários do Supabase estão saudáveis; opcionais não usados estão desativados;
+- o Playwright comprovou login, convite/Mailpit, callback, ativação, recuperação de senha, TOTP/AAL2, revogação de convite e logout local; o harness prova refresh, expiração, logout global e recuperação TOTP;
 - build aprovado novamente em 14/08/2026 sem `.env.local`, validando somente o modo demonstrativo; smoke HTTP permanece histórico de 13/08;
 - lint repetido em 21/08/2026: 0 erros e 18 warnings;
-- `db:lint` e `db:test` tentados em 14/08/2026, ambos encerrados por `ECONNREFUSED 127.0.0.1:54322`;
-- duas suítes pgTAP transacionais versionadas/declaradas, com `plan(59)` e `plan(109)`, ainda não executadas; nenhuma asserção foi comprovada.
+- `db:lint` aprovado; onboarding/lifecycle 112/112 e outbox 21/21 aprovados em 23/08;
+- três suítes pgTAP aprovadas, com `plan(59)`, `plan(112)` e `plan(21)`, totalizando 192/192.
 
 ## Próxima sequência canônica
 
-1. Estabilizar o Supabase local na sessão `leoto`: reproduzir a inicialização com diagnóstico redigido, corrigir o HTTP `502` do Storage/encerramento e comprovar que `54321`, `54322` e `54323` permanecem disponíveis.
-2. Instalar/habilitar o Git e criar um baseline recuperável antes das próximas mutações, sem versionar segredos, `.env.local` ou `.next/`.
-3. Executar `db:reset`, `db:lint` e `db:test`, comprovando as 168 asserções das duas suítes pgTAP transacionais.
-4. Depois do `db:reset`, marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-5. Escrever um runbook reproduzível de rollback/roll-forward que inclua `supabase_migrations`; ensaiar os rollbacks 4–5 e o roll-forward e, ao final, repetir `db:lint`, as 168 asserções pgTAP e `db:test:concurrency`.
-6. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar gaps operacionais: resultados das compensações da Equipe, provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, UX completa do lifecycle, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Executar o runner concorrente no banco local explicitamente marcado como descartável e guardar evidência.
+2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
+3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
+4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
+5. Preservar no harness as provas de refresh/expiração/logout global/recuperação TOTP e ampliar casos adversários de callback.
+6. Fechar gaps operacionais: provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
+7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 ## Critério de conclusão do passo 3
 
-O passo 3 só termina quando as cinco migrations subirem do zero, os novos contratos receberem rollback e pgTAP, testes de autorização/concorrência passarem e os fluxos reais de convite, usuário Auth existente, confirmação, recuperação, TOTP, logout e revogação forem demonstrados em ambiente descartável com dois tenants. Outbox/retry, recuperação do TOTP, transferência de dono e seletor multi-tenant permanecem gates explícitos.
+O passo 3 só termina quando as oito migrations subirem do zero, o rollback 8–4 for ensaiado, o E2E atualizado passar e a outbox tiver scheduler/alertas hospedados. Transferência de dono e seletor multi-tenant permanecem gates explícitos.

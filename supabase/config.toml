@@ -27,13 +27,15 @@ api_url = "http://127.0.0.1"
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://127.0.0.1:3000/**"]
+additional_redirect_urls = ["http://127.0.0.1:3000/**", "http://127.0.0.1:3010/**"]
 jwt_expiry = 3600
 enable_signup = false
 enable_anonymous_sign_ins = false
 
 [auth.email]
-enable_signup = false
+# Mantém o provider de e-mail disponível para login/convites. O cadastro público
+# continua bloqueado por auth.enable_signup = false.
+enable_signup = true
 enable_confirmations = true
 double_confirm_changes = true
 secure_password_change = true
@@ -57,3 +59,9 @@ content_path = "./supabase/templates/recovery.html"
 [storage]
 enabled = true
 file_size_limit = "15MiB"
+
+[storage.vector]
+enabled = false
+
+[analytics]
+enabled = false

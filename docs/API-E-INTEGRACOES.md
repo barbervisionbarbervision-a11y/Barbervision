@@ -1,6 +1,6 @@
 # API e integrações
 
-Última atualização: **21/08/2026**.
+Última atualização: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Visão geral
 
@@ -17,7 +17,7 @@ O Barber Vision não depende de API de geração de imagens ou servidor de infer
 
 O placement ativo é **v7**, `manual-placement-v1`, `manual-local`, `automatico: false`. Landmarks continuam no preparo/remoção, mas não posicionam o novo cabelo.
 
-Existem agora integrações server-side estreitas para Auth: Route Handlers em `/auth/callback` e `/auth/confirm`, clientes Supabase SSR e Server Actions na tela de equipe. Login com senha, recuperação, redefinição, ativação e MFA TOTP estão implementados no código. A quinta migration também versiona convites, auditoria e nove RPCs de onboarding/lifecycle. A integração permanece **parcial**: em 14/08 um bootstrap transitório aplicou as cinco migrations e o seed, mas o Storage respondeu HTTP 502 e a pilha encerrou. Rollback, 168 pgTAPs, concorrência, JWTs reais e as jornadas de Auth/equipe continuam sem validação ponta a ponta.
+Existem integrações server-side estreitas para Auth, incluindo callbacks, clientes Supabase SSR, Server Actions e o worker protegido da outbox. Em 23/08, reset, lint, pgTAP 192/192, rollback/roll-forward 8–4, concorrência e E2E atualizado passaram.
 
 Não há endpoints de domínio para clientes, catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas. O painel ainda lê mocks/armazenamento local, e a jornada pública não persiste no Supabase. A vitrine pode criar um link `wa.me` somente quando o dono demo informa um número comercial; não existe integração com a API oficial do WhatsApp.
 
@@ -519,41 +519,38 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 ### Lacunas que impedem o passo 3 de ser considerado concluído
 
-- a quinta migration foi aplicada apenas no bootstrap transitório de 14/08; seu rollback, lint validado, pgTAP dedicado e exercício funcional não foram executados;
-- `/barbeiro/equipe`, os handlers e `npm run auth:provision-owner` continuam sem evidência funcional contra banco/e-mail reais;
-- o envio chama `inviteUserByEmail` de forma síncrona; não existe outbox/retry, reconciliação automática ou garantia de entrega;
-- quando a configuração ou o envio falha, as actions disparam compensações de revogação/marcação de falha, mas ignoram o resultado dessas RPCs e podem afirmar que o convite foi neutralizado sem confirmação autoritativa;
-- o caminho de usuário Auth já existente ainda não foi demonstrado;
-- o provisionamento do primeiro dono cria/convida a identidade Auth antes da RPC de banco e não possui atomicidade distribuída, preflight, retomada segura por UUID, compensação ou reconciliação; pode sobrar identidade Auth órfã ou tenant/membership de dono ativo antes de a conta estar operacional;
+- as migrations 5–8 estão aplicadas; onboarding/lifecycle passou 112/112 e outbox 21/21; concorrência e rollback 5–4 permanecem evidências históricas;
+- `/barbeiro/equipe`, handlers e `npm run auth:provision-owner` possuem evidência funcional contra Supabase/Mailpit locais;
+- o envio usa uma outbox durável; o worker chama `inviteUserByEmail`, aplica lease/retry e reconcilia expiração, mas produção ainda depende de scheduler e SMTP hospedados;
+- quando a configuração ou o envio falha, as actions executam a compensação, releem o convite por `id + barbearia_id` e só anunciam `revogado`, `expirado` ou `falhou` quando o banco confirma esse estado; falha ou divergência produz mensagem de reconciliação necessária;
+- o provisionamento do primeiro dono faz preflight de entrada/origem/slug, resolve Auth existente por RPC server-only, reutiliza a identidade por e-mail e aceita retomada explícita por UUID;
+- se a RPC falhar depois da criação Auth, o script retorna o UUID e um comando de retomada que não cria outra identidade; não existe transação distribuída, mas o replay foi comprovado sobre o mesmo tenant;
 - `/auth/confirm` tenta aceitar a membership antes de `DefinirSenhaForm` concluir a senha; o portador do link já pode obter sessão/membership ativa e navegar para o painel, comportamento que precisa ser bloqueado ou aceito explicitamente;
 - a action de revogação sempre anuncia “Convite revogado”, embora a RPC possa materializar um convite vencido como `expirado`; a resposta precisa reler/retornar o estado autoritativo;
 - as RPCs de suspender, reativar e revogar funcionário ainda não possuem UX completa;
 - não existe RPC estreita para reatribuir um cliente; o `UPDATE` direto de `atribuicoes_cliente.usuario_id` está revogado;
 - a barreira SQL contra nomes de segredo cobre somente o primeiro nível de `eventos_auditoria.metadados`; payloads aninhados exigem hardening e testes próprios;
-- transferência/promoção de dono, recuperação de TOTP e seletor multi-tenant continuam ausentes;
+- transferência/promoção de dono e seletor multi-tenant continuam ausentes; recuperação operacional de TOTP está disponível por comando server-only;
 - templates/configuração locais não comprovam SMTP, URLs permitidas ou templates no projeto hospedado;
 - replay, reenvio/revogação e duas corridas possuem cobertura em fonte, ainda não executada; sessão, e-mail real, MFA e abuso/rate limit continuam sem E2E.
 
 ### Banco versionado
 
-`supabase/schema.sql` é somente um índice documental. A fonte de verdade são cinco migrations: core multi-tenant, grants/RLS, Storage privado, garantia de e-mail/AAL2 e onboarding/lifecycle/auditoria. Elas definem sete tabelas públicas e três buckets. Há cinco rollbacks manuais; os dois novos são defensivos, não foram ensaiados e não reconciliam automaticamente o histórico `supabase_migrations`.
+`supabase/schema.sql` é somente um índice documental. A fonte de verdade são oito migrations, incluindo retomada do dono e outbox. Há oito rollbacks; o próximo ensaio integral deve cobrir 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
 
-Os pgTAPs `step2_tenant_rls.test.sql` e `step3_auth_onboarding_lifecycle.test.sql` declaram 59 + 109 asserções. O segundo cobre AAL1/AAL2, e-mail confirmado, ACLs, convites, lifecycle, replay e auditoria; `provisionar_dono_controlado` e `marcar_convite_falhou` têm somente verificação estrutural/ACL. TOTP, callbacks, JWTs reais e o comportamento funcional dessas duas RPCs ficam fora dele. Ambas são suítes transacionais versionadas/declaradas, ainda não executadas. O runner concorrente também não conectou. Antes do bootstrap de 14/08, `db:lint` e `db:test` terminaram em `ECONNREFUSED 127.0.0.1:54322`; depois, `db:start` aplicou migrations/seed e chegou a iniciar containers, mas o Storage respondeu HTTP 502 e a stack encerrou. Em 21/08, serviço Docker, Supabase e portas `54320–54324` estão inativos. A causa do 502 permanece uma falha de saúde/infraestrutura sem diagnóstico; não há evidência para atribuir o erro às policies RLS. Não há projeto remoto vinculado/configurado. Consulte [Banco de dados](BANCO-DE-DADOS.md) e [`supabase/README.md`](../supabase/README.md).
+Os pgTAPs passaram 59 + 112 + 21 asserções, totalizando 192/192. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
 
 Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema, usuários, SMTP, redirects ou integrações de domínio. O modo real não deve ser habilitado para usuários até essas dependências serem aplicadas e testadas.
 
 ### Sequência canônica de validação
 
-1. Estabilizar a stack local: abrir o Docker Desktop na sessão Windows, confirmar WSL 2/engine, reproduzir o HTTP 502 e capturar `status`/logs de Storage, gateway e banco antes de prosseguir; não atribuir o erro a RLS sem evidência.
-2. Instalar/habilitar o Git e criar uma baseline recuperável antes de novas mutações, sem versionar secrets nem `.next/`.
-3. Aplicar/recriar o banco e executar `db:reset`, `db:lint` e `db:test`, comprovando as 168 asserções pgTAP.
-4. Depois do `db:reset`, marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-5. Escrever um runbook reproduzível de rollback/roll-forward que inclua `supabase_migrations`; ensaiar os rollbacks das migrations 4–5 e o roll-forward e, depois, **repetir** `db:lint`, as 168 asserções pgTAP e `db:test:concurrency`.
-6. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
-7. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, UX do lifecycle, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
+2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
+3. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
+4. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
+5. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários de callback.
+6. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
+7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 ## WhatsApp
 
@@ -573,7 +570,7 @@ O CRM não cria mais links com os telefones mock. Para um cliente “sumido”, 
 Não existem atualmente:
 
 - Auth completo e validado de ponta a ponta; o scaffold SSR/TOTP atual é parcial;
-- ciclo operacional validado de convites, provisionamento, suspensão/revogação e auditoria; os contratos SQL passaram somente pelo bootstrap transitório, não por validação funcional;
+- ciclo operacional validado de convite, suspensão, reativação e revogação; provisionamento inicial e falhas distribuídas continuam pendentes;
 - banco/Storage para os fluxos de negócio;
 - consentimento, retenção e exclusão de selfies;
 - jornada pública persistida, tokens de avaliação e agendamento real;

@@ -1,6 +1,6 @@
 # Decisões de produto
 
-Estado reconciliado em **21/08/2026**.
+Estado reconciliado em **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 Este arquivo registra decisões aprovadas. Itens futuros são identificados como alvo; interfaces ou scaffolds existentes não são tratados como operação pronta.
 
@@ -89,7 +89,7 @@ Regras:
 - dado do tenant não pode ser enviado ao navegador antes do filtro seguro;
 - RLS e código server-side precisam negar acessos cruzados.
 
-As cinco migrations do banco/RLS/Auth estão versionadas. Em **14/08/2026**, um bootstrap transitório aplicou todas elas, executou o seed e iniciou containers, mas o Storage retornou `502` no health check e a pilha foi encerrada. Em **21/08/2026**, Docker/Supabase estão inativos. Não houve `db:reset`, `db:lint`, execução das 168 asserções pgTAP, validação JWT de Data API/Storage, rollback/roll-forward, teste concorrente ou Auth E2E. O passo 3 permanece parcial. Os oito layouts exclusivos do dono já existem no modo Supabase, porém as telas de negócio continuam mocks/`localStorage`.
+As oito migrations do banco/RLS/Auth estão versionadas. Em 23/08, reset, lint e pgTAP 192/192 passaram; as demais evidências históricas estão em `ESTADO-VALIDACAO.md`. O passo 3 permanece parcial pelos gaps operacionais.
 
 ## Cadastro e identidade do cliente no MVP
 
@@ -101,7 +101,7 @@ Decisão ratificada pelo contrato atual:
 - a mesma pessoa pode existir em tenants diferentes, sem compartilhamento automático de cadastro;
 - flexibilizar o telefone ou mudar a chave de deduplicação exige decisão explícita, migration corretiva, atualização da UX e testes de colisão/migração.
 
-Isso é um contrato de dados que passou apenas pelo bootstrap efêmero, sem reset, testes ou validação em ambiente operacional. Não autoriza usar telefone real antes dos gates de privacidade, consentimento, retenção e segurança.
+Esse contrato de dados foi recriado por reset e validado por pgTAP e Data API com JWTs reais; a aplicação ainda não foi exercitada ponta a ponta. Isso não autoriza usar telefone real antes dos gates de privacidade, consentimento, retenção e segurança.
 
 ## Autenticação e MFA
 
@@ -122,9 +122,9 @@ O requisito inicial de “Gmail com código” foi traduzido em e-mail para conf
 
 Já existe código para cookies SSR, `getClaims()`, login, confirmação, recuperação, redefinição, ativação, TOTP, contexto de membership/tenant e guardas do dono. O bootstrap AAL1 do dono foi ajustado para chegar ao MFA sem ler dados da barbearia.
 
-Uma quinta migration versiona `convites_barbearia`, `eventos_auditoria` append-only e nove RPCs para convite, aceite, marcação de envio/falha, provisionamento do primeiro dono e lifecycle do funcionário. Ela foi aplicada somente no bootstrap efêmero de 14/08. Rollback defensivo, pgTAP dedicado e runner concorrente também estão em fonte, mas não foram executados; Auth, e-mail e MFA tampouco tiveram E2E real.
+Uma quinta migration versiona `convites_barbearia`, `eventos_auditoria` append-only e nove RPCs para convite, aceite, marcação de envio/falha, provisionamento do primeiro dono e lifecycle do funcionário. Seu pgTAP dedicado, as duas corridas concorrentes, rollback/roll-forward e o E2E principal de Auth/e-mail/MFA passaram em 22/08.
 
-Continuam faltando SMTP/redirects reais, E2E, recuperação de fator, proteção contra abuso, seletor de tenant, outbox/retry, caminho comprovado para usuário Auth já existente e transferência segura de dono. A tela Equipe e o script do primeiro dono permanecem não operacionais até banco, Auth e e-mail serem validados em conjunto.
+Continuam faltando SMTP/redirects hospedados, recuperação de fator, proteção contra abuso, seletor de tenant, outbox/retry e transferência segura de dono. Equipe e provisionamento do primeiro dono estão operacionais apenas no ambiente local validado; produção ainda exige configuração e ensaio próprios.
 
 ### Múltiplas barbearias
 
@@ -254,7 +254,7 @@ Qualquer evolução oficial exigirá integração autorizada, origem verificáve
 ## Sequência de implementação aprovada
 
 1. segurança da demonstração — concluída para demo controlada;
-2. Supabase/tenant/RLS/Storage — versionado; bootstrap transitório, não validado;
+2. Supabase/tenant/RLS/Storage — reset/lint/pgTAP/concorrência/JWT/Storage real validados;
 3. Auth real/MFA — parcial, não validado;
 4. privacidade/consentimento — não iniciado;
 5. primeiro fluxo vertical persistido — não iniciado;

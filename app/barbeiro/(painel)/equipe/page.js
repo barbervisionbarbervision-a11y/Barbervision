@@ -12,7 +12,8 @@ export default async function Equipe() {
         membros={equipeExemplo.map((pessoa) => ({
           usuarioId: pessoa.id,
           nome: pessoa.nome,
-          papel: pessoa.papel
+          papel: pessoa.papel,
+          status: "ativo"
         }))}
         convites={[]}
       />
@@ -26,7 +27,7 @@ export default async function Equipe() {
       .from("membros_barbearia")
       .select("usuario_id,papel,status")
       .eq("barbearia_id", sessao.barbeariaId)
-      .eq("status", "ativo"),
+      .order("created_at", { ascending: true }),
     supabase
       .from("convites_barbearia")
       .select("id,nome,email_normalizado,status,created_at")
@@ -52,7 +53,8 @@ export default async function Equipe() {
       membros={(resultadoMembros.data ?? []).map((membro) => ({
         usuarioId: membro.usuario_id,
         nome: nomes.get(membro.usuario_id) ?? "Membro",
-        papel: membro.papel
+        papel: membro.papel,
+        status: membro.status
       }))}
       convites={(resultadoConvites.data ?? []).map((convite) => ({
         id: convite.id,

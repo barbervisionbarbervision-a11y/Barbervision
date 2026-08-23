@@ -1,6 +1,6 @@
 # Fotos-fonte recebidas e uso como referência
 
-Última atualização documental: **21/08/2026**.
+Última atualização documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Estado desta etapa
 
@@ -34,7 +34,7 @@ Os outputs ativos são:
 
 O inventário, a separação privada/pública e o uso apenas como referência ampla permanecem inalterados. Paths, bytes e SHA-256 foram revalidados em **14/08/2026**; esses hashes não foram recalculados em 21/08. O simulador e o placement manual v7 seguem congelados, sem mudança de código visual. A implementação parcial de Auth com Supabase SSR, cookies, membership e AAL2 para dono não publica, licencia, protege por tenant nem migra estas fotos. Sem configuração do Supabase, o desenvolvimento continua no fallback demo e as áreas internas ficam bloqueadas por padrão em produção.
 
-Em **14/08/2026**, um bootstrap transitório aplicou as cinco migrations, executou o seed e iniciou containers; o health check do Storage retornou `502` e o CLI encerrou a pilha. Em **21/08/2026**, Docker/Supabase estão inativos. Reset, lint SQL, 168 asserções pgTAP, validação JWT de Data API/Storage, rollback/roll-forward, concorrência e Auth E2E continuam sem execução. O passo 3 segue parcial, e os passos 4 (governança de privacidade) e 5 (fluxo público persistido) ainda não existem. As fontes permanecem apenas no diretório privado ignorado pelo Git, sem backup automático, Storage privado, política de retenção ou autorização comprovada.
+Em 22/08, start, reset, lint SQL, pgTAP 170/170, concorrência, rollback/roll-forward 5–4, JWT de Data API/Storage e o Auth E2E com lifecycle passaram. Os passos 4 e 5 ainda não existem. As fontes permanecem no diretório privado ignorado pelo Git, sem governança de produção comprovada.
 
 O recebimento — e também o uso limitado como referência — não comprova licença, cessão de direitos autorais, autorização da pessoa retratada ou autorização para remoção de marca. Origem e direito de uso continuam não verificados. As fontes não devem ser publicadas e os assets sintéticos versionados devem continuar rotulados como demonstração até que a procedência e a política de uso sejam revisadas.
 
@@ -105,4 +105,4 @@ Não concluído:
 
 ## Próxima ação desta frente após o descongelamento
 
-Na ordem operacional canônica, primeiro é necessário reativar/validar a pilha, criar a baseline Git, executar reset/lint/168 pgTAP/concorrência/rollback/JWT/E2E e fechar os gaps de Auth antes de implementar privacidade e persistir dados reais; veja o [Plano de execução](PLANO-DE-EXECUCAO.md). Quando a frente visual voltar a ser gate do piloto, obter da barbearia novas fotos frontais produzidas por ela ou comprovação documental das fontes existentes. Em paralelo, testar os assets sintéticos ativos apenas como demonstração aproximada numa matriz consentida, incluindo placement manual v7 confirmado, cobertura nos extremos de X/Y/largura/altura/rotação contra caixa/cap, layout lateral em 320/390/768/desktop, E2E, carregamento e celulares reais, e manter explícito que os arquivos privados não estão no produto e que seus direitos continuam pendentes.
+Na ordem operacional canônica, pilha, baseline Git, reset, lint, pgTAP 170/170, concorrência, rollback 5–4, JWT/Storage e Auth E2E com lifecycle já foram validados; o rollback 6–4 e os gaps operacionais de Auth vêm antes de privacidade e dados reais. Quando a frente visual voltar a ser gate do piloto, obter fotos frontais produzidas pela barbearia ou comprovação documental das fontes existentes. Testar os assets sintéticos apenas como demonstração aproximada numa matriz consentida, incluindo placement manual v7, extremos de geometria, layouts 320/390/768/desktop, carregamento e celulares reais.

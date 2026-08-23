@@ -1,16 +1,16 @@
 # Arquitetura
 
-Última auditoria: **21/08/2026**.
+Última auditoria: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Resumo
 
 O Barber Vision é uma aplicação Next.js 16 com App Router e duas partes em estágios diferentes. A jornada pública, o simulador e quase todo o domínio operacional ainda são locais: mocks, `sessionStorage`, `localStorage`, MediaPipe e Canvas no navegador. A simulação combina normalização da selfie, `FaceLandmarker` com 478 pontos, `ImageSegmenter` com SelfieMulticlass, síntese aproximada para ocultar o cabelo original, análise alpha, matte de oclusão e overlay 2D. Essas análises protegem o preparo, mas **não posicionam o novo corte**. O placement primário continua manual v7: base fixa do catálogo, ajuste separado de posição, largura, altura e rotação, seguido da confirmação em **Pronto**.
 
-Autenticação possui uma integração Supabase SSR parcial. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono só deve alcançar dados de negócio em AAL2; em AAL1 existe um bootstrap mínimo para encaminhá-lo à matrícula/desafio de MFA sem consultar a barbearia protegida. Funcionários podem operar em AAL1. Esse caminho está versionado, mas não foi testado de ponta a ponta contra um Supabase real.
+Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono só alcança dados de negócio em AAL2; em AAL1 existe um bootstrap mínimo para encaminhá-lo à matrícula/desafio de MFA sem consultar a barbearia protegida. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
 
-O restante do backend não está pronto. Existem cinco migrations — core, RLS, Storage, garantia de e-mail/AAL2 e onboarding/lifecycle/auditoria —, cinco rollbacks e 168 asserções pgTAP em duas suítes. Em 14/08, um `db:start` aplicou as cinco migrations e o seed durante um bootstrap transitório e chegou a **Starting containers**; em seguida o Storage respondeu HTTP 502, a pilha encerrou e as portas fecharam. Isso não substitui `db:reset`, lint, pgTAP, Data API/Storage com JWT, concorrência ou ensaio de rollback. A quinta migration define `convites_barbearia`, `eventos_auditoria` e nove RPCs consumidas pela UI de equipe, Server Actions, callbacks e script de provisionamento; sua reversão defensiva, o teste dedicado e o runner concorrente permanecem sem execução comprovada. O painel de negócio continua consumindo mocks/armazenamento local; os passos de privacidade e fluxo público persistido também não foram implementados.
+O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem oito migrations, oito rollbacks e três suítes pgTAP com 192/192. A outbox de convites possui enqueue atômico, lease, retry, conclusão idempotente e expiração reconciliada; falta operacionalizar o scheduler hospedado e reexecutar seu E2E. O painel de negócio continua consumindo mocks/armazenamento local.
 
-Evidências temporais devem permanecer separadas do estado do código: o build foi aprovado novamente em **14/08/2026** no modo sem Supabase; o smoke HTTP permanece histórico de **13/08/2026**. O lint foi repetido em **21/08/2026** com exit `0`, zero erros e 18 warnings. Antes do bootstrap transitório de 14/08, `db:lint` e `db:test` chegaram à conexão local e terminaram em `ECONNREFUSED 127.0.0.1:54322`; isso não é lint nem teste SQL executado. Em **21/08/2026**, Docker Desktop/Supabase estão inativos, o serviço Docker está parado, não há listeners nas portas locais `54320–54324` e `supabase status` falha. A causa do HTTP 502 do Storage ainda é desconhecida e deve ser tratada como saúde/infraestrutura, não atribuída a RLS sem evidência.
+Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 Há dois modos explícitos de execução:
 
@@ -56,7 +56,7 @@ flowchart LR
     PF[private-assets<br/>fontes recebidas] -. sem import ou consumidor .- CP
 
     SA --> S[Supabase configurado]
-    SQL[supabase/migrations<br/>core + RLS + Storage + AAL2 + lifecycle] -. bootstrap transitório;<br/>validação pendente .-> S
+SQL[supabase/migrations<br/>core + RLS + Storage + AAL2 + lifecycle] -. reset/lint/pgTAP/JWT/E2E aprovados .-> S
     INV[UI/actions de convite] -. contratos versionados<br/>não testados .-> S
 ```
 
@@ -83,7 +83,7 @@ As setas tracejadas representam intenção, preparação ou ausência explícita
 | Fechamento financeiro local | `app/barbeiro/(painel)/financeiro/`, `lib/fechamentoFinanceiro.js` | Lançamentos gerenciais por competência, separação serviço/produto, conciliação, fechamento/reabertura e CSV; não calcula nem transmite tributos |
 | Vitrine pública | `components/VitrineProdutosCuidados.jsx` | Até três produtos locais relacionados ao perfil de cuidado; WhatsApp ou cópia |
 | Fontes privadas manuais | `private-assets/cortes-recebidos-2026-07-21/` | Cópias fora de `public/`, Git, catálogo e build; usadas somente como referência ampla offline dos demos, sem recorte/publicação ou direitos confirmados |
-| Fundação de dados | `lib/supabase/`, `supabase/` | Clientes browser/server/admin, cinco migrations, cinco rollbacks, seed, templates, dois pgTAPs e runner concorrente; bootstrap transitório observado, validação operacional pendente |
+| Fundação de dados | `lib/supabase/`, `supabase/` | Migrations, rollback, pgTAP, concorrência, JWT/RLS, Storage e jornada Auth principal aprovados localmente |
 | Estilo | `app/globals.css`, `tailwind.config.js` | Tokens, fontes, animações e utilitários Tailwind |
 
 ## Renderização e fronteiras de execução
@@ -111,7 +111,7 @@ O inventário de 14/08/2026 possui **31 arquivos `page.js`** e **dois Route Hand
 
 O inventário precisa ser regenerado sempre que arquivos de configuração/documentação forem adicionados; `proxy.js` e a configuração ESLint agora fazem parte da arquitetura. Perfis temporários em `tmp/`, dependências, artefatos de build e as cinco fontes privadas ignoradas continuam fora desse inventário.
 
-Os números de **22,2 kB** próprios/**125 kB** de First Load JS pertencem a uma compilação histórica e não devem ser usados como baseline atual. Os dois modelos e o WASM permanecem fora do bundle e são carregados como arquivos estáticos same-origin. A cadeia instalada inclui Next `16.3.0`, `@supabase/ssr` `0.12.4`, `@supabase/supabase-js` `2.112.2`, MediaPipe `0.10.35`, Supabase CLI `2.112.0` e `pg` `8.23.0` para o runner concorrente. Build, lint, audit e testes são evidências temporais e precisam ser repetidos no release.
+Os números de **22,2 kB** próprios/**125 kB** de First Load JS pertencem a uma compilação histórica e não devem ser usados como baseline atual. A cadeia instalada inclui Next `16.3.0`, `@supabase/ssr` `0.12.4`, `@supabase/supabase-js` `2.112.2`, MediaPipe `0.10.35`, Supabase CLI `2.115.0` e `pg` `8.23.0`.
 
 ### Server-side, Auth e APIs
 
@@ -120,9 +120,9 @@ Existem dois Route Handlers de Auth:
 - `/auth/callback`: troca o `code` PKCE por sessão e, se houver `convite`, tenta a RPC `aceitar_convite_barbearia`;
 - `/auth/confirm`: verifica `token_hash` para confirmação, convite, recovery ou alteração de e-mail e também tenta aceitar convite quando aplicável.
 
-Existem Server Actions na tela de equipe e um script de provisionamento de dono. Eles usam contexto de dono/AAL2 e cliente admin server-only. A quinta migration define as tabelas e RPCs que esses consumidores chamam, além de `suspender_funcionario`, `reativar_funcionario` e `revogar_funcionario`. Esses caminhos continuam **não operacionais e não comprovados**: o bootstrap transitório do schema não validou Auth, envio de e-mail, callbacks ou as operações pela aplicação. Também não existe API de domínio para clientes, agenda, simulações, avaliações, produtos ou financeiro.
+Existem Server Actions na tela de equipe e um script de provisionamento de dono. Eles usam contexto de dono/AAL2 e cliente admin server-only. A quinta migration define as tabelas e RPCs consumidas. Esses caminhos continuam **não operacionais e não comprovados pela aplicação**: pgTAP valida o SQL coberto, não Auth, e-mail, callbacks ou orquestração real. Também não existe API de domínio para clientes, agenda, simulações, avaliações, produtos ou financeiro.
 
-Há três riscos P1 na orquestração atual. As compensações disparadas pelas actions de convite ignoram o resultado da RPC de revogação/marcação de falha e podem anunciar um estado que não foi confirmado. O provisionamento cria/convida a identidade Auth antes da RPC de banco e não possui transação distribuída, preflight, retomada ou reconciliação; uma falha pode deixar identidade órfã, e o banco pode materializar tenant/membership de dono ativo antes de a conta estar operacional. Por fim, `/auth/confirm` aceita a membership antes de a tela definir a senha; o portador do link já obtém sessão/membership ativa e pode alcançar o painel se nenhuma barreira adicional for criada. Esse comportamento precisa ser aceito explicitamente pelo produto ou corrigido antes do E2E.
+O provisionamento não possui transação distribuída entre Auth e Postgres, mas agora valida entrada/origem/slug antes da mutação e retoma com a identidade existente por e-mail ou UUID quando a RPC falha. A membership nasce ativa antes da senha para permitir bootstrap, enquanto dados de negócio exigem AAL2; o link inicial conduz à definição de senha. As compensações de convite também releem o estado autoritativo antes de afirmar a transição.
 
 Selfie, catálogo demonstrativo e placement continuam tratados no navegador. Não há persistência pública no Supabase.
 
@@ -270,7 +270,7 @@ Inventário e triagem: [Fotos reais recebidas](FOTOS-REAIS-RECEBIDAS.md).
 
 A arquitetura agora possui duas realidades distintas.
 
-Na fundação SQL, `barbearias` é o tenant; `membros_barbearia` define papel/status por conta; clientes, atribuições, convites e eventos de auditoria exigem `barbearia_id`; FKs compostas impedem atribuição cruzada; grants/RLS negam outro tenant e anônimo. Os UUIDs históricos de procedência — `barbearias.criado_por`, `clientes.criado_por`, `membros_barbearia.convidado_por`, `atribuicoes_cliente.atribuido_por`, atores dos convites e ator/alvo da auditoria — não têm FK destrutiva para `auth.users`, para sobreviver à remoção da conta. A quarta migration exige e-mail confirmado/AAL2, e a quinta adiciona comandos estreitos de onboarding/lifecycle e auditoria append-only. Essa fundação foi aplicada somente no bootstrap transitório de 14/08 e ainda aguarda recriação e validação reproduzível num Supabase saudável.
+Na fundação SQL, `barbearias` é o tenant; `membros_barbearia` define papel/status; FKs compostas impedem atribuição cruzada; grants/RLS negam outro tenant e anônimo. As migrations 4–6 cobrem assurance, comandos/auditoria e leitura operacional de perfis. A fundação passou reset, lint, pgTAP 170/170, JWT e Storage real.
 
 Eventos de origem `usuario` exigem ator; eventos de origem `sistema` podem manter o ator nulo. Transições efetivas de lifecycle auditam, enquanto replay idempotente que já encontra o estado final é no-op e não duplica evento. O `CHECK` contra segredos óbvios olha apenas as chaves de primeiro nível de `metadados`, então payloads aninhados ainda precisam de sanitização. A troca direta de `atribuicoes_cliente.usuario_id` foi revogada para `authenticated`, e `service_role` perdeu `UPDATE` na tabela; falta uma RPC estreita e auditada para reatribuição.
 
@@ -296,7 +296,7 @@ Portanto, a identidade SSR já carrega tenant por desenho, mas “multi-tenant s
 6. dono em AAL2 pode alcançar layouts exclusivos, e a migration `auth_assurance` reforça o mesmo step-up em RLS/Storage;
 7. login com senha, recuperação, redefinição, ativação, TOTP, logout local/global e templates locais existem no código.
 
-Esse caminho é **parcial e não validado de ponta a ponta**. Não há `.env.local`, projeto remoto vinculado ou SMTP hospedado configurado. O bootstrap transitório de 14/08 aplicou o schema e o seed, mas terminou após o HTTP 502 do Storage; em 21/08, Docker/Supabase e suas portas locais estão inativos. Convites, provisionamento, lifecycle e auditoria não foram exercitados pela aplicação; rollback e pgTAP estão versionados, porém sem execução comprovada. Ainda faltam outbox/retry, caminho comprovado para usuário Auth existente, transferência de dono, recuperação quando o TOTP é perdido, seletor de tenant e testes de browser/API/JWT.
+Esse caminho principal está validado localmente com Supabase, Mailpit, JWT/Storage e Playwright, mas continua parcial para produção. Não há projeto remoto vinculado nem SMTP hospedado. Outbox/retry e expiração reconciliada estão implementados; faltam scheduler hospedado, reexecução do E2E atualizado, transferência de dono, seletor de tenant e cenários adversários adicionais.
 
 ### Modo demonstração sem Supabase
 
@@ -336,7 +336,7 @@ barbervision/
 │   ├── clienteFlow.js, mockData.js, hairCatalog.js
 │   ├── posVenda.js, cuidadosCabelo.js, productCatalog.js
 │   └── fechamentoFinanceiro.js, dataUtils.js, useSessaoDono.js
-├── scripts/provision-owner.mjs                       # RPC versionada, fluxo não testado
+├── scripts/provision-owner.mjs                       # provisionamento retomável validado localmente
 ├── private-assets/                 # ignorado pelo Git; nunca servido pelo app
 │   └── cortes-recebidos-2026-07-21/
 ├── public/
@@ -348,7 +348,7 @@ barbervision/
 ├── supabase/
 │   ├── migrations/                  # core, RLS, Storage, assurance e onboarding/lifecycle
 │   ├── rollback/                    # cinco reversões manuais e defensivas
-│   ├── tests/database/              # 59 + 109 asserções pgTAP
+│   ├── tests/database/              # 59 + 112 + 21 asserções pgTAP
 │   ├── templates/                   # convite e recuperação locais
 │   ├── config.toml
 │   ├── seed.sql
@@ -389,11 +389,11 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 ## Restrições arquiteturais confirmadas
 
 - Existe Auth SSR parcial, mas não há backend de domínio, serviços ou repositórios persistentes para o fluxo público e o painel;
-- há Server Actions de convite e dois Route Handlers de Auth; o SQL de convites/provisionamento/lifecycle/auditoria passou apenas pelo bootstrap transitório, sem teste funcional;
+- há Server Actions de convite e dois Route Handlers de Auth; o SQL passou pgTAP, mas ainda não teste funcional pela aplicação;
 - os UUIDs de procedência são históricos, sem FK destrutiva para Auth; o `UPDATE` direto da atribuição foi revogado, mas ainda não existe RPC estreita de reatribuição;
 - auditoria exige ator em eventos de usuário e não duplica evento em replay no-op, porém a verificação de nomes de segredo em `metadados` cobre somente o nível superior;
-- cinco migrations e o seed chegaram a ser aplicados no bootstrap transitório de 14/08; os cinco rollbacks e os dois testes de banco continuam sem execução, e não há `db:reset` validado;
-- as migrations 4–5 têm rollbacks/teste dedicado, ainda sem ensaio, lint PostgreSQL comprovado ou evidência concorrente;
+- oito migrations e seed foram aplicados por reset; lint e pgTAP 192/192 passam; concorrência e rollback 5–4 foram executados historicamente, restando ensaiar 8–4;
+- as migrations 4–5 tiveram rollback/roll-forward ensaiado; lint, pgTAP e concorrência passaram após a restauração;
 - três buckets privados estão definidos nas migrations; no runtime do aplicativo, porém, não há upload/leitura de Storage e as imagens continuam somente na persistência demonstrativa do navegador;
 - no fluxo ativo existem segmentação, FaceLandmarker com 478 pontos, síntese automática aproximada para a remoção e matte alpha do cutout, mas não há reconstrução anatômica 3D, deformação de malha, oclusão semântica avançada ou adaptação automática de luz/perspectiva;
 - o placement do cliente é uma transformação 2D manual com posição, largura, altura e rotação absolutas; ele não usa a geometria facial para posicionar o cutout, não corrige perspectiva e não substitui os gates automáticos do preparo;
@@ -402,7 +402,7 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - o pipeline local de cabelo e pele/cabeça faz parte do grafo ativo e possui limite de 45 segundos para carregar selfie/runtime/dois modelos; qualidade e desempenho ainda não foram validados em aparelhos-alvo;
 - sem fila, webhook, cron ou processamento assíncrono;
 - sem analytics, logs estruturados, tracing ou monitoramento;
-- sem suíte automatizada de aplicação, TypeScript ou schema validation; existem dois pgTAPs, um para a baseline do passo 2 e outro para assurance/onboarding/lifecycle/auditoria do passo 3, ambos ainda não executados. No segundo, provisionamento do dono e marcação de falha têm somente asserções estruturais/ACL, não cenários funcionais;
+- Playwright cobre Auth/lifecycle/outbox; três pgTAPs passaram 192/192 e dois workers concorrentes não duplicaram reivindicações;
 - sem CI/CD, container ou configuração específica de provedor de deploy;
 - sem internacionalização; textos são pt-BR embutidos nos componentes.
 
@@ -427,20 +427,17 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - `proxy.js` seleciona o modo de forma explícita: sem env há demo controlada; com env há Auth SSR e nenhuma flag insegura cria bypass;
 - `supabase/migrations` é a fonte de verdade com sete tabelas públicas, policies, três buckets, reforço de e-mail/AAL2 e nove RPCs de onboarding/lifecycle; `schema.sql` é apenas um índice documental;
 - a tela/actions de equipe, callbacks e script de primeiro dono chamam contratos agora versionados, porém esses caminhos não foram exercitados e não devem ser anunciados como concluídos;
-- `supabase/tests/database/step2_tenant_rls.test.sql` contém 59 asserções adaptadas ao claim AAL2 dos donos; o caso de perfil inativo usa um funcionário e a expectativa cross-tenant acompanha o trigger. A cobertura dedicada de assurance/onboarding/lifecycle está nas 109 asserções da segunda suíte; nenhuma das duas rodou. Em 21/08, Docker/Supabase estão inativos e o projeto remoto continua ausente;
-- `db:lint` e `db:test` chegaram à tentativa de conexão em 14/08, mas terminaram em `ECONNREFUSED 127.0.0.1:54322` antes da análise SQL.
+- `step2_tenant_rls.test.sql` passou 59/59, onboarding/lifecycle 112/112 e outbox 21/21;
+- `db:lint` passou sem erros em 22/08; falta corrigir e repetir integralmente o passo 2.
 
 Ao substituir mocks por dados reais, evite fazer uma troca parcial que mantenha métricas derivadas de arrays antigos. A jornada, o painel e as regras precisam passar a compartilhar IDs e eventos persistidos de ponta a ponta.
 
 ## Sequência canônica de validação
 
-1. Estabilizar a stack local: abrir o Docker Desktop na sessão Windows, confirmar WSL 2/engine, reproduzir o HTTP 502 e capturar `status`/logs de Storage, gateway e banco antes de prosseguir. A causa ainda é de saúde/infraestrutura desconhecida, não RLS demonstrada.
-2. Instalar/habilitar o Git e criar uma baseline recuperável antes de novas mutações, sem versionar secrets nem `.next/`.
-3. Aplicar/recriar o banco e executar `db:reset`, `db:lint` e `db:test`, comprovando as 168 asserções pgTAP.
-4. Depois do `db:reset`, marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-5. Escrever um runbook reproduzível de rollback/roll-forward que inclua `supabase_migrations`; ensaiar os rollbacks das migrations 4–5 e o roll-forward e, depois, **repetir** `db:lint`, as 168 asserções pgTAP e `db:test:concurrency`.
+1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
+5. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
 6. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
 7. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, UX do lifecycle, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
+8. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários.
+9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
 10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.

@@ -5,7 +5,7 @@
     <p>Use o botão abaixo para criar uma nova senha do Barber Vision.</p>
     <p>
       <a
-        href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery"
+        href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}"
         style="display: inline-block; border-radius: 8px; background: #c6963b; color: #000; padding: 12px 18px; text-decoration: none; font-weight: 700"
       >Criar nova senha</a>
     </p>

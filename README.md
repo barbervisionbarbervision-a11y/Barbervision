@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **21/08/2026**. O projeto é uma demonstração funcional local, não um produto pronto para receber dados reais de clientes.
+> Estado reconciliado em **22/08/2026**. O projeto é uma demonstração funcional local, não um produto pronto para receber dados reais de clientes. Veja a evidência atual em [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -18,8 +18,8 @@ O simulador de cabelo está **congelado por decisão de produto**: a preparaçã
 | Passo | Estado real | Observação |
 |---|---|---|
 | 1. Segurança da demonstração | Concluído para a demo controlada | Em produção sem Auth, `/admin` permanece sempre bloqueado; uma flag explicitamente insegura pode liberar somente a demo de `/barbeiro/*`. |
-| 2. Supabase, tenant e RLS | Execução parcial; validação pendente | `db:start` aplicou as cinco migrations e o seed em PostgreSQL 15.8, e o schema foi consultado. A pilha não permaneceu ativa; `db:reset`, lint, pgTAP, RLS via JWT e Storage continuam sem validação. |
-| 3. Autenticação real | Parcial; não operacional ponta a ponta | SSR, login, recuperação, callbacks e TOTP existem. O SQL de convites/lifecycle/auditoria chegou a ser aplicado, mas nenhum fluxo Auth real, pgTAP ou teste de autorização foi executado. |
+| 2. Supabase, tenant e RLS | Validado localmente | Reset, lint, pgTAP 192/192, concorrência histórica, RLS via JWT e Storage com blob real passam. |
+| 3. Autenticação real | Jornada principal aprovada; gaps operacionais abertos | Playwright comprova login, TOTP/AAL2 do dono, convite/ativação de funcionário, recuperação de senha, revogação de convite e logout com Auth e Mailpit locais reais. |
 | 4. Privacidade e consentimento | Não iniciado | Ainda faltam consentimento afirmativo, retenção, exclusão, termos e governança LGPD. |
 | 5. Fluxo vertical persistido | Não iniciado | A jornada pública continua em `sessionStorage`/`localStorage`; não cria simulação, agenda ou avaliação no banco. |
 | 6. Painel operacional real | Não iniciado | As telas de negócio ainda usam mocks e armazenamento do navegador. |
@@ -68,13 +68,14 @@ As migrations criam:
 - `clientes`;
 - `atribuicoes_cliente`;
 - `convites_barbearia`;
+- `convite_email_outbox`, fila privada com lease, retry e estado terminal;
 - `eventos_auditoria` append-only;
 - RLS por tenant e papel;
 - buckets privados `barbervision-hair-sources`, `barbervision-hair-cutouts` e `barbervision-selfies`;
 - exigência de e-mail confirmado e AAL2 para o dono acessar dados de negócio e Storage;
 - nove RPCs estreitas para criar, aceitar, revogar e registrar envio/falha de convite, provisionar o primeiro dono e suspender, reativar ou revogar funcionário.
 
-A migration `20260813010000_onboarding_invites_lifecycle_audit.sql` entrega esses contratos em fonte, com locks, grants mínimos e auditoria na mesma transação das transições efetivas. UUIDs de autoria/proveniência são históricos e não usam FKs destrutivas; replays idempotentes não duplicam eventos. O `UPDATE` direto do responsável por uma atribuição foi fechado até existir uma RPC transacional de reatribuição. As migrations 4–5 possuem rollbacks defensivos e uma suíte dedicada de 109 asserções; há também um runner com duas sessões concorrentes e uma terceira conexão observadora/administrativa. Em 14/08, as cinco migrations e o seed foram aplicados por `db:start`, e as tabelas/RPCs foram criadas no PostgreSQL local. Isso prova aplicação básica, não comportamento: pgTAP, rollbacks, concorrência, JWTs e fluxos Auth continuam sem execução. Outbox/retry de e-mail, expiração reconciliada de convites, transferência de dono, UX do lifecycle e a orquestração completa para um usuário Auth já existente continuam pendentes. O provisionamento inicial não é atômico nem retomável após “Auth criado/RPC falhou”; as compensações de convite hoje ignoram o próprio erro; a mensagem de revogação não distingue o estado autoritativo `expirado`; e o aceite da membership ocorre antes de a tela gravar a senha. Por isso, as telas e scripts consumidores não constituem evidência de um fluxo real funcional.
+As migrations de onboarding, leitura operacional, retomada do primeiro dono e outbox entregam os contratos de Auth. Reset, lint e pgTAP 192/192 passam localmente. A criação do convite e o enqueue são atômicos; um worker server-only reivindica itens com lease, aplica backoff exponencial, conclui de forma idempotente e materializa convites vencidos. O disparo imediato usa `after()`, mas produção ainda exige um agendador externo chamando a rota interna protegida. Transferência de dono continua pendente.
 
 ## Stack
 
@@ -83,7 +84,7 @@ A migration `20260813010000_onboarding_invites_lifecycle_audit.sql` entrega esse
 - Tailwind CSS 3.4;
 - MediaPipe Tasks Vision 0.10.35;
 - Supabase JS 2.112.2 e `@supabase/ssr` 0.12.4;
-- Supabase CLI 2.112.0;
+- Supabase CLI 2.115.0;
 - `pg` 8.23.0 para o runner concorrente descartável;
 - Lucide React.
 
@@ -135,8 +136,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://SEU-PROJETO.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_sua-chave
 SUPABASE_SECRET_KEY=sb_secret_sua-chave
 BARBERVISION_APP_URL=http://127.0.0.1:3000
+BARBERVISION_CRON_SECRET=gere-um-segredo-longo-e-aleatorio
 BARBERVISION_ENABLE_UNSAFE_INTERNAL_DEMO=false
-BARBERVISION_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+BARBERVISION_TEST_DATABASE_URL=postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
 BARBERVISION_ALLOW_REMOTE_DB_TEST=false
 BARBERVISION_TEST_DATABASE_CONFIRM=127.0.0.1:54322/postgres
 ```
@@ -144,6 +146,7 @@ BARBERVISION_TEST_DATABASE_CONFIRM=127.0.0.1:54322/postgres
 Regras:
 
 - `SUPABASE_SECRET_KEY` é exclusiva do servidor e nunca pode receber prefixo `NEXT_PUBLIC_`;
+- `BARBERVISION_CRON_SECRET` protege o worker HTTP e também é exclusivamente server-side;
 - `.env.local` não deve ser versionado;
 - as três variáveis `BARBERVISION_*DATABASE*` são exclusivas do runner concorrente e devem apontar para um banco explicitamente descartável;
 - as configurações de `supabase/config.toml` valem para o ambiente local e não comprovam a configuração do projeto hospedado;
@@ -173,7 +176,7 @@ Regras:
 | `/barbeiro/login` | Login real quando Supabase está configurado; seletor demo sem Supabase |
 | `/barbeiro/esqueci-senha` | Solicitação de recuperação |
 | `/barbeiro/redefinir-senha` | Troca de senha após sessão de recuperação |
-| `/barbeiro/ativar-conta` | Conclusão do convite; contrato SQL aplicado na inicialização transitória, ainda sem teste ponta a ponta |
+| `/barbeiro/ativar-conta` | Conclusão do convite; contrato SQL e jornada E2E local aprovados |
 | `/barbeiro/mfa` | Cadastro/desafio TOTP do dono |
 | `/barbeiro/sem-acesso` | Conta sem perfil, membership ou tenant válido |
 | `/auth/callback` | Troca de código por sessão |
@@ -196,7 +199,10 @@ As rotas sob `/barbeiro` incluem dashboard, clientes, simulações, histórico, 
 | `npm run db:lint` | Lint SQL local |
 | `npm run db:test` | Executar pgTAP |
 | `npm run db:test:concurrency` | Executar duas corridas reais em banco explicitamente marcado como descartável |
-| `npm run auth:provision-owner` | Provisionamento controlado; RPC aplicada na inicialização transitória, ainda sem execução funcional comprovada |
+| `npm run db:test:integration` | Criar Auth/TOTP temporário e validar Data API/RLS/Storage com JWT e blob reais |
+| `npm run test:e2e` | Executar a jornada Playwright de Auth, TOTP, convite, recuperação e logout contra Supabase/Mailpit locais |
+| `npm run auth:recover-owner-totp -- --usuario-id UUID --confirmar-email EMAIL --confirmar-remocao-totp` | Recuperação operacional do TOTP após verificação externa da identidade do dono |
+| `npm run auth:provision-owner` | Provisionamento controlado e retomável; criação, reutilização por e-mail e replay por UUID comprovados localmente |
 
 ## Estrutura principal
 
@@ -216,18 +222,14 @@ docs/                    documentação técnica e de produto
 
 ## Validação conhecida
 
-- Em 21/08/2026, `npm ls --depth=0`, `npm run lint -- --no-cache`, os dois `node --check` e `launcher.bat --check` passaram; o lint possui 0 erros e 18 warnings. O `npm audit` com 0 vulnerabilidades e a validação do atalho continuam como evidências de 14/08.
-- `npm run build` foi aprovado em 14/08/2026, com 31 páginas, 2 Route Handlers e o Proxy. O smoke HTTP continua sendo evidência histórica de 13/08/2026; o build não foi repetido nesta revisão documental.
-- O build sem `.env.local` valida apenas o modo demonstrativo; não testa login, e-mail, TOTP, RLS ou Storage.
-- O build precisou de acesso de rede para obter Anton e Manrope do Google Fonts; um ambiente offline falha nessa etapa até as fontes serem auto-hospedadas.
-- No smoke do build sem Supabase, `/` e `/b/barbearia-exemplo` responderam `200`; login, dashboard e `/admin` responderam `307` para `/?modo=seguro`.
-- Em 14/08, `leoto` executou `db:start`: o CLI aplicou as cinco migrations e o seed. Durante uma janela transitória, `54321`, `54322`, `54323`, `54324` e `54327` aceitaram conexão; PostgreSQL 15.8 registrou as cinco versões, as tabelas core/convites/auditoria existiam e o seed tinha duas barbearias. Auth health, REST e Studio responderam `200`, enquanto Storage respondeu `502`.
-- A pilha não permaneceu ativa e a causa final do CLI não foi capturada; todas as portas fecharam. No snapshot de 21/08, Docker/daemon estão parados, não há `.env.local`, `.supabase` persistido, Git operacional, `psql` ou projeto remoto vinculado. Existem apenas resíduos locais ignorados em `supabase/.temp`, `.branches` e `snippets`.
-- `db:lint` e `db:test` foram tentados em 14/08/2026 e chegaram à conexão local, mas terminaram em `ECONNREFUSED 127.0.0.1:54322`; não houve lint nem asserção SQL executada.
-- As duas suítes SQL transacionais declaram 168 asserções: 59 da fundação e 109 de assurance, AAL1/AAL2, convites, lifecycle, ACLs e auditoria. Elas ainda não foram executadas. Concorrência fica no runner de duas sessões concorrentes mais uma conexão observadora; callbacks e JWTs reais continuam fora do pgTAP.
-- O runner concorrente passou em `node --check`, bloqueou destino sem confirmação e banco remoto não autorizado; com o destino local confirmado, parou corretamente em `ECONNREFUSED` porque não há PostgreSQL na porta `54322`.
-- O Git CLI não está disponível e o diretório `.git/` está vazio; ainda não existe baseline recuperável por commit/tag para as próximas mudanças.
-- O simulador continua sujeito a validação em aparelhos reais antes de qualquer piloto com clientes.
+- Em 22/08/2026, `npm run lint`, `npm run build`, `launcher.bat --check` e `npm run db:lint` passaram. O lint possui 0 erros e 18 warnings.
+- O build confirmou 31 páginas, 2 Route Handlers e Proxy. Sem rede, ele falha ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
+- O Supabase necessário está saudável; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Storage foi validado com JWT e blob real.
+- As três suítes pgTAP passaram: 59/59, 112/112 e 21/21, totalizando 192/192.
+- O runner concorrente recusou conectar sem a confirmação explícita do banco descartável, conforme sua guarda de segurança.
+- O Git está operacional, com baseline `7c34dab` confirmado.
+- Com CLI 2.115.0, `db:start`, `db:reset`, lint SQL e pgTAP 192/192 passam atualmente; concorrência, rollback 5–4, JWT/Data API, Storage e o E2E anterior de Auth/e-mail/TOTP/lifecycle são evidências históricas ainda válidas no escopo testado.
+- O smoke HTTP de contenção permanece evidência histórica de 13/08/2026, e o simulador continua sujeito a validação em aparelhos reais antes do piloto.
 
 Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
@@ -235,9 +237,12 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 - [AI context.md](AI%20context.md): contexto canônico para agentes e próximas sessões;
 - [pendências.md](pend%C3%AAncias.md): backlog oficial e próximos passos;
+- [docs/ESTADO-VALIDACAO.md](docs/ESTADO-VALIDACAO.md): evidências operacionais mais recentes;
 - [docs/PLANO-DE-EXECUCAO.md](docs/PLANO-DE-EXECUCAO.md): sequência de nove passos;
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): fronteiras e fluxo de dados;
 - [docs/AUTENTICACAO-E-SESSOES.md](docs/AUTENTICACAO-E-SESSOES.md): Auth, MFA, convites e riscos;
+- [docs/OUTBOX-DE-CONVITES.md](docs/OUTBOX-DE-CONVITES.md): fila, retries, scheduler e operação do envio;
+- [docs/DEPLOY-GRATUITO.md](docs/DEPLOY-GRATUITO.md): publicação no Render, Supabase e Cloudflare;
 - [docs/BANCO-DE-DADOS.md](docs/BANCO-DE-DADOS.md): modelo multi-tenant e RLS;
 - [supabase/README.md](supabase/README.md): operação da fundação Supabase;
 - [docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md](docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md): requisitos dos passos 4 e 5;
@@ -247,16 +252,9 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Reabrir o Docker e reproduzir `db:start` guardando a saída completa; diagnosticar o Storage `502` e por que a pilha encerra, até obter `supabase status` e health checks estáveis.
-2. Instalar/habilitar o Git e criar uma baseline recuperável antes das correções de código ou SQL, excluindo secrets, `.next` e resíduos locais do Supabase.
-3. Com a pilha estável, executar `db:reset`, `db:lint` e os 168 testes pgTAP.
-4. Depois do `db:reset`, marcar e confirmar explicitamente o banco descartável; executar `db:test:concurrency` e guardar a evidência das duas corridas.
-5. Escrever um runbook reproduzível para rollback/roll-forward e `supabase_migrations`; ensaiar os rollbacks 4–5 e o roll-forward e, ao final, repetir `db:lint`, os 168 pgTAPs e o runner concorrente.
-6. Criar `.env.local` somente no ambiente controlado e preparar fixtures/identidades Auth reais para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. Criar o harness de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, UX do lifecycle, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Vincular Render, Supabase e Cloudflare, cadastrar os segredos e validar o cron remoto com convite controlado.
+2. Completar comandos administrativos: reatribuição, transferência de dono e seleção multi-tenant.
+3. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
 Depois desses gates, o passo 5 persiste o fluxo vertical; painel, catálogo, produtos, financeiro e operação vêm nas fases seguintes.
 

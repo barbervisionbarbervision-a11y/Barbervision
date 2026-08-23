@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { exigirDono } from "@/lib/auth/context";
+import { processarConvitesEmail } from "@/lib/auth/invite-outbox";
 import { obterUrlBaseAplicacao } from "@/lib/auth/site-url";
 import { criarClienteSupabaseAdmin } from "@/lib/supabase/admin";
 import { criarClienteSupabaseServer } from "@/lib/supabase/server";
@@ -10,17 +12,47 @@ function entradaConviteValida({ nome, email }) {
   const nomeLimpo = String(nome ?? "").trim();
   const emailLimpo = String(email ?? "").trim().toLocaleLowerCase("pt-BR");
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLimpo);
+  if (nomeLimpo.length < 2 || nomeLimpo.length > 120 || !emailValido || emailLimpo.length > 254) return null;
+  return { nome: nomeLimpo, email: emailLimpo };
+}
 
-  if (nomeLimpo.length < 2 || nomeLimpo.length > 120 || !emailValido || emailLimpo.length > 254) {
+async function lerEstadoConvite(cliente, conviteId, barbeariaId) {
+  const { data, error } = await cliente.from("convites_barbearia").select("status")
+    .eq("id", conviteId).eq("barbearia_id", barbeariaId).maybeSingle();
+  if (error || !data?.status) {
+    console.error("[equipe] não foi possível confirmar o estado do convite", {
+      codigo: error?.code ?? null,
+      conviteId
+    });
     return null;
   }
+  return data.status;
+}
 
-  return { nome: nomeLimpo, email: emailLimpo };
+async function executarTransicaoEConfirmar({ cliente, rpc, argumentos, conviteId, barbeariaId }) {
+  const { error } = await cliente.rpc(rpc, argumentos);
+  const status = await lerEstadoConvite(cliente, conviteId, barbeariaId);
+  if (error) {
+    console.error("[equipe] transição de convite retornou erro", {
+      codigo: error.code ?? null,
+      conviteId,
+      rpc,
+      statusConfirmado: status
+    });
+  }
+  return { status };
 }
 
 export async function convidarFuncionarioAction(entrada) {
   const validada = entradaConviteValida(entrada ?? {});
   if (!validada) return { ok: false, mensagem: "Informe nome e e-mail válidos." };
+
+  try {
+    criarClienteSupabaseAdmin();
+    obterUrlBaseAplicacao();
+  } catch {
+    return { ok: false, mensagem: "O servidor de convites ainda não está configurado." };
+  }
 
   const { sessao } = await exigirDono();
   const supabase = await criarClienteSupabaseServer();
@@ -29,73 +61,75 @@ export async function convidarFuncionarioAction(entrada) {
     p_email: validada.email,
     p_nome: validada.nome
   });
-
   if (erroCriacao || !conviteId) {
-    return {
-      ok: false,
-      mensagem: "Não foi possível abrir o convite. Confira se já existe um convite ou membro com esse e-mail."
-    };
+    return { ok: false, mensagem: "Não foi possível abrir o convite. Confira se já existe um convite ou membro com esse e-mail." };
   }
 
-  let admin;
-  let redirectTo;
-  try {
-    admin = criarClienteSupabaseAdmin();
-    redirectTo = `${obterUrlBaseAplicacao()}/auth/callback?next=/barbeiro/ativar-conta&convite=${encodeURIComponent(conviteId)}`;
-  } catch {
-    await supabase.rpc("revogar_convite_barbearia", { p_convite_id: conviteId });
-    return {
-      ok: false,
-      mensagem: "O servidor de convites ainda não está configurado; nenhum convite ficou ativo."
-    };
-  }
-
-  const { error: erroEnvio } = await admin.auth.admin.inviteUserByEmail(validada.email, {
-    redirectTo,
-    data: {
-      nome: validada.nome,
-      barbervision_convite_id: conviteId
+  after(async () => {
+    try {
+      await processarConvitesEmail({ limite: 10 });
+    } catch (error) {
+      console.error("[invite-outbox] tentativa imediata falhou", {
+        mensagem: error instanceof Error ? error.message : "erro"
+      });
     }
   });
-
-  if (erroEnvio) {
-    await admin.rpc("marcar_convite_falhou", {
-      p_convite_id: conviteId,
-      p_codigo_erro: "auth_admin_invite_failed"
-    });
-    revalidatePath("/barbeiro/equipe");
-    return {
-      ok: false,
-      mensagem: "O convite foi registrado, mas o e-mail não saiu. Tente novamente após revisar o serviço de e-mail."
-    };
-  }
-
-  const { error: erroMarcacao } = await admin.rpc("marcar_convite_enviado", {
-    p_convite_id: conviteId
-  });
-  if (erroMarcacao) {
-    revalidatePath("/barbeiro/equipe");
-    return {
-      ok: false,
-      mensagem: "O e-mail saiu, mas o status não foi confirmado no banco. Não envie outro convite antes da revisão."
-    };
-  }
   revalidatePath("/barbeiro/equipe");
-  return { ok: true, mensagem: "Convite enviado. O funcionário precisa confirmar o e-mail e criar a senha." };
+  return {
+    ok: true,
+    statusConvite: "pendente_envio",
+    mensagem: "Convite registrado para envio. A entrega será processada em segundo plano."
+  };
 }
 
 export async function revogarConviteAction(conviteId) {
   if (typeof conviteId !== "string" || !/^[0-9a-f-]{36}$/i.test(conviteId)) {
     return { ok: false, mensagem: "Convite inválido." };
   }
-
-  await exigirDono();
+  const { sessao } = await exigirDono();
   const supabase = await criarClienteSupabaseServer();
-  const { error } = await supabase.rpc("revogar_convite_barbearia", {
-    p_convite_id: conviteId
+  const confirmacao = await executarTransicaoEConfirmar({
+    cliente: supabase,
+    rpc: "revogar_convite_barbearia",
+    argumentos: { p_convite_id: conviteId },
+    conviteId,
+    barbeariaId: sessao.barbeariaId
   });
-
-  if (error) return { ok: false, mensagem: "Não foi possível revogar este convite." };
   revalidatePath("/barbeiro/equipe");
-  return { ok: true, mensagem: "Convite revogado." };
+  if (confirmacao.status === "revogado") {
+    return { ok: true, statusConvite: confirmacao.status, mensagem: "Convite revogado." };
+  }
+  if (confirmacao.status === "expirado") {
+    return { ok: true, statusConvite: confirmacao.status, mensagem: "O convite já estava expirado e foi reconciliado como expirado." };
+  }
+  return {
+    ok: false,
+    statusConvite: confirmacao.status,
+    mensagem: "Não foi possível confirmar que este convite deixou de estar ativo. Recarregue a equipe antes de tentar novamente."
+  };
+}
+
+const COMANDOS_FUNCIONARIO = {
+  suspender: { rpc: "suspender_funcionario", sucesso: "Funcionário suspenso. O acesso foi interrompido." },
+  reativar: { rpc: "reativar_funcionario", sucesso: "Funcionário reativado. O acesso foi restaurado." },
+  revogar: { rpc: "revogar_funcionario", sucesso: "Funcionário revogado. O acesso foi encerrado definitivamente." }
+};
+
+export async function alterarStatusFuncionarioAction({ usuarioId, comando } = {}) {
+  const configuracao = COMANDOS_FUNCIONARIO[comando];
+  if (!configuracao || typeof usuarioId !== "string" || !/^[0-9a-f-]{36}$/i.test(usuarioId)) {
+    return { ok: false, mensagem: "Comando de funcionário inválido." };
+  }
+  const { sessao } = await exigirDono();
+  const supabase = await criarClienteSupabaseServer();
+  const { error } = await supabase.rpc(configuracao.rpc, {
+    p_barbearia_id: sessao.barbeariaId,
+    p_usuario_id: usuarioId
+  });
+  if (error) {
+    console.error("[equipe] falha no lifecycle do funcionário", { codigo: error.code ?? null, comando });
+    return { ok: false, mensagem: "Não foi possível atualizar este funcionário. Recarregue a equipe e tente novamente." };
+  }
+  revalidatePath("/barbeiro/equipe");
+  return { ok: true, mensagem: configuracao.sucesso };
 }

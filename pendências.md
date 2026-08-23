@@ -1,6 +1,6 @@
 # Pendências — Barber Vision
 
-Backlog oficial do projeto, reconciliado com o código e as evidências de execução em **21/08/2026**.
+Backlog oficial do projeto, reconciliado com o código e as evidências de execução em **22/08/2026**. A evidência temporal detalhada está em [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 Este arquivo separa o que existe em fonte do que foi executado e validado. Uma tela, migration ou função criada não encerra uma etapa sem teste proporcional ao risco.
 
@@ -17,8 +17,8 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 | Passo | Estado | Gate atual |
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
-| 2 — Supabase, tenant e RLS | Migrations e seed aplicados transitoriamente; validação pendente | Estabilizar a pilha e provar reset/lint/pgTAP/RLS/Storage |
-| 3 — Auth real | SQL aplicado transitoriamente; jornadas não operacionais ponta a ponta | Executar testes/rollbacks e provar convite, MFA e lifecycle reais |
+| 2 — Supabase, tenant e RLS | Validado localmente: reset, 192/192, concorrência histórica, rollback histórico, JWT/RLS e Storage | Preservar os gates e integrá-los à CI |
+| 3 — Auth real | Auth e lifecycle de funcionário aprovados em E2E | Fechar hardening e falhas distribuídas |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -80,24 +80,20 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — estabilizar o Supabase local na sessão `leoto`**: reproduzir com diagnóstico, corrigir o Storage `502`/encerramento e comprovar `supabase status` e as portas `54321`, `54322` e `54323` persistentes.
-2. **P0 — instalar/habilitar o Git e criar uma baseline recuperável antes de correções de código ou SQL**, excluindo secrets, `.next` e resíduos locais do Supabase.
-3. **P0 — aplicar/recriar o banco e executar `db:reset`, `db:lint` e os 168 testes pgTAP**.
-4. **P0 — depois do `db:reset`, marcar e confirmar explicitamente o banco descartável, executar `db:test:concurrency`** e guardar a evidência das duas corridas reais.
-5. **P0 — escrever o runbook e exercitar os rollbacks 4–5 e o roll-forward**, incluindo `supabase_migrations`; depois repetir `db:lint`, os 168 pgTAPs e o runner concorrente.
-6. **P0 — criar `.env.local` controlado e fixtures/identidades Auth reais** para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. **P0 — criar o harness e validar Data API e Storage** com JWTs reais e cenários adversários.
-8. **P0 — selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle**.
-9. **P0 — fechar gaps operacionais**: outbox/retry, usuário Auth existente, expiração reconciliada, UX do lifecycle, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou clientes reais.
+1. **P0 — vincular e validar o deploy gratuito**: conectar Render, Supabase e Cloudflare, cadastrar segredos e executar a matriz remota; a infraestrutura já está versionada.
+2. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
+3. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou clientes reais.
+
+Concluídos nesta fundação: lifecycle de funcionário, Auth/e-mail/TOTP, compensações autoritativas, provisionamento retomável, sessão/recuperação, E2E atualizado da outbox, rollback/roll-forward 8–4 e corrida real entre dois workers.
 
 Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar painel, catálogo, produtos, financeiro e operação.
 
 ## P0 — baseline recuperável antes dos ensaios
 
-- [ ] Instalar/habilitar o Git CLI e substituir o diretório `.git/` vazio por um repositório operacional.
-- [ ] Revisar `.gitignore` para excluir `.env.local`, secrets, `.next`, temporários e artefatos privados não destinados ao repositório.
-- [ ] Criar commit e tag de baseline após conferir que nenhum segredo ou dado real entrou no histórico.
+- [x] Git CLI e repositório operacional disponíveis.
+- [x] Baseline recuperável criado no commit `7c34dab`.
+- [x] `.gitignore` exclui `.env.local`, `.next`, temporários e artefatos privados relevantes.
+- [ ] Criar tags de marcos futuros após cada gate integralmente validado.
 
 # Passo 2 — Supabase, tenant e RLS
 
@@ -110,10 +106,10 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Três buckets privados: fontes, recortes e selfies.
 - [x] Path de Storage iniciado pelo UUID do tenant.
 - [x] Seed de dois tenants e papéis de teste.
-- [x] Suíte pgTAP transacional do passo 2 declarada com 59 asserções; execução ainda pendente.
+- [x] Suíte pgTAP transacional do passo 2 declarada com 59 asserções; 27 rodaram sem falha em 22/08 e a suíte abortou por SQL inválido no teste antes das 32 restantes.
 - [x] Três rollbacks para as três primeiras migrations.
 - [x] Rollbacks defensivos das migrations 4–5, sem `CASCADE` e com preflight transacional.
-- [x] Suíte pgTAP transacional do passo 3 declarada com 109 asserções; execução ainda pendente.
+- [x] Suíte pgTAP transacional do passo 3 ampliada e aprovada com 112/112 asserções em 22/08.
 - [x] Runner de concorrência com duas sessões concorrentes, uma conexão observadora, confirmação exata e marcador de banco descartável.
 
 ## P0 — validação que falta
@@ -126,15 +122,17 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Executar `npm.cmd run db:start` em terminal de `leoto`; a execução transitória criou as tabelas esperadas e duas barbearias do seed, mas não permaneceu saudável.
 - [ ] Reproduzir `db:start -- --debug` preservando a saída final redigida e diagnosticar por que a pilha encerra; não publicar chaves/credenciais locais impressas pelo CLI.
 - [ ] Enquanto a falha ocorre, registrar `supabase status`, `docker ps -a` e logs redigidos de Storage, Kong e PostgreSQL.
-- [ ] Corrigir o HTTP `502` de Storage e comprovar que `54321`, `54322` e `54323` e os health checks permanecem disponíveis; não expor o daemon Docker em `2375` apenas por causa do aviso de Analytics.
-- [ ] Executar `npm run db:reset` do zero.
-- [ ] Executar `npm run db:lint`.
-- [ ] Executar `npm run db:test` e guardar o resultado.
-- [ ] Confirmar que todas as 168 asserções realmente passam.
+- [x] Corrigir a saúde local atualizando o CLI para 2.115.0 e desativando Analytics/Vector opcionais; `54321`, `54322`, `54323`, Auth, Storage e Studio permanecem disponíveis sem expor `2375`.
+- [x] Executar `npm run db:reset` do zero: migrations e seed aplicados; validação pós-reset aprovada.
+- [x] Atualizar Supabase CLI para 2.115.0, desativar Analytics/Vector opcionais e obter `db:start` + `db:reset` com exit `0`.
+- [x] Executar `npm run db:lint`: aprovado sem erros em 22/08.
+- [x] Executar `npm run db:test`: aprovado em 22/08 com 59/59 no passo 2 e 112/112 no passo 3.
+- [x] Corrigir os três cenários de `UPDATE` e o fixture que isola a constraint de formato do telefone.
+- [x] Confirmar que todas as 192 asserções passam após reset limpo.
 - [ ] Após o roll-forward, repetir `db:lint`, os 168 pgTAPs e o runner concorrente e comparar o resultado com a baseline.
-- [ ] Criar fixtures/identidades Auth reais para dono AAL1, dono AAL2, funcionário e usuário cross-tenant antes dos testes de API.
-- [ ] Criar harness/script reproduzível para Data API e Storage; não existe comando correspondente no `package.json` atual.
-- [ ] Testar Data API com JWTs reais, não apenas claims simuladas em SQL.
+- [x] Criar fixtures efêmeras Auth reais para dono AAL1/AAL2, funcionário e usuário cross-tenant nos harnesses locais, com limpeza ao final.
+- [x] Criar harness reproduzível para Data API e Storage: `npm run db:test:integration` aprovado com JWT/TOTP e blob reais.
+- [x] Testar Data API com JWTs reais, incluindo AAL1/AAL2, funcionário atribuído, suspenso, sem membership e cross-tenant.
 - [ ] Testar leitura/escrita de Storage com URLs assinadas.
 - [ ] Testar tenant A sem acesso ao tenant B.
 - [ ] Testar funcionário sem acesso a cliente não atribuído.
@@ -170,7 +168,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Modelar estados `pendente_envio`, `enviado`, `aceito`, `revogado`, `expirado` e `falhou`.
 - [x] Adicionar expiração, timestamps, versionamento e autoria histórica.
 - [x] Impedir dois convites abertos para o mesmo tenant/e-mail.
-- [ ] Criar outbox/fila server-only para envio idempotente e retry.
+- [x] Criar outbox/fila server-only para envio idempotente, lease e retry com backoff.
 - [x] Criar `criar_convite_funcionario`.
 - [x] Criar `revogar_convite_barbearia`.
 - [x] Criar `aceitar_convite_barbearia`.
@@ -182,7 +180,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Exigir e-mail confirmado e exatamente igual ao convite no aceite.
 - [x] Tornar aceite idempotente e resistente a replay em fonte.
 - [ ] Tratar usuário já existente e confirmado sem duplicar conta.
-- [ ] Tornar o primeiro provisionamento retomável: prevalidar antes do convite Auth, aceitar retomada segura por UUID e definir compensação quando o Auth nasce mas a RPC falha.
+- [x] Tornar o primeiro provisionamento retomável: prevalidar antes do convite Auth, reutilizar identidade por e-mail, aceitar retomada segura por UUID e emitir comando seguro quando o Auth nasce mas a RPC falha.
 - [ ] Validar `BARBERVISION_APP_URL` no script de provisionamento com a mesma regra HTTPS/loopback usada pela aplicação.
 - [x] Impedir promoção a dono por RPC de funcionário comum; nenhuma RPC genérica de promoção foi exposta.
 
@@ -223,13 +221,13 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Provar que dono AAL2 obtém acesso autorizado.
 - [ ] Provar que claim `aal` ausente é tratada como AAL1.
 - [ ] Provar que funcionário AAL1 continua no escopo atribuído.
-- [ ] Testar enrollment e challenge TOTP com sessão real.
-- [ ] Impedir remoção do último fator sem reautenticação e recuperação segura.
+- [x] Testar enrollment, challenge e verify TOTP com sessão real no harness JWT e no Playwright.
+- [x] Não oferecer remoção self-service do último fator; recuperação exige comando server-only, UUID, e-mail coincidente, dono ativo e confirmação operacional explícita.
 - [ ] Definir recuperação quando o dono perde o autenticador.
 - [ ] Definir política de reautenticação para ações críticas.
-- [ ] Testar refresh, expiração, logout local e logout global.
+- [x] Testar refresh válido, access token expirado, logout local no Playwright e logout global invalidando refresh token de outra sessão.
 - [ ] Fazer `SairButton` funcionar também na tela de sem acesso quando o Supabase não estiver configurado, sem lançar erro no modo demo.
-- [ ] Exibir/tratar a falha do logout global na tela de Segurança; hoje o erro pode ficar silencioso.
+- [x] Exibir falha explícita do logout global na tela de Segurança.
 - [ ] Testar suspensão com JWT ainda válido.
 - [ ] Adicionar seletor de barbearia para múltiplas memberships.
 - [ ] Não escolher silenciosamente a membership mais antiga no produto final.
@@ -243,18 +241,21 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Configurar allowlist exata de redirects no projeto hospedado.
 - [ ] Configurar SMTP transacional e remetente verificado.
 - [ ] Publicar templates de convite e recuperação.
-- [ ] Testar convite real pelo Admin API.
+- [x] Testar convite real pelo Admin API, entrega no Mailpit, confirmação e ativação pela aplicação.
 - [ ] Testar confirmação de e-mail.
 - [ ] Testar link expirado, reutilizado, inválido e e-mail divergente.
 - [ ] Decidir se o link confirmado basta para ativar a membership antes de definir a senha; se não, criar e testar um estado de onboarding incompleto até a senha ser gravada.
-- [ ] Criar reconciliação/job idempotente para materializar convites vencidos como `expirado`, sem depender de tocar a linha por outra RPC.
-- [ ] Fazer a revogação reler/retornar o estado autoritativo e exibir `expirado` quando a RPC expirar um convite vencido, em vez de sempre anunciar “Convite revogado”.
-- [ ] Verificar e tratar o erro da compensação `revogar_convite_barbearia`; não afirmar que nenhum convite ficou ativo sem confirmação do banco.
-- [ ] Verificar e tratar o erro de `marcar_convite_falhou`; deixar um estado explícito de reconciliação quando a compensação também falhar.
-- [ ] Testar recuperação de senha e secure password change.
+- [x] Criar reconciliação idempotente para materializar convites vencidos como `expirado` durante cada lote do worker.
+- [ ] Configurar um agendador no ambiente hospedado para chamar periodicamente a rota protegida do worker.
+- [x] Versionar Blueprint Render Free, health check e Cloudflare Cron Trigger a cada minuto com webhook opcional.
+- [ ] Vincular as contas, cadastrar segredos e provar o cron em logs remotos com convite controlado.
+- [x] Fazer a revogação reler/retornar o estado autoritativo e exibir `expirado` quando a RPC expirar um convite vencido, em vez de sempre anunciar “Convite revogado”.
+- [x] Verificar e tratar o erro da compensação `revogar_convite_barbearia`; não afirmar que nenhum convite ficou ativo sem confirmação do banco.
+- [x] Verificar e tratar o erro de `marcar_convite_falhou`; deixar um estado explícito de reconciliação quando a compensação também falhar.
+- [x] Testar solicitação, e-mail, callback e redefinição de senha pela aplicação local.
 - [x] Sanitizar `next` no login e callback para aceitar somente paths locais iniciados por `/barbeiro/` e rejeitar `//`.
 - [ ] Testar `next` absoluto, protocol-relative, codificado e malformado no browser/E2E.
-- [ ] Tratar falha entre gravação do convite e envio do e-mail.
+- [x] Tratar falha entre gravação do convite e envio do e-mail com enqueue atômico, lease, retry e conclusão idempotente.
 
 ## P1 — abuso e segurança de conta
 
@@ -282,12 +283,13 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Testar corrida entre atribuição/reatribuição e revogação de funcionário.
 - [ ] Executar os cenários versionados de auditoria uma vez por transição efetiva e replay/no-op.
 - [ ] Testar append-only e ACLs de auditoria para `UPDATE`, `DELETE`, `TRUNCATE`, insert direto e metadados aninhados.
-- [ ] Testar outbox invisível para clientes.
-- [ ] Criar cenários funcionais para `provisionar_dono_controlado` e `marcar_convite_falhou`; hoje o pgTAP verifica somente estrutura e ACL dessas RPCs.
+- [x] Testar estrutura, ACL server-only, enqueue, lease, retry, conclusão idempotente, expiração e cancelamento da outbox em pgTAP.
+- [ ] Testar dois workers simultâneos reivindicando a outbox em conexões PostgreSQL reais.
+- [ ] Criar cenário funcional de banco para `provisionar_dono_controlado`; `marcar_convite_falhou` já está coberta no E2E pela rejeição real da Admin API.
 - [x] Criar runner com duas sessões concorrentes e uma conexão observadora para último dono e atribuição/revogação.
-- [ ] Executar o runner em PostgreSQL descartável e guardar evidência de lock/resultado.
-- [ ] Criar E2E com Mailpit/local ou provedor descartável.
-- [ ] Cobrir login, confirmação, recuperação, convite, TOTP, logout e revogação.
+- [x] Executar o runner em PostgreSQL descartável e guardar evidência de lock/resultado: duas corridas aprovadas em 22/08.
+- [x] Criar E2E Playwright com Supabase e Mailpit locais e fixtures efêmeras.
+- [x] Cobrir login, confirmação/ativação, recuperação, convite, TOTP, logout e revogação de convite.
 
 # Passo 4 — privacidade e consentimento
 
@@ -547,7 +549,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Ratificar no MVP atual que telefone/WhatsApp é obrigatório; qualquer flexibilização exige migration, UX e regra de contato revisadas.
 - [x] Ratificar no MVP atual a deduplicação por tenant + telefone normalizado, já exigida pelo schema e pelo cadastro público.
 - [ ] Como funcionará a escolha entre múltiplas memberships do mesmo usuário?
-- [ ] Qual fluxo recupera o dono que perdeu o TOTP?
+- [x] Recuperação operacional server-only com verificação externa de identidade, UUID + e-mail coincidentes, membership de dono ativa e confirmação explícita; remove fatores via Admin API e força novo enrollment.
 - [ ] Qual autoridade da plataforma provisiona o primeiro dono?
 - [ ] Qual provedor de e-mail será usado?
 - [ ] Qual provedor/API de WhatsApp será usado, se houver automação?
@@ -558,7 +560,7 @@ Não altera a prioridade atual de Auth/privacidade.
 
 # Evidência atual e manutenção
 
-## Verificado em 21/08/2026
+## Verificado em 22/08/2026
 
 - [x] `npm ls --depth=0` passou.
 - [x] `npm run lint` passou com 0 erros e 18 warnings.
@@ -566,29 +568,36 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] `launcher.bat --check` passou.
 - [x] `node --check` passou em `scripts/provision-owner.mjs` e `scripts/test-db-concurrency.mjs`.
 - [x] Atalho da Área de Trabalho corrigido e revalidado para o `launcher.bat` atual em 14/08.
-- [x] Inventário atual: 166 arquivos visíveis a `rg --files`, 31 páginas, 2 Route Handlers, 11 layouts e 24 Markdown.
+- [x] Inventário atual: 167 arquivos visíveis a `rg --files`, 31 páginas, 2 Route Handlers, 11 layouts e 25 Markdown.
 - [x] Integridade documental: UTF-8, links locais e fences sem falhas.
 - [x] 31 páginas e 2 Route Handlers identificados em fonte.
-- [x] 5 migrations, 5 rollbacks e 2 pgTAPs com 168 asserções declaradas identificados.
+- [x] Inventário atual: 8 migrations, 8 rollbacks e 3 pgTAPs com 192 asserções.
+- [x] Git operacional e baseline `7c34dab` confirmados; árvore limpa antes desta revisão.
+- [x] `npm run build` aprovado em 22/08 com 31 páginas, 2 Route Handlers e Proxy.
+- [x] `npm run db:lint` aprovado em 22/08 sem erros de schema.
+- [x] pgTAP do passo 3 aprovado com 112/112 asserções.
+- [x] pgTAP do passo 2 aprovado com 59/59.
 - [x] Migration `20260813010000` identificada em fonte com duas tabelas e nove RPCs no schema `public`.
 - [x] Docker Desktop 4.86.0 e Docker CLI 29.7.2 instalados; ativação elevada do WSL terminou com exit `0`.
-- [x] Bootstrap transitório de 14/08 aplicou as cinco migrations e `supabase/seed.sql`; PostgreSQL 15.8 registrou as cinco versões e duas barbearias do seed.
-- [x] Durante a janela transitória, Auth health, REST sem cenário JWT e Studio responderam `200`; Storage respondeu `502`, portanto não está validado.
+- [x] Reset limpo de 23/08 aplicou as oito migrations e `supabase/seed.sql`.
+- [x] Auth, Storage e Studio responderam `200`; containers necessários estão saudáveis.
 - [x] Simulador não foi alterado nesta revisão documental.
 
-`npm run build` foi aprovado novamente em **14/08/2026**, com 31 páginas, 2 Route Handlers e o Proxy. O smoke sem Supabase permanece evidência histórica de **13/08/2026**, quando confirmou públicas `200` e superfícies internas redirecionadas ao modo seguro.
+`npm run build` foi aprovado novamente em **22/08/2026**, com 31 páginas, 2 Route Handlers e o Proxy. O smoke sem Supabase permanece evidência histórica de **13/08/2026**, quando confirmou públicas `200` e superfícies internas redirecionadas ao modo seguro.
 
 ## Não verificado
 
 - [ ] Tornar o build independente da rede, auto-hospedando Anton e Manrope ou adotando fontes locais equivalentes.
-- [ ] Validar `wsl --status` e a seção `Server` de `docker version` fora do ambiente restrito; em 21/08 o serviço está parado, o pipe do daemon não existe e as portas locais estão fechadas.
-- [ ] Reproduzir de forma estável a aplicação das migrations e do seed por `db:reset`; a execução transitória de 14/08 não prova repetibilidade nem estado preservado.
-- [ ] SQL lint em PostgreSQL real.
-- [ ] Repetir `db:lint` e `db:test` com a pilha ativa; as tentativas de 14/08 terminaram em `ECONNREFUSED 127.0.0.1:54322`.
-- [ ] Os dois pgTAPs executados.
-- [ ] Rollbacks 4–5 ensaiados e roll-forward comprovado em clone descartável.
-- [ ] Runner concorrente executado; a tentativa local atual parou em `ECONNREFUSED` por ausência de PostgreSQL na porta `54322`.
-- [ ] Data API autorizada por JWT e Storage funcional; um `200` no REST sem cenário de autorização e um `502` no Storage não encerram este gate.
+- [x] Serviços necessários saudáveis; Imgproxy, Analytics, Vector e Pooler explicitamente desativados/não usados.
+- [x] Reproduzir a aplicação das migrations e do seed por `db:reset`; cinco versões e duas barbearias confirmadas.
+- [x] Obter encerramento limpo do CLI no reset com Supabase CLI 2.115.0.
+- [x] SQL lint em PostgreSQL local aprovado.
+- [x] Corrigir e repetir o pgTAP do passo 2: aprovado 59/59.
+- [x] As três suítes pgTAP aprovadas integralmente: 192/192.
+- [x] Rollbacks 4–5 ensaiados historicamente, com histórico reconciliado e roll-forward comprovado.
+- [x] Ensaiar o conjunto atual 8–4, reconciliar cinco versões e repetir lint, pgTAP 192/192 e concorrência em 23/08.
+- [x] Runner concorrente executado em 22/08 no banco local marcado: duas corridas aprovadas e limpeza dos fixtures concluída.
+- [ ] Data API autorizada por JWT e Storage funcional com upload/download real; health check `200` não encerra este gate.
 - [ ] Login, convite, recuperação e MFA reais.
 - [ ] Smoke visual atualizado de todas as rotas; o smoke HTTP de contenção já passou.
 

@@ -1,6 +1,6 @@
 # Simulador local de cabelo
 
-Última atualização documental: **21/08/2026**.
+Última atualização documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Estado executivo
 
@@ -28,9 +28,9 @@ Decisão de foco: o cabelo fica **congelado temporariamente** nesse estado porqu
 
 ## Reconciliação transversal em 21/08/2026
 
-O pipeline descrito neste documento permanece congelado e sem mudança: preparo automático local, placement manual v7 e confirmação em **Pronto**. Nenhum código visual mudou nesta revisão. A evolução recente ocorreu ao redor dele. Já existe uma implementação parcial de Auth com sessão Supabase SSR, cookies, guards de servidor por membership e exigência de AAL2 para telas exclusivas do dono quando o Supabase está configurado; esse caminho ainda não foi validado de ponta a ponta e não torna o simulador, o catálogo nem a jornada persistentes.
+O pipeline descrito neste documento permanece congelado e sem mudança: preparo automático local, placement manual v7 e confirmação em **Pronto**. Nenhum código visual mudou nesta revisão. Auth/lifecycle com sessão Supabase SSR, cookies, membership e AAL2 foram validados localmente, mas isso não torna simulador, catálogo ou jornada persistentes.
 
-Sem variáveis do Supabase, o desenvolvimento continua no fallback demonstrativo. Em produção, `/admin` permanece bloqueado e `/barbeiro/*` é bloqueado por padrão; a flag insegura de demonstração interna só pode liberar o painel demonstrativo da barbearia, não o `/admin`. Os dados de negócio do painel, o catálogo e a jornada do cliente continuam em `localStorage`/`sessionStorage` ou mocks. Em **14/08/2026**, um bootstrap transitório aplicou as cinco migrations, executou o seed e iniciou containers; o health check do Storage retornou `502` e o CLI encerrou a pilha. Em **21/08/2026**, Docker/Supabase estão inativos. Não foram executados reset, lint SQL, as 168 asserções pgTAP, Data API/Storage com JWT, rollback/roll-forward, concorrência nem Auth E2E. O passo 3 continua parcial; privacidade e fluxo persistido também não foram implementados.
+Sem variáveis do Supabase, o desenvolvimento continua no fallback demonstrativo. Em produção, `/admin` e `/barbeiro/*` permanecem bloqueados. Os dados do painel, catálogo e jornada continuam em armazenamento local ou mocks. A baseline atual de banco passa 192/192; privacidade e fluxo persistido ainda não foram implementados.
 
 ## Objetivo e limite do produto
 
@@ -397,7 +397,7 @@ O recibo v3 é pequeno e o placement v7 contém somente identidade do molde, geo
 
 A revisão de segurança não alterou o pipeline do cabelo. Headers defensivos globais incluem `nosniff`, proteção contra framing, Referrer Policy, Permissions Policy e COOP. Sem configuração do Supabase, o Proxy mantém a jornada pública disponível e bloqueia as superfícies internas de produção conforme a regra descrita na reconciliação acima.
 
-Com o Supabase configurado, o Proxy atualiza/valida a sessão por cookies e os layouts de servidor exigem membership ativa; áreas exclusivas do dono exigem AAL2. Essa implementação de Auth/MFA TOTP é parcial e ainda não foi provada de ponta a ponta. A quinta migration versiona convites, provisionamento, lifecycle de funcionário e auditoria de domínio, mas foi aplicada somente no bootstrap efêmero e não recebeu teste funcional; ela não migra os dados de negócio locais, não resolve a recuperação operacional de MFA nem isola a jornada pública. RLS/grants/Storage continuam sem validação por reset/pgTAP/JWT; CSP compatível com MediaPipe/WASM permanece pendente.
+Com o Supabase configurado, o Proxy atualiza/valida a sessão por cookies e os layouts de servidor exigem membership ativa; áreas exclusivas do dono exigem AAL2. A jornada principal de Auth/MFA TOTP foi comprovada pelo Playwright. A quinta migration de convites/lifecycle/auditoria passou reset, pgTAP e validação funcional de convite/aceite. Ela não migra os dados de negócio locais, não resolve recuperação de MFA nem isola a jornada pública. RLS/grants e Storage com JWT passaram localmente; CSP compatível com MediaPipe/WASM permanece pendente.
 
 ## Evidência histórica da camada congelada
 

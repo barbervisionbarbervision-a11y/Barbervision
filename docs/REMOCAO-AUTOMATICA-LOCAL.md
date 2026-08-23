@@ -1,6 +1,6 @@
 # Remoção automática local do cabelo
 
-Última auditoria documental: **21/08/2026**.
+Última auditoria documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Estado executivo
 
@@ -29,9 +29,9 @@ Decisão atual: congelar temporariamente esta implementação porque o conjunto 
 
 ## Reconciliação transversal em 21/08/2026
 
-A remoção local e o placement manual v7 permanecem congelados e tecnicamente inalterados; nenhum código visual mudou nesta revisão. Ao redor deles, existe uma implementação parcial de Auth com Supabase SSR, sessão por cookies, guards de servidor por membership e AAL2 para telas exclusivas do dono quando o Supabase está configurado. Esse caminho ainda não foi validado de ponta a ponta e os dados do painel, catálogos e financeiro continuam demonstrativos em `localStorage` ou mocks.
+A remoção local e o placement manual v7 permanecem congelados e tecnicamente inalterados; nenhum código visual mudou nesta revisão. Ao redor deles, Auth/lifecycle com Supabase SSR, cookies, membership e AAL2 foram validados localmente. Os dados do painel, catálogos e financeiro continuam demonstrativos em `localStorage` ou mocks.
 
-Sem configuração do Supabase, o desenvolvimento usa o fallback demo; em produção, `/admin` fica bloqueado e `/barbeiro/*` fica bloqueado por padrão, com liberação insegura opcional apenas para a demo interna da barbearia. Em **14/08/2026**, um bootstrap transitório aplicou as cinco migrations, executou o seed e iniciou containers; o health check do Storage respondeu `502` e o CLI encerrou a pilha. Em **21/08/2026**, Docker/Supabase estão inativos. Não ocorreram `db:reset`, `db:lint`, as 168 asserções pgTAP, testes por JWT, rollback/roll-forward, concorrência ou Auth E2E. O passo 3 continua parcial, e privacidade/persistência ainda não existem. Nada disso envia a selfie para um servidor nem altera o pipeline local documentado abaixo.
+Sem configuração do Supabase, o desenvolvimento usa o fallback demo; em produção, `/admin` e `/barbeiro/*` ficam bloqueados por padrão. A baseline atual de banco passa 192/192; demais evidências estão em `ESTADO-VALIDACAO.md`. Privacidade/persistência ainda não existem.
 
 ## Decisão de arquitetura
 
@@ -374,7 +374,7 @@ O histórico `bald-cap-canvas-v2` também não é regra ativa. O recibo de remo�
 
 Headers defensivos globais protegem tipo de conteúdo, framing, referrer, permissões e isolamento de opener. Sem configuração do Supabase, o Proxy de produção bloqueia as superfícies internas por padrão; a flag insegura só libera a demo da barbearia e não abre `/admin` em produção. Essa camada não modifica a remoção local e não envia a selfie para fora.
 
-Quando o Supabase está configurado, sessão SSR, membership e guards de dono com AAL2 substituem o fallback demonstrativo nas rotas cobertas. A implementação ainda é parcial e não foi testada de ponta a ponta; a quinta migration versiona convites, provisionamento, lifecycle de funcionário e auditoria de domínio, mas teve somente aplicação efêmera no bootstrap e nenhuma validação funcional. A fundação de tenant/membership, RLS/grants e Storage privado segue sem validação por reset/pgTAP/JWT, e a CSP compatível com Next/MediaPipe/WASM permanece pendente.
+Quando o Supabase está configurado, sessão SSR, membership e guards de dono com AAL2 substituem o fallback demonstrativo nas rotas cobertas. Auth/e-mail/TOTP e lifecycle de funcionário foram testados de ponta a ponta; a fundação de tenant/membership, RLS/grants e Storage privado com JWT passou localmente. Gaps operacionais de convite/provisionamento e CSP compatível com Next/MediaPipe/WASM permanecem pendentes.
 
 ## Limitações bloqueadoras
 

@@ -1,6 +1,6 @@
 # Fechamento financeiro
 
-Última atualização documental: **21/08/2026**.
+Última atualização documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Decisão e limite do módulo
 
@@ -37,9 +37,9 @@ Referência institucional: [Tipos de pessoas jurídicas e enquadramentos](https:
 
 ## Situação do protótipo local
 
-A tela está em `/barbeiro/financeiro`, aparece no menu como **Fechamento** e continua usando `useSessaoDono` como guarda de UX do fallback demonstrativo. No modo Supabase configurado, a rota também está sob layouts de servidor que validam sessão/membership e exigem dono com AAL2 antes da renderização. Esse Auth SSR é parcial e ainda não foi validado de ponta a ponta; ele não substitui autorização nas futuras operações de dados e não cria trilha de auditoria financeira persistente.
+A tela está em `/barbeiro/financeiro`, aparece no menu como **Fechamento** e continua usando `useSessaoDono` como guarda de UX do fallback demonstrativo. No modo Supabase configurado, a rota também está sob layouts de servidor que validam sessão/membership e exigem dono com AAL2. O Auth SSR foi validado localmente, mas não substitui autorização nas futuras operações financeiras nem cria trilha persistente.
 
-Sem variáveis do Supabase, o desenvolvimento usa a sessão demo; em produção, `/barbeiro/*` é bloqueado por padrão, salvo opt-in inseguro para a demonstração interna. Independentemente do modo de sessão, toda a operação financeira descrita aqui continua no navegador. Em **14/08/2026**, houve um bootstrap transitório do Supabase: as cinco migrations e o seed foram aplicados e os containers chegaram a iniciar, mas o Storage retornou `502` no health check e a pilha foi encerrada. Em **21/08/2026**, Docker/Supabase estão inativos. Não ocorreram reset, lint SQL, as 168 asserções pgTAP, testes por JWT, rollback/roll-forward, concorrência nem E2E de Auth. O passo 3 permanece parcial. A auditoria de domínio da quinta migration cobre somente comandos de Auth/onboarding/lifecycle e não cria trilha financeira persistente. As etapas 4 de privacidade e 5 de fluxo persistido ainda não foram implementadas.
+Sem variáveis do Supabase, o desenvolvimento usa a sessão demo; em produção, `/barbeiro/*` é bloqueado por padrão. Toda a operação financeira descrita aqui continua no navegador. A baseline de banco e o rollback/roll-forward 8–4 passam; a auditoria existente não cria trilha financeira persistente.
 
 O estado fica em `localStorage`, separado por slug demonstrativo e competência:
 

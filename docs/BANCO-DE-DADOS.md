@@ -1,14 +1,14 @@
 # Banco de dados
 
-Última atualização: **21/08/2026**.
+Última atualização: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Estado executivo
 
-O repositório possui uma fundação Supabase em cinco migrations. As três primeiras formam a baseline do passo 2: tenant, identidade mínima, papéis por barbearia, clientes, atribuição de carteira, grants/RLS e três buckets privados. A quarta exige e-mail confirmado para conta ativa e AAL2 para todo acesso do dono a dados de negócio e Storage. A quinta adiciona convites, auditoria de domínio e nove RPCs de onboarding/lifecycle. Há seed fictício, cinco rollbacks manuais e duas suítes pgTAP com 168 asserções declaradas.
+O repositório possui uma fundação Supabase em oito migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono e outbox de e-mail. Há seed fictício, oito rollbacks manuais e três suítes pgTAP com 192 asserções.
 
-Isso ainda **não significa backend operacional**. O runtime já possui clientes Supabase SSR e telas de Auth. Em 14/08, `db:start` aplicou as cinco migrations e o seed durante um bootstrap transitório e chegou a iniciar os containers; o Storage então respondeu HTTP 502, a stack encerrou e as portas fecharam. As telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, e nenhuma selfie é enviada ao Storage. Os contratos SQL consumidos pela página de equipe, callbacks e script de provisionamento estão versionados, mas não foram validados pelas jornadas reais.
+Isso ainda **não significa backend de negócio operacional**. Auth, RLS, Storage privado e lifecycle de funcionário foram validados localmente, mas as telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, nenhuma selfie é enviada ao Storage e os passos de privacidade/persistência ainda não foram implementados.
 
-Os oito artefatos originais do passo 2 — três migrations, três rollbacks, seed e teste — tiveram análise sintática histórica. As migrations quarta e quinta também possuem down scripts defensivos inspecionados no código, mas não ensaiados, e uma suíte pgTAP transacional versionada/declarada, ainda não executada. Não há evidência de `db:reset`, `db:lint` aprovado, 168 pgTAPs aprovados, Data API/Storage com JWT, concorrência ou rollback/roll-forward. Em 21/08, Docker Desktop/Supabase estão inativos, o serviço Docker está parado e não há listeners em `54320–54324`; não existe projeto Supabase remoto vinculado. O HTTP 502 é uma falha de saúde/infraestrutura ainda sem causa identificada, não uma evidência de bloqueio RLS. Portanto, a baseline do passo 2 continua **em validação operacional**, e o passo 3 está apenas parcial.
+Em 23/08, `db:reset` encerrou com exit `0`, aplicou oito migrations e seed; `db:lint` e pgTAP 192/192 passaram. Os rollbacks 5–4 e o roll-forward foram ensaiados historicamente; o próximo ensaio deve cobrir 8–4. Data API/Storage com JWT e blob real passaram anteriormente.
 
 ## Fonte de verdade e arquivos
 
@@ -215,7 +215,7 @@ Os gatilhos registram `criado_por`, `atribuido_por`, atualizam `updated_at`, tra
 
 `usuario_email_confirmado()` consulta o estado autoritativo em `auth.users`; metadata fornecida pelo cliente não confirma conta. `usuario_tem_aal2()` lê a claim `aal` do JWT e considera claim ausente como `aal1`. A migration 4 substitui os helpers de membro, dono, visibilidade de perfil/cliente e Storage para aplicar essas regras sem alterar as policies existentes.
 
-As RPCs fazem suas mutações locais em transação, mas não tornam atômica a orquestração entre Supabase Auth, e-mail, Server Actions e banco. Hoje, resultados de compensação podem ser ignorados pela aplicação; o provisionamento pode deixar identidade Auth órfã ou membership de dono ativa antes de a conta estar operacional; e o aceite de convite ocorre antes da definição de senha. Esses são riscos P1 de consistência/lifecycle a corrigir e cobrir no E2E, não garantias fornecidas pelo schema.
+As RPCs fazem suas mutações locais em transação, mas não tornam atômica a orquestração entre Supabase Auth, e-mail, Server Actions e banco. A aplicação agora confere as compensações por releitura autoritativa, mas o provisionamento ainda pode deixar identidade Auth órfã ou membership de dono ativa antes de a conta estar operacional, e o aceite de convite ocorre antes da definição de senha. Esses riscos P1 restantes não são garantias fornecidas pelo schema.
 
 ## Storage privado
 
@@ -239,7 +239,7 @@ As quatro policies de cliente abrangem somente `barbervision-hair-sources` e `ba
 
 Os limites de bucket não substituem validação server-side de magic bytes, pixels/dimensões, conteúdo, EXIF/GPS, direitos, quarentena ou expiração. Signed URLs, publicação coordenada e limpeza de órfãos continuam pendentes nos passos 4 e 7. Selfies permanecem somente no navegador no protótipo atual.
 
-O HTTP 502 observado no Storage durante o bootstrap de 14/08 ocorreu no nível de saúde/serviço e permanece sem causa diagnosticada. Ele não valida upload/download e não deve ser interpretado como negação de policy: a validação de RLS/Storage exige endpoint saudável, JWTs reais e cenários permitidos/negados controlados.
+O HTTP 502 observado durante o bootstrap de 14/08 foi um incidente histórico de inicialização. Em 22/08, Storage respondeu HTTP 200; isso ainda não valida upload/download, que exige JWTs reais e cenários permitidos/negados controlados.
 
 ## Seed e testes
 
@@ -259,11 +259,11 @@ O HTTP 502 observado no Storage durante o bootstrap de 14/08 ocorreu no nível d
 - constraints de slug, coerência e unicidade de telefone;
 - paths próprios, cruzados, profundidade inválida e ausência de policy de selfies no Storage.
 
-`supabase/tests/database/step3_auth_onboarding_lifecycle.test.sql` declara outras 109 asserções. Ele cobre estrutura/ACL, owner AAL1/AAL2, e-mail confirmado, convites, expiração, aceite/replay, lifecycle de funcionário e auditoria append-only. `provisionar_dono_controlado` e `marcar_convite_falhou` aparecem somente nas verificações estruturais/ACL; seu comportamento funcional, TOTP, callbacks, JWTs reais, outbox e concorrência não são simulados no pgTAP.
+`supabase/tests/database/step3_auth_onboarding_lifecycle.test.sql` declara outras 111 asserções. Ele cobre estrutura/ACL, owner AAL1/AAL2, e-mail confirmado, convites, expiração, aceite/replay, lifecycle, auditoria e leitura de perfis suspensos/revogados pelo dono. `provisionar_dono_controlado` e `marcar_convite_falhou` aparecem somente nas verificações estruturais/ACL; seu comportamento funcional e outbox não são simulados no pgTAP.
 
-O cenário pgTAP de perfil inativo/cross-tenant foi ajustado no arquivo versionado para não violar a nova proteção do perfil de dono ativo. São duas suítes transacionais versionadas/declaradas, com `plan(59)` + `plan(109)`, ainda não executadas; portanto, nenhuma das 168 asserções constitui evidência de aprovação.
+As três suítes, com `plan(59)` + `plan(112)` + `plan(21)`, passaram integralmente: 192/192. A terceira cobre estrutura, ACL, enqueue, lease, retry, conclusão idempotente, expiração e cancelamento da outbox.
 
-Ainda falta executar a suíte num PostgreSQL/Supabase real e acrescentar testes de integração pela API local e endpoint de Storage com JWTs reais. Testar somente `storage.objects` não prova upload/download do blob.
+O harness `db:test:integration` executa contra o Supabase local real: cria identidades Auth, eleva TOTP/AAL2, consulta a Data API com RLS e envia/baixa/remove um blob pelo endpoint de Storage. Ele também prova negações AAL1, funcionário, cross-tenant, suspenso, sem membership e bucket de selfies.
 
 ## Execução local
 
@@ -279,9 +279,9 @@ npm.cmd run db:test:concurrency
 npm.cmd run db:stop
 ```
 
-O CLI está fixado em `supabase@2.112.0`. `db:reset` recria o banco local, aplica as migrations e executa o seed. As 168 asserções das duas suítes pgTAP transacionais devem passar antes da corrida concorrente. O marcador exigido pelo runner só deve ser aplicado após o reset, porque a recriação do banco pode removê-lo. Nenhum desses comandos deve ser apontado para produção por engano.
+O CLI está fixado em `supabase@2.115.0`. `db:reset` recria o banco local, aplica migrations e seed. As 170 asserções devem passar antes da corrida concorrente. O marcador exigido pelo runner só deve ser aplicado após o reset, porque a recriação pode removê-lo.
 
-Em 14/08/2026, antes do bootstrap transitório, `npm.cmd run db:lint` e `npm.cmd run db:test` chegaram à tentativa de conexão local, mas terminaram em `ECONNREFUSED 127.0.0.1:54322`. Depois, `db:start` aplicou migrations/seed, chegou a iniciar containers e terminou após o HTTP 502 do Storage. Não registre nenhuma dessas tentativas como `db:reset`, lint aprovado, pgTAP aprovado ou integração Storage validada.
+Em 22/08/2026, `db:reset`, `db:lint` e `db:test` passaram; este último com 170/170. A integração Storage foi validada separadamente com JWT e blob real.
 
 Para um projeto remoto explicitamente criado e vinculado:
 
@@ -295,15 +295,15 @@ Confirme o project ref, revise o dry-run, faça backup e execute os testes antes
 
 ## Rollback
 
-Existem cinco rollbacks. A ordem inversa começa por onboarding/lifecycle/auditoria, depois auth assurance, Storage, RLS e core. Os dois novos scripts usam preflight, locks e uma única transação; o rollback 5 recusa convites/auditoria não vazios e proveniência incompatível, enquanto o rollback 4 exige que a migration 5 já tenha sido retirada e restaura funções, policies, ACLs e comentários da baseline.
+Existem oito rollbacks. O ensaio completo 8–4 passou em 23/08, com histórico reconciliado, roll-forward pelo CLI e repetição de lint, pgTAP 192/192 e concorrência.
 
-Os scripts não reconciliam automaticamente `supabase_migrations.schema_migrations`. Antes de qualquer rollback real, exporte os dados, valide o ambiente alvo, documente a janela, defina o tratamento do histórico e ensaie o roll-forward. Em desenvolvimento descartável, prefira `npm run db:reset`.
+Os scripts não reconciliam automaticamente `supabase_migrations.schema_migrations`. O procedimento aprovado está em [Runbook de rollback do banco](ROLLBACK-BANCO.md) e foi ensaiado no ambiente local descartável em 22/08. Em ambiente persistente, ainda é obrigatório exportar dados, validar o alvo e documentar janela, responsáveis e recuperação.
 
 ## Entidades ainda não modeladas
 
 A baseline foi mantida mínima para provar autorização antes de espalhar um modelo incompleto. Ainda não existem no banco:
 
-- outbox/retry de e-mail, reenvio reconciliado, transferência/promoção de dono e eventos nativos de autenticação;
+- scheduler/alertas hospedados da outbox, teste concorrente entre workers, transferência/promoção de dono e eventos nativos de autenticação;
 - serviços, disponibilidade, bloqueios, agenda, agendamentos e atendimentos;
 - sessões públicas, simulações, templates/revisões e resultados;
 - promoções, eventos de funil, avaliações, indicações e fidelidade;
@@ -317,15 +317,12 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-1. Estabilizar a stack local: abrir o Docker Desktop na sessão Windows, validar WSL 2/engine, reproduzir o HTTP 502 e capturar `status`/logs de Storage, gateway e banco antes de prosseguir; não atribuir o erro a RLS sem evidência.
-2. Instalar/habilitar o Git e criar um baseline recuperável antes de novas mutações, sem versionar segredos, `.env.local` ou `.next/`.
-3. Executar `db:reset`, `db:lint` e `db:test`, comprovando as 168 asserções das duas suítes pgTAP transacionais.
-4. Depois do `db:reset`, marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-5. Escrever um runbook reproduzível de rollback/roll-forward que inclua `supabase_migrations`; ensaiar os rollbacks 4–5 e o roll-forward e, ao final, repetir `db:lint`, as 168 asserções pgTAP e `db:test:concurrency`.
-6. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Selecionar/configurar o framework E2E, criar a suíte e então executar Auth, e-mail, convite, MFA e lifecycle.
-9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, UX do lifecycle, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
+2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
+3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
+4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
+5. Ampliar o Playwright aprovado para lifecycle completo e falhas distribuídas.
+6. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
+7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

@@ -4,7 +4,7 @@ import pg from "pg";
 const { Client } = pg;
 
 const DEFAULT_LOCAL_DATABASE_URL =
-  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  "postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres";
 const DISPOSABLE_DATABASE_MARKER =
   "barbervision:disposable-concurrency-test";
 const LOCK_WAIT_TIMEOUT_MS = 8_000;
@@ -62,6 +62,8 @@ function fixtureIds() {
     tenantLastOwner: randomUUID(),
     clientExisting: randomUUID(),
     clientRacing: randomUUID(),
+    inviteOne: randomUUID(),
+    inviteTwo: randomUUID(),
     suffix: randomUUID().replaceAll("-", ""),
   };
 }
@@ -301,10 +303,68 @@ async function setupFixtures(admin, ids) {
       ],
     );
 
+    await admin.query(
+      `
+        insert into public.convites_barbearia (
+          id, barbearia_id, nome, email_normalizado, papel, status, criado_por, expira_em
+        ) values
+          ($1, $3, 'Worker concorrente 1', $5, 'funcionario', 'pendente_envio', $4, now() + interval '1 day'),
+          ($2, $3, 'Worker concorrente 2', $6, 'funcionario', 'pendente_envio', $4, now() + interval '1 day')
+      `,
+      [
+        ids.inviteOne,
+        ids.inviteTwo,
+        ids.tenantLifecycle,
+        ids.ownerLifecycle,
+        `worker-one-${ids.suffix}@barbervision.invalid`,
+        `worker-two-${ids.suffix}@barbervision.invalid`,
+      ],
+    );
+
     await admin.query("commit");
   } catch (error) {
     await admin.query("rollback");
     throw error;
+  }
+}
+
+async function testOutboxWorkers(databaseUrl, observer, ids) {
+  const first = await createClient(databaseUrl, "barbervision-outbox-worker-1");
+  const second = await createClient(databaseUrl, "barbervision-outbox-worker-2");
+  const firstWorker = randomUUID();
+  const secondWorker = randomUUID();
+
+  try {
+    const [firstClaim, secondClaim] = await Promise.all([
+      first.query("select * from public.reivindicar_convites_email($1::uuid, 1)", [firstWorker]),
+      second.query("select * from public.reivindicar_convites_email($1::uuid, 1)", [secondWorker]),
+    ]);
+    const claimed = [...firstClaim.rows, ...secondClaim.rows];
+    const claimedIds = new Set(claimed.map((item) => item.convite_id));
+
+    if (claimed.length !== 2 || claimedIds.size !== 2) {
+      throw new Error(`Workers reivindicaram itens duplicados ou incompletos: ${JSON.stringify(claimed)}`);
+    }
+
+    const expectedIds = new Set([ids.inviteOne, ids.inviteTwo]);
+    if ([...claimedIds].some((id) => !expectedIds.has(id))) {
+      throw new Error(`Worker reivindicou convite fora do fixture: ${JSON.stringify([...claimedIds])}`);
+    }
+
+    const verification = await observer.query(
+      `select count(*)::integer as total, count(distinct worker_id)::integer as workers
+       from public.convite_email_outbox
+       where convite_id = any($1::uuid[]) and status = 'processando' and tentativas = 1`,
+      [[ids.inviteOne, ids.inviteTwo]],
+    );
+    if (verification.rows[0].total !== 2 || verification.rows[0].workers !== 2) {
+      throw new Error(`Estado inesperado da outbox concorrente: ${JSON.stringify(verification.rows[0])}`);
+    }
+
+    console.log("[OK] Outbox: dois workers reivindicaram itens distintos sem duplicação.");
+  } finally {
+    await first.end().catch(() => {});
+    await second.end().catch(() => {});
   }
 }
 
@@ -608,6 +668,7 @@ async function main() {
 
     await testLastOwnerSerialization(databaseUrl, admin, ids);
     await testAssignmentVersusRevocation(databaseUrl, admin, ids);
+    await testOutboxWorkers(databaseUrl, admin, ids);
     console.log("[OK] Suíte concorrente concluída.");
   } finally {
     if (cleanupRequired) {
