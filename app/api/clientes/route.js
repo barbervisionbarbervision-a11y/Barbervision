@@ -66,7 +66,10 @@ export async function POST(request) {
     return Response.json({ ok: true, clienteId: cliente.id }, { status: 201 });
   } catch (error) {
     console.error("[clientes] falha ao salvar cadastro", {
-      mensagem: error instanceof Error ? error.message : "erro desconhecido"
+      codigo: typeof error?.code === "string" ? error.code : null,
+      mensagem: typeof error?.message === "string" ? error.message : "erro desconhecido",
+      detalhes: typeof error?.details === "string" ? error.details : null,
+      dica: typeof error?.hint === "string" ? error.hint : null
     });
     return Response.json({ erro: "Não foi possível salvar o cadastro agora." }, { status: 500 });
   }
