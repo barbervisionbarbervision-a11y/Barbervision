@@ -1,6 +1,6 @@
 # Estado de validação
 
-> Baseline operacional reconciliada em **23/08/2026**. Este documento concentra evidências temporais. Os documentos de arquitetura e produto descrevem contratos; em caso de divergência sobre o que foi executado, prevalece este registro mais recente.
+> Baseline operacional reconciliada em **24/08/2026**. Este documento concentra evidências temporais. Os documentos de arquitetura e produto descrevem contratos; em caso de divergência sobre o que foi executado, prevalece este registro mais recente.
 
 ## Resumo executivo
 
@@ -19,6 +19,24 @@
 - A suíte Playwright criou fixtures efêmeras e comprovou login do dono, bootstrap AAL1, enrollment/verify TOTP, AAL2, convite por Admin API, entrega no Mailpit, ativação do funcionário, recuperação de senha, revogação de convite e logout. A suíte passou em 29,9 s e removeu os fixtures ao final.
 - Durante o E2E foram corrigidos o efeito MFA incompatível com o replay do React Strict Mode, o QR `data:image/svg+xml` bloqueado pelo `next/image` e o redirecionamento do callback para usar a origem canônica validada da aplicação.
 - Em 23/08, a outbox de convites foi validada por reset, lint SQL e 21 asserções próprias. O E2E foi atualizado, mas não reexecutado porque a instância `next dev` aberta pelo usuário mantém o lock de `.next` e impede o webServer isolado do Playwright.
+- O GitHub privado recebeu a branch `main` no commit `6cea627`; o Supabase hospedado foi vinculado e recebeu exatamente as oito migrations.
+- O Render chegou ao formulário inicial do Blueprint, mas não existe evidência de deploy, build, URL final ou health check remoto.
+- Uma secret key Supabase apareceu em captura durante esse formulário. O usuário confirmou sua revogação e substituição em 24/08; nenhum valor foi reproduzido neste repositório.
+
+## Evidências de 24/08/2026
+
+| Verificação | Resultado | Interpretação |
+| --- | --- | --- |
+| `git push -u origin main` | branch `main` criada no GitHub privado | fonte remota disponível ao Render |
+| `npx.cmd supabase projects list` | projeto `barbervision`, `sa-east-1`, `ACTIVE_HEALTHY` | conta e projeto hospedado confirmados |
+| `npx.cmd supabase link --project-ref ftwdfobgwxjmeickktmy` | `Finished supabase link` | pasta local vinculada ao remoto |
+| `npx.cmd supabase db push --dry-run` antes do envio | listou as oito migrations oficiais | escopo conferido antes da mutação |
+| `npx.cmd supabase db push` | oito migrations aplicadas sem erro | schema remoto criado |
+| `npx.cmd supabase db push --dry-run` após o envio | `Remote database is up to date` | histórico local/remoto sincronizado |
+| Render Blueprint | repositório conectado; formulário de cinco variáveis aberto | deploy ainda não comprovado |
+| Revisão de segurança | secret key visível em captura | revogação/rotação é gate P0 |
+| Rotação da secret key | revogação e substituição confirmadas pelo usuário | incidente encerrado no escopo disponível; novo valor não registrado |
+| Primeiro deploy Render | falhou no `next build`: `Cannot find module 'tailwindcss'` | `NODE_ENV=production` fez o `npm ci` omitir ferramentas de build; Blueprint corrigido para `npm ci --include=dev` |
 
 ## Evidências de 23/08/2026
 
@@ -65,11 +83,11 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Estado oficial dos passos
 
-| Passo | Estado em 22/08/2026 | Próximo gate |
+| Passo | Estado em 24/08/2026 | Próximo gate |
 | ---: | --- | --- |
 | 1 | Concluído para demo controlada | preservar contenção e corrigir warnings sem regressão |
 | 2 | Validado localmente | preservar os gates e integrá-los à CI |
-| 3 | Jornada principal aprovada localmente; gaps operacionais abertos | completar lifecycle de funcionário e hardening de falhas/recuperação |
+| 3 | Jornada local aprovada e schema remoto aplicado; operação hospedada incompleta | rotacionar segredo e validar Render/Supabase/Cloudflare ponta a ponta |
 | 4 | Não iniciado como implementação de produção | fechar política de consentimento, retenção e descarte |
 | 5 | Não iniciado | persistir um fluxo público mínimo e seguro |
 | 6 | Não iniciado | substituir mocks após o fluxo vertical |
@@ -79,6 +97,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Configurar scheduler, segredo e alertas da outbox no ambiente hospedado.
-2. Completar reatribuição, transferência de dono e seleção multi-tenant.
-3. Implementar privacidade e só então o fluxo persistido.
+1. Concluir Render, validar `/api/health` e corrigir a origem final em todos os serviços; a secret key exposta já foi substituída.
+3. Configurar Auth/SMTP/templates no Supabase e publicar/testar o scheduler Cloudflare.
+4. Completar reatribuição, transferência de dono e seleção multi-tenant.
+5. Implementar privacidade e só então o fluxo persistido.

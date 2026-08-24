@@ -1,6 +1,6 @@
 # Arquitetura
 
-Última auditoria: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
+Última auditoria: **24/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Resumo
 
@@ -426,7 +426,7 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - `lib/supabase/client.js`, `server.js`, `proxy.js` e `admin.js` separam browser, SSR e privilégio administrativo. Somente `admin.js` lê `SUPABASE_SECRET_KEY`, no servidor;
 - `proxy.js` seleciona o modo de forma explícita: sem env há demo controlada; com env há Auth SSR e nenhuma flag insegura cria bypass;
 - `supabase/migrations` é a fonte de verdade com sete tabelas públicas, policies, três buckets, reforço de e-mail/AAL2 e nove RPCs de onboarding/lifecycle; `schema.sql` é apenas um índice documental;
-- a tela/actions de equipe, callbacks e script de primeiro dono chamam contratos agora versionados, porém esses caminhos não foram exercitados e não devem ser anunciados como concluídos;
+- a tela/actions de equipe, callbacks e script de primeiro dono chamam contratos versionados e foram exercitados localmente; ainda não há validação equivalente no ambiente hospedado;
 - `step2_tenant_rls.test.sql` passou 59/59, onboarding/lifecycle 112/112 e outbox 21/21;
 - `db:lint` passou sem erros em 22/08; falta corrigir e repetir integralmente o passo 2.
 
@@ -434,10 +434,4 @@ Ao substituir mocks por dados reais, evite fazer uma troca parcial que mantenha 
 
 ## Sequência canônica de validação
 
-1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-5. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-6. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
-7. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários.
-9. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+Os gates locais de banco, concorrência, integração e E2E já possuem evidência. Em 24/08/2026, o schema remoto também está aplicado. A sequência vigente é: rotacionar a secret key exposta; concluir Render e health check; configurar Auth/SMTP/templates; publicar e testar Cloudflare; executar a matriz remota; fechar reatribuição, transferência de dono e seleção multi-tenant; então implementar privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).

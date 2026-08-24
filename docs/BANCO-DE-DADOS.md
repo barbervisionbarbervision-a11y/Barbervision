@@ -1,6 +1,6 @@
 # Banco de dados
 
-Última atualização: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
+Última atualização: **24/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Estado executivo
 
@@ -317,12 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-5. Ampliar o Playwright aprovado para lifecycle completo e falhas distribuídas.
-6. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+O passo 2 possui validação local completa e as oito migrations foram aplicadas no Supabase hospedado. O passo 3 possui integração/E2E local, mas ainda depende de rotação da secret key exposta, deploy Render, configuração hospedada de Auth/SMTP/templates, scheduler Cloudflare e matriz remota controlada. Também faltam reatribuição estreita, transferência de dono e seleção multi-tenant.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

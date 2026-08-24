@@ -1,5 +1,7 @@
 # Deploy gratuito: Render + Cloudflare + Supabase
 
+> Estado em **24/08/2026**: GitHub e Supabase estão vinculados; as oito migrations estão aplicadas no remoto. O Blueprint Render está no formulário inicial, sem deploy comprovado. O Cloudflare ainda não foi publicado. A secret key que apareceu em captura teve revogação/substituição confirmada pelo usuário; o novo valor não foi registrado.
+
 ## Arquitetura
 
 - **Render Free** executa a aplicação Next.js definida em `render.yaml`.
@@ -17,6 +19,19 @@ Essa composição serve para demonstração e piloto técnico. O Render Free pod
 5. Anote URL, publishable key e secret key. Nunca coloque a secret key no navegador ou Git.
 
 O deploy remoto e qualquer migration destrutiva exigem backup e revisão próprios. Os testes locais não autorizam executar rollbacks no projeto hospedado.
+
+### Incidente de chave em captura
+
+Se uma `SUPABASE_SECRET_KEY` aparecer em captura, chat, log ou gravação, trate-a como comprometida mesmo que o deploy ainda não tenha sido salvo:
+
+1. remova o valor do formulário;
+2. revogue a chave no painel **Supabase → Settings → API Keys**;
+3. crie uma nova secret key com nome operacional identificável;
+4. cadastre a substituta somente no Render;
+5. nunca registre o valor na documentação, Git, issue, chat ou evidência;
+6. anote apenas data, responsável e confirmação da rotação.
+
+Não avance ao deploy enquanto a rotação não estiver confirmada.
 
 ## 2. Criar o segredo compartilhado
 
@@ -46,6 +61,10 @@ Use exatamente o mesmo valor em `BARBERVISION_CRON_SECRET` no Render e no Cloudf
 5. Após o deploy, abra `/api/health` e confirme `200` com `ok: true`.
 6. Adicione a origem final às URLs permitidas do Supabase Auth.
 7. Faça login real antes de configurar o scheduler.
+
+Checkpoint atual: os campos foram exibidos, porém o botão de deploy não foi comprovadamente acionado. A rotação foi confirmada em 24/08; ao retomar, preencha os cinco valores sem fazer captura de tela com valores visíveis.
+
+O primeiro build remoto falhou porque `NODE_ENV=production` fez o `npm ci` omitir o Tailwind/PostCSS em `devDependencies`. O Blueprint agora usa `npm ci --include=dev && npm run build`; preservar essa opção enquanto essas ferramentas forem necessárias à compilação.
 
 O nome `barbervision` pode já estar ocupado no Render; se a URL recebida for diferente, use a origem efetiva em todas as configurações.
 

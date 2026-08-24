@@ -1,6 +1,6 @@
 # Pendências — Barber Vision
 
-Backlog oficial do projeto, reconciliado com o código e as evidências de execução em **22/08/2026**. A evidência temporal detalhada está em [Estado de validação](docs/ESTADO-VALIDACAO.md).
+Backlog oficial do projeto, reconciliado com o código e as evidências de execução em **24/08/2026**. A evidência temporal detalhada está em [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 Este arquivo separa o que existe em fonte do que foi executado e validado. Uma tela, migration ou função criada não encerra uma etapa sem teste proporcional ao risco.
 
@@ -18,7 +18,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
 | 2 — Supabase, tenant e RLS | Validado localmente: reset, 192/192, concorrência histórica, rollback histórico, JWT/RLS e Storage | Preservar os gates e integrá-los à CI |
-| 3 — Auth real | Auth e lifecycle de funcionário aprovados em E2E | Fechar hardening e falhas distribuídas |
+| 3 — Auth real | Auth e lifecycle aprovados localmente; Supabase remoto migrado; Render/Cloudflare incompletos | Rotacionar segredo exposto e concluir a matriz hospedada |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -80,7 +80,7 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — vincular e validar o deploy gratuito**: conectar Render, Supabase e Cloudflare, cadastrar segredos e executar a matriz remota; a infraestrutura já está versionada.
+1. **P0 — concluir e validar o deploy gratuito**: finalizar Render, configurar Auth/SMTP/templates no Supabase, publicar Cloudflare e executar a matriz remota.
 2. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 3. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou clientes reais.
 
@@ -248,7 +248,13 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Criar reconciliação idempotente para materializar convites vencidos como `expirado` durante cada lote do worker.
 - [ ] Configurar um agendador no ambiente hospedado para chamar periodicamente a rota protegida do worker.
 - [x] Versionar Blueprint Render Free, health check e Cloudflare Cron Trigger a cada minuto com webhook opcional.
-- [ ] Vincular as contas, cadastrar segredos e provar o cron em logs remotos com convite controlado.
+- [x] Criar o projeto Supabase hospedado em São Paulo, vincular a CLI e aplicar as oito migrations; segunda simulação confirmou o remoto atualizado.
+- [x] Conectar o repositório privado ao Blueprint Render e chegar ao formulário das cinco variáveis.
+- [x] Revogar a `SUPABASE_SECRET_KEY` exposta em captura e criar uma substituta antes do deploy; confirmação do usuário em 24/08, sem registrar o novo valor.
+- [ ] Concluir o deploy Render, registrar a URL efetiva e validar `/api/health`.
+- [x] Diagnosticar o primeiro build Render: `tailwindcss` foi omitido pelo `npm ci` sob `NODE_ENV=production`; corrigir o Blueprint com `--include=dev`.
+- [ ] Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
+- [ ] Publicar o Worker Cloudflare e provar o cron em logs remotos com convite controlado.
 - [x] Fazer a revogação reler/retornar o estado autoritativo e exibir `expirado` quando a RPC expirar um convite vencido, em vez de sempre anunciar “Convite revogado”.
 - [x] Verificar e tratar o erro da compensação `revogar_convite_barbearia`; não afirmar que nenhum convite ficou ativo sem confirmação do banco.
 - [x] Verificar e tratar o erro de `marcar_convite_falhou`; deixar um estado explícito de reconciliação quando a compensação também falhar.

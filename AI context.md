@@ -2,7 +2,7 @@
 
 Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 
-> Última revisão integral: **22/08/2026**. Leia este arquivo, `README.md`, `pendências.md`, `docs/ESTADO-VALIDACAO.md`, `docs/PLANO-DE-EXECUCAO.md` e `AGENTS.md` antes de alterar o projeto. Presença de código — ou uma inicialização transitória — não equivale a funcionalidade validada.
+> Última revisão integral: **24/08/2026**. Leia este arquivo, `README.md`, `pendências.md`, `docs/ESTADO-VALIDACAO.md`, `docs/PLANO-DE-EXECUCAO.md` e `AGENTS.md` antes de alterar o projeto. Presença de código — ou uma inicialização transitória — não equivale a funcionalidade validada.
 
 ## Resumo em 30 segundos
 
@@ -13,7 +13,8 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2, fundação Supabase/RLS, está validado localmente: CLI 2.115.0, `db:start`, `db:reset`, oito migrations, seed, lint, pgTAP 192/192, concorrência histórica, rollback/roll-forward histórico, JWT/RLS e Storage com blob real passaram.
-- O passo 3, Auth, tem jornada e outbox comprovadas. A infraestrutura gratuita Render + Cloudflare + Supabase está versionada, mas ainda não vinculada às contas; faltam validação remota e comandos administrativos.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O projeto Supabase hospedado `barbervision` está vinculado e recebeu as oito migrations; o Blueprint Render está conectado ao GitHub, mas o deploy não foi comprovado, e o Worker Cloudflare ainda não foi publicado.
+- Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - A correção do bootstrap AAL1 → TOTP do dono foi comprovada com JWT real e E2E. O formulário MFA também foi corrigido para React Strict Mode, e o QR SVG do Supabase usa `<img>` nativo sem liberar SVG globalmente no Next.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
@@ -57,7 +58,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 
 ## Estado oficial dos nove passos
 
-| Passo | Estado em 22/08/2026 |
+| Passo | Estado em 24/08/2026 |
 |---|---|
 | 1 — Segurança da demo | Concluído para demo controlada |
 | 2 — Supabase, tenant e RLS | Validação local completa: SQL, concorrência, rollback, JWT/RLS e Storage |
@@ -427,7 +428,18 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - redução dos 18 warnings de lint;
 - manifesto reproduzível dos arquivos congelados do simulador.
 
-## Validação reconciliada em 22/08/2026
+## Validação reconciliada em 24/08/2026
+
+### Estado remoto comprovado
+
+- GitHub privado: `barbervisionbarbervision-a11y/Barbervision`, branch `main`, commit remoto inicial `6cea627`.
+- Supabase hospedado: projeto `barbervision`, ref pública `ftwdfobgwxjmeickktmy`, região `sa-east-1`, estado `ACTIVE_HEALTHY` no momento da vinculação.
+- `supabase link` terminou com sucesso.
+- `supabase db push --dry-run` listou exatamente as oito migrations; `supabase db push` aplicou as oito sem erro; uma segunda simulação informou `Remote database is up to date`.
+- Render: repositório privado conectado ao Blueprint e formulário das cinco variáveis aberto. Não há evidência de deploy, build remoto, URL final ou health check.
+- Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
+- Cloudflare: nenhum login, secret, deploy, Cron Trigger ou log remoto foi comprovado.
+- Ainda faltam configuração hospedada de Auth redirects, templates, SMTP, signup público e confirmação dupla.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
@@ -447,9 +459,12 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Vincular o Blueprint Render, projeto Supabase e Worker Cloudflare; cadastrar segredos e validar o cron remoto.
-2. Completar reatribuição, transferência de dono e seleção multi-tenant.
-3. Implementar privacidade antes de persistir dados reais.
+1. Concluir o Blueprint Render com os cinco valores privados, registrar a URL efetiva e validar `/api/health`.
+2. Corrigir `BARBERVISION_APP_URL` no Render e configurar no Supabase as URLs/redirects, signup, templates e SMTP.
+3. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
+4. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento sem dados reais.
+5. Completar reatribuição, transferência de dono e seleção multi-tenant.
+6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
 Depois desses gates, persistir o fluxo vertical do passo 5 e só então migrar painel, catálogo/produtos, financeiro e operação.
 

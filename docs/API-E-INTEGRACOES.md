@@ -1,6 +1,6 @@
 # API e integrações
 
-Última atualização: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
+Última atualização: **24/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Visão geral
 
@@ -544,13 +544,7 @@ Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema
 
 ### Sequência canônica de validação
 
-1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-3. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
-4. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
-5. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários de callback.
-6. Fechar gaps operacionais: outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+Os gates locais listados acima já foram executados, e as oito migrations estão no Supabase hospedado. Falta rotacionar a secret key exposta, concluir Render, configurar Auth/SMTP/templates, publicar Cloudflare e repetir a matriz de integração no ambiente remoto controlado. Depois vêm os comandos administrativos restantes e a implementação de privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 

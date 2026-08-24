@@ -1,6 +1,6 @@
 # Roadmap técnico e de produto
 
-Estado reconciliado em **22/08/2026**. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **24/08/2026**. O Supabase remoto está migrado; Render e Cloudflare ainda não estão operacionalmente validados. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -141,12 +141,12 @@ Estado: **parcial e não validado**.
 
 ### Sequência canônica para concluir a fundação
 
-1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-5. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários.
-6. Fechar gaps operacionais: provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
+1. Revogar e substituir a `SUPABASE_SECRET_KEY` exposta na captura do formulário Render.
+2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
+3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
+4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+5. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento.
+6. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Critério de conclusão: um dono e um funcionário são provisionados por caminhos controlados, confirmam e-mail, autenticam, respeitam MFA/papel/tenant e têm ciclo de vida testado, sem usar mocks como autoridade.
@@ -348,12 +348,12 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-5. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários.
-6. Fechar gaps operacionais: provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
+1. Revogar e substituir a `SUPABASE_SECRET_KEY` exposta na captura do formulário Render.
+2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
+3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
+4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+5. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento.
+6. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Referência oficial detalhada: [Plano de execução](PLANO-DE-EXECUCAO.md). Pendências rastreáveis: [pendências.md](../pend%C3%AAncias.md).

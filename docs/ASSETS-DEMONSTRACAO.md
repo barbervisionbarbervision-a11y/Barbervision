@@ -1,6 +1,6 @@
 # Assets de demonstração
 
-Última atualização documental: **22/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
+Última atualização documental: **24/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Escopo e separação
 
@@ -331,14 +331,6 @@ Antes de usuários reais:
 
 ## Próximos passos
 
-A sequência operacional canônica é a mesma do [Plano de execução](PLANO-DE-EXECUCAO.md):
-
-1. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar as evidências.
-2. Criar o runbook e ensaiar rollback/roll-forward; repetir lint, pgTAP e concorrência depois do ensaio.
-3. Criar `.env.local` controlado e fixtures Auth reais de dono AAL1/AAL2, funcionário e cenário cross-tenant.
-4. Criar o harness e validar Data API e Storage com JWTs reais e cenários adversários.
-5. Selecionar/configurar E2E, criar a suíte e executar Auth, e-mail, convite, MFA e lifecycle.
-6. Fechar outbox/retry, Auth existente, expiração, reatribuição, recuperação TOTP, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+A sequência operacional canônica está no [Plano de execução](PLANO-DE-EXECUCAO.md) e no [Estado de validação](ESTADO-VALIDACAO.md). Em 24/08/2026, os testes locais e as migrations remotas já foram concluídos; o gate imediato é rotacionar a secret key exposta e terminar a validação hospedada de Render, Supabase e Cloudflare.
 
 O simulador e os assets continuam congelados enquanto essa base é validada. Quando a frente visual voltar como gate anterior ao piloto, permanecem obrigatórios: comprovar origem/licença das fontes privadas; confirmar os nomes com barbeiro; preferir fotos frontais próprias; testar matriz consentida; criar gate de cabelo residual e regressão visual; medir aparelhos reais; e decidir o destino privado dos rollbacks.

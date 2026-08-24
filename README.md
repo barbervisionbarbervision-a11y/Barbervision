@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **22/08/2026**. O projeto é uma demonstração funcional local, não um produto pronto para receber dados reais de clientes. Veja a evidência atual em [Estado de validação](docs/ESTADO-VALIDACAO.md).
+> Estado reconciliado em **24/08/2026**. O projeto é uma demonstração funcional com fundação local validada e Supabase remoto migrado; ainda não é um produto pronto para receber dados reais de clientes. Veja a evidência atual em [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -252,9 +252,10 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Vincular Render, Supabase e Cloudflare, cadastrar os segredos e validar o cron remoto com convite controlado.
-2. Completar comandos administrativos: reatribuição, transferência de dono e seleção multi-tenant.
-3. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
+1. Concluir o deploy no Render e validar a URL final e `/api/health`; a chave exposta já foi revogada e substituída.
+2. Configurar Auth/SMTP/templates no Supabase e publicar/validar o scheduler Cloudflare.
+3. Completar comandos administrativos: reatribuição, transferência de dono e seleção multi-tenant.
+4. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
 Depois desses gates, o passo 5 persiste o fluxo vertical; painel, catálogo, produtos, financeiro e operação vêm nas fases seguintes.
 

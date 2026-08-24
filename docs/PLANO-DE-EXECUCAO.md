@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **22/08/2026**. Esta é a sequência oficial. Uma etapa só muda para concluída após código, execução e evidência de aceite. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **24/08/2026**. Esta é a sequência oficial. Uma etapa só muda para concluída após código, execução e evidência de aceite. O Supabase remoto já recebeu as oito migrations; Render e Cloudflare ainda não possuem validação operacional, e a rotação da secret key exposta é o gate imediato. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -26,18 +26,15 @@ O simulador de cabelo fica congelado durante os passos 2–5, salvo correção c
 
 Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operacional é única:
 
-1. Marcar/confirmar o banco descartável e executar `db:test:concurrency`.
-2. Preservar a baseline pós-reset aprovada: oito migrations, seed, lint e pgTAP 192/192.
-3. Marcar e confirmar o banco descartável; executar `db:test:concurrency` e guardar a evidência.
-4. Validar Data API e operação real de Storage com JWTs controlados.
-5. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-6. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
-7. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Preservar a suíte Playwright aprovada e ampliá-la para lifecycle completo, refresh/expiração e falhas.
-9. Fechar gaps operacionais: provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Revogar e substituir a `SUPABASE_SECRET_KEY` exposta na captura do Render.
+2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
+3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
+4. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
+5. Executar a matriz remota controlada de Auth, TOTP, convite/outbox, RLS e Storage.
+6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
+7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: em 22/08, build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 170/170, concorrência, rollbacks 5–4/roll-forward, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle passaram. Falta ensaiar o rollback 6–4.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 192/192, concorrência, rollback/roll-forward 8–4, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle/outbox passaram localmente. As oito migrations também estão aplicadas no Supabase hospedado; a operação remota completa ainda não foi validada.
 
 ## Passo 1 — segurança da demonstração
 
