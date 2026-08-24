@@ -14,21 +14,39 @@ export default function Cadastro() {
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [codigoIndicacao, setCodigoIndicacao] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
 
-  function continuar(e) {
+  async function continuar(e) {
     e.preventDefault();
     if (!nome.trim() || !email.trim() || !whatsapp.trim()) return;
-    // Fase futura: gravar cliente na tabela `clientes` do Supabase aqui, e
-    // creditar a indicação para quem tem esse código, se preenchido.
-    setFluxo({
-      barbeariaSlug: barbearia,
-      etapa: "selfie",
-      nome,
-      email: email.trim().toLocaleLowerCase("pt-BR"),
-      whatsapp,
-      codigoIndicacao: codigoIndicacao.trim() || null
-    });
-    router.push(`/b/${barbearia}/selfie`);
+
+    setEnviando(true);
+    setErro("");
+
+    try {
+      const resposta = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ barbeariaSlug: barbearia, nome, email, whatsapp })
+      });
+      const resultado = await resposta.json();
+      if (!resposta.ok) throw new Error(resultado.erro || "Não foi possível salvar o cadastro.");
+
+      setFluxo({
+        barbeariaSlug: barbearia,
+        etapa: "selfie",
+        clienteId: resultado.clienteId,
+        nome,
+        email: email.trim().toLocaleLowerCase("pt-BR"),
+        whatsapp,
+        codigoIndicacao: codigoIndicacao.trim() || null
+      });
+      router.push(`/b/${encodeURIComponent(barbearia)}/selfie`);
+    } catch (error) {
+      setErro(error instanceof Error ? error.message : "Não foi possível salvar o cadastro.");
+      setEnviando(false);
+    }
   }
 
   return (
@@ -86,7 +104,11 @@ export default function Cadastro() {
           />
         </label>
 
-        <Button type="submit" className="mt-4">Continuar</Button>
+        {erro && <p role="alert" className="text-sm text-red-400">{erro}</p>}
+
+        <Button type="submit" disabled={enviando} className="mt-4">
+          {enviando ? "Salvando..." : "Continuar"}
+        </Button>
       </form>
     </main>
   );
