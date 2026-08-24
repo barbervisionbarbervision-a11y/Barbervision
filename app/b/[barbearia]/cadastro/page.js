@@ -11,18 +11,20 @@ export default function Cadastro() {
   const router = useRouter();
   const { barbearia } = useParams();
   const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [codigoIndicacao, setCodigoIndicacao] = useState("");
 
   function continuar(e) {
     e.preventDefault();
-    if (!nome.trim() || !whatsapp.trim()) return;
+    if (!nome.trim() || !email.trim() || !whatsapp.trim()) return;
     // Fase futura: gravar cliente na tabela `clientes` do Supabase aqui, e
     // creditar a indicação para quem tem esse código, se preenchido.
     setFluxo({
       barbeariaSlug: barbearia,
       etapa: "selfie",
       nome,
+      email: email.trim().toLocaleLowerCase("pt-BR"),
       whatsapp,
       codigoIndicacao: codigoIndicacao.trim() || null
     });
@@ -46,6 +48,19 @@ export default function Cadastro() {
             onChange={(e) => setNome(e.target.value)}
             required
             placeholder="Seu nome completo"
+            className="mt-1 w-full bg-white/5 border border-steel/30 rounded-lg px-4 py-3 text-parchment placeholder:text-steel/60 focus:border-brass outline-none"
+          />
+        </label>
+
+        <label className="text-sm text-steel">
+          E-mail
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="voce@exemplo.com"
             className="mt-1 w-full bg-white/5 border border-steel/30 rounded-lg px-4 py-3 text-parchment placeholder:text-steel/60 focus:border-brass outline-none"
           />
         </label>

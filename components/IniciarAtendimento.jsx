@@ -8,8 +8,9 @@ export default function IniciarAtendimento({ barbeariaSlug }) {
   const router = useRouter();
 
   function iniciar() {
+    if (!barbeariaSlug) return;
     iniciarFluxo(barbeariaSlug);
-    router.push(`/b/${barbeariaSlug}/cadastro`);
+    router.push(`/b/${encodeURIComponent(barbeariaSlug)}/cadastro`);
   }
 
   return (

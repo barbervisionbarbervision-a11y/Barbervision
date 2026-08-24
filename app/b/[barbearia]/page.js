@@ -5,9 +5,10 @@ import IniciarAtendimento from "@/components/IniciarAtendimento";
 import PoleDivider from "@/components/PoleDivider";
 import { barbeariaExemplo, promocoesExemplo } from "@/lib/mockData";
 
-export default function TelaInicial({ params }) {
+export default async function TelaInicial({ params }) {
   // Fase futura: buscar a barbearia no Supabase pelo slug (params.barbearia).
-  const barbearia = { ...barbeariaExemplo, slug: params.barbearia };
+  const { barbearia: barbeariaSlug } = await params;
+  const barbearia = { ...barbeariaExemplo, slug: barbeariaSlug };
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center gap-8 bg-ink">
