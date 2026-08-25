@@ -8,7 +8,7 @@ O Barber Vision é uma aplicação Next.js 16 com App Router e duas partes em es
 
 Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono com e-mail confirmado, perfil e membership ativos alcança o próprio tenant em AAL1 ou AAL2; TOTP é opcional e pode ser configurado depois. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
 
-O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem onze migrations, onze rollbacks e quatro suítes pgTAP com 205/205 sobre o conjunto completo. A API mínima de clientes foi comprovada remotamente com criação e upsert idempotente; sua proteção com rate limit distribuído, Turnstile e aceite versionado passou localmente e aguarda ativação no Render. O painel de negócio continua consumindo mocks/armazenamento local.
+O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem onze migrations, onze rollbacks e quatro suítes pgTAP com 205/205 sobre o conjunto completo. A API mínima de clientes e sua proteção com rate limit distribuído, Turnstile e aceite versionado foram comprovadas remotamente. O painel de negócio continua consumindo mocks/armazenamento local.
 
 Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
@@ -120,7 +120,7 @@ Existem dois Route Handlers de Auth:
 - `/auth/callback`: troca o `code` PKCE por sessão e, se houver `convite`, tenta a RPC `aceitar_convite_barbearia`;
 - `/auth/confirm`: verifica `token_hash` para confirmação, convite, recovery ou alteração de e-mail e também tenta aceitar convite quando aplicável.
 
-Existem Server Actions na tela de equipe, um script de provisionamento de dono e `POST /api/clientes`. A API usa o admin server-only, resolve tenant ativo por slug, aplica rate limit distribuído por HMAC, valida Turnstile server-side, registra aceite versionado e faz upsert por telefone. A versão protegida está validada localmente e sua migration está remota; o deploy aguarda as chaves reais do Turnstile. Não existem APIs de domínio para agenda, simulações, avaliações, produtos ou financeiro.
+Existem Server Actions na tela de equipe, um script de provisionamento de dono e `POST /api/clientes`. A API usa o admin server-only, resolve tenant ativo por slug, aplica rate limit distribuído por HMAC, valida Turnstile server-side, registra aceite versionado e faz upsert por telefone. A versão protegida e sua migration estão hospedadas e o fluxo real foi comprovado. Não existem APIs de domínio para agenda, simulações, avaliações, produtos ou financeiro.
 
 O provisionamento não possui transação distribuída entre Auth e Postgres, mas agora valida entrada/origem/slug antes da mutação e retoma com a identidade existente por e-mail ou UUID quando a RPC falha. A membership nasce ativa antes da senha para permitir bootstrap; o link inicial conduz à definição de senha e TOTP pode ser configurado depois. As compensações de convite também releem o estado autoritativo antes de afirmar a transição.
 

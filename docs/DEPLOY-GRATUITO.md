@@ -1,6 +1,6 @@
 # Deploy gratuito: Render + Cloudflare + Supabase
 
-> Estado em **25/08/2026**: GitHub e Supabase estão vinculados; onze migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects e SMTP Brevo foram configurados, e a entrega real de convite foi comprovada. O código protegido do cadastro público aguarda chaves reais do Turnstile antes do deploy. O Worker Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
+> Estado em **25/08/2026**: GitHub e Supabase estão vinculados; onze migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects, SMTP Brevo e Turnstile foram configurados. Entrega real de convite e cadastro público protegido foram comprovados; o smoke remoto confirmou `400`, `403` e `201`. O Worker Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
 
 ## Arquitetura
 

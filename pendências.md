@@ -83,8 +83,8 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — ativar a proteção do cadastro público no Render**: migration 11, rate limit distribuído, aceite versionado, Turnstile server-side, testes unitários, HTTP local e 205/205 pgTAP estão concluídos; faltam criar/configurar as chaves reais, publicar o commit e executar o smoke hospedado. Remover o registro sintético antes do piloto.
-2. **P0 — fechar o hardening do primeiro dono**: testar hospedado **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
+1. **P0 — fechar o hardening do primeiro dono**: testar hospedado **Configurar depois**, recuperação, isolamento e proteção antiabuso dos fluxos Auth.
+2. **P0 — higienizar os dados de validação**: remover registros sintéticos criados nos testes antes do piloto, preservando somente tenants e usuários reais.
 3. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
 4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.

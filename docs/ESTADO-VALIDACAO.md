@@ -25,7 +25,7 @@
 - O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. O conteúdo público do commit `ab97b14` foi conferido na tela de login, que já informa que o autenticador é opcional.
 - Site URL e redirects de produção foram configurados no Supabase; signup direto permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real de convite foi comprovada.
 - O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. O reteste no tenant real `barbervision` retornou `201`; uma segunda chamada com o mesmo WhatsApp retornou o mesmo UUID, comprovando o upsert. O slug mock `barbearia-joao` retorna corretamente `404` porque não existe no remoto.
-- Em 25/08, o cadastro público ganhou consentimento versionado, Turnstile validado no servidor e limites distribuídos por rede e contato. A migration 11 está no Supabase hospedado; a publicação do código permanece retida até configurar chaves reais do Turnstile no Render.
+- Em 25/08, o cadastro público ganhou consentimento versionado, Turnstile validado no servidor e limites distribuídos por rede e contato. A migration 11 e o commit `52c9cf2` estão hospedados; o smoke remoto confirmou `400` sem consentimento, `403` com token inválido e `201` no envio real, que avançou para selfie. O `429` permanece comprovado localmente, sem carga artificial no serviço gratuito.
 - Uma secret key Supabase apareceu em captura durante esse formulário. O usuário confirmou sua revogação e substituição em 24/08; nenhum valor foi reproduzido neste repositório.
 
 ## Evidências de 25/08/2026
@@ -124,7 +124,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Criar as chaves reais do Turnstile, configurá-las no Render, publicar o código protegido e executar o smoke hospedado de `POST /api/clientes` para 400/403/201/429.
+1. Remover os registros sintéticos de validação antes do piloto e executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
 2. Provar no hospedado TOTP opcional, recuperação e isolamento; manter signup irrestrito de funcionários bloqueado.
 3. Finalizar templates e provar confirmação/recuperação hospedadas.
 4. Publicar/testar o scheduler Cloudflare e executar a matriz remota controlada.

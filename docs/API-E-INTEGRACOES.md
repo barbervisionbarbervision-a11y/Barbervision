@@ -19,7 +19,7 @@ O placement ativo é **v7**, `manual-placement-v1`, `manual-local`, `automatico:
 
 Existem integrações server-side estreitas para Auth, incluindo callbacks, clientes Supabase SSR, Server Actions e o worker protegido da outbox. Em 23/08, reset, lint, pgTAP 192/192, rollback/roll-forward 8–4, concorrência e E2E atualizado passaram.
 
-Existe um endpoint de domínio mínimo, `POST /api/clientes`, para resolver a barbearia por slug e criar/atualizar nome, e-mail e WhatsApp por telefone normalizado usando cliente admin server-only. A persistência e a idempotência foram comprovadas no hospedado em 24/08. Em 25/08, a migration 11 adicionou aceite versionado e rate limit atômico no Supabase, e o endpoint passou a validar Cloudflare Turnstile no servidor. A migration está remota; a nova versão da aplicação aguarda chaves reais do Turnstile no Render. Não há endpoints de domínio para catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas.
+Existe um endpoint de domínio mínimo, `POST /api/clientes`, para resolver a barbearia por slug e criar/atualizar nome, e-mail e WhatsApp por telefone normalizado usando cliente admin server-only. Persistência e idempotência foram comprovadas no hospedado em 24/08. Em 25/08, aceite versionado, rate limit atômico no Supabase e Cloudflare Turnstile server-side foram publicados; o smoke remoto confirmou `400`, `403` e `201`, com avanço para selfie. Não há endpoints de domínio para catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas.
 
 ### `POST /api/clientes`
 
@@ -556,7 +556,7 @@ Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema
 
 ### Sequência canônica de validação
 
-Os gates locais anteriores foram executados, onze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite e persistência da API de clientes foram comprovados. A proteção antiabuso passou localmente e aguarda chaves reais do Turnstile no Render; depois faltam o smoke hospedado, publicar o scheduler Cloudflare e repetir a matriz remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais anteriores foram executados, onze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite, persistência e proteção antiabuso da API de clientes foram comprovados. Faltam publicar o scheduler Cloudflare, higienizar registros sintéticos e repetir a matriz Auth remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 
