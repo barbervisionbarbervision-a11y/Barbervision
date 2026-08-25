@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   CONSENTIMENTO_CADASTRO_VERSAO,
   criarIdentificadorRateLimit,
+  obterSegredoRateLimit,
   obterEnderecoRede,
   validarRespostaTurnstile
 } from "../lib/cadastro-publico-seguranca.js";
@@ -26,6 +27,15 @@ test("gera HMAC estável sem expor o valor original", () => {
 
 test("recusa segredo curto", () => {
   assert.throws(() => criarIdentificadorRateLimit("rede", "valor", "curto"));
+});
+
+test("prefere segredo exclusivo e deriva fallback separado do Turnstile", () => {
+  const exclusivo = "x".repeat(40);
+  assert.equal(obterSegredoRateLimit({ BARBERVISION_RATE_LIMIT_SECRET: exclusivo }), exclusivo);
+
+  const derivado = obterSegredoRateLimit({ TURNSTILE_SECRET_KEY: "turnstile-private-key" });
+  assert.match(derivado, /^[a-f0-9]{64}$/);
+  assert.notEqual(derivado, "turnstile-private-key");
 });
 
 test("valida sucesso, ação e hostname do Turnstile", () => {

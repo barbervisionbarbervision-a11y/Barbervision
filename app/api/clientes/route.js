@@ -3,6 +3,7 @@ import {
   CONSENTIMENTO_CADASTRO_VERSAO,
   criarIdentificadorRateLimit,
   obterEnderecoRede,
+  obterSegredoRateLimit,
   verificarTurnstile
 } from "@/lib/cadastro-publico-seguranca";
 
@@ -66,8 +67,7 @@ export async function POST(request) {
     const supabase = criarClienteSupabaseAdmin();
     const enderecoRede = obterEnderecoRede(request.headers) ||
       (process.env.NODE_ENV === "development" ? "desenvolvimento-local" : null);
-    const segredoRateLimit = process.env.BARBERVISION_RATE_LIMIT_SECRET?.trim() ||
-      (process.env.NODE_ENV === "development" ? "barbervision-development-rate-limit-secret" : "");
+    const segredoRateLimit = obterSegredoRateLimit();
 
     if (!enderecoRede) {
       return Response.json({ erro: "Não foi possível validar a origem da solicitação." }, { status: 503 });

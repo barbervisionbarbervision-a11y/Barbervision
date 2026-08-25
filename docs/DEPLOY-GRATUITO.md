@@ -17,7 +17,7 @@ Essa composição serve para demonstração e piloto técnico. O Render Free pod
 
 ### Diagnóstico atual do cadastro público
 
-`POST /api/clientes` usa `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SECRET_KEY` apenas no servidor. A persistência hospedada foi comprovada em 24/08. Para publicar a proteção de 25/08, o Render também exige `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `BARBERVISION_TURNSTILE_HOSTNAMES=barbervision.onrender.com` e um `BARBERVISION_RATE_LIMIT_SECRET` aleatório com pelo menos 32 caracteres. Nunca use chaves de teste do Turnstile em produção nem a URL do Dashboard como URL do Supabase.
+`POST /api/clientes` usa `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SECRET_KEY` apenas no servidor. A persistência hospedada foi comprovada em 24/08. A proteção exige `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` e `BARBERVISION_TURNSTILE_HOSTNAMES=barbervision.onrender.com`. Um `BARBERVISION_RATE_LIMIT_SECRET` aleatório com pelo menos 32 caracteres é recomendado; se o Render não o disponibilizar, o servidor deriva por HMAC um segredo separado da chave privada do Turnstile. Nunca use chaves de teste do Turnstile em produção nem a URL do Dashboard como URL do Supabase.
 3. Publique os templates `supabase/templates/invite.html` e `recovery.html`.
 4. Mantenha signup público desabilitado.
 5. Anote URL, publishable key e secret key. Nunca coloque a secret key no navegador ou Git.
