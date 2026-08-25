@@ -271,12 +271,14 @@ async function setupFixtures(admin, ids) {
           id,
           barbearia_id,
           nome,
+          email,
+          email_normalizado,
           whatsapp,
           whatsapp_normalizado,
           criado_por
         ) values
-          ($1, $3, 'Cliente já atribuído', '+55 (85) 90000-0101', '5585900000101', $4),
-          ($2, $3, 'Cliente da corrida', '+55 (85) 90000-0102', '5585900000102', $4)
+          ($1, $3, 'Cliente já atribuído', 'atribuido@teste.invalid', 'atribuido@teste.invalid', '+55 (85) 90000-0101', '5585900000101', $4),
+          ($2, $3, 'Cliente da corrida', 'corrida@teste.invalid', 'corrida@teste.invalid', '+55 (85) 90000-0102', '5585900000102', $4)
       `,
       [
         ids.clientExisting,

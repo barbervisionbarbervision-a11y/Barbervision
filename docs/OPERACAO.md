@@ -22,7 +22,7 @@ Situação confirmada nesta revisão:
 - o Git está operacional e o commit baseline `7c34dab` foi confirmado;
 - convites e provisionamento têm código e contratos SQL cobertos por pgTAP, mas nenhuma jornada real foi executada/testada;
 - o lint foi repetido em 21/08 e terminou com zero erros e 18 warnings; o build aprovado continua sendo o de 14/08 e o smoke HTTP permanece evidência histórica de 13/08;
-- `db:start`, reset, lint, pgTAP 170/170, concorrência, rollback/roll-forward 5–4, JWT/Data API, Storage com blob real e Auth/E2E com lifecycle passam localmente;
+- reset das dez migrations, pgTAP 192/192, concorrência, rollback/roll-forward 10–9, JWT/Data API, Storage com blob real e Auth/E2E com lifecycle passam localmente; o lint amplo do PostgreSQL 17 ainda inclui falsos positivos internos do pgTAP;
 - privacidade de selfies e primeiro fluxo vertical persistido ainda não começaram como implementação de produção.
 
 Consequência operacional: o projeto está adequado para demonstração controlada com dados fictícios. Ainda não está adequado para cadastrar barbearias, usuários ou clientes reais.
@@ -199,14 +199,16 @@ Oito migrations estão versionadas:
 6. `20260822010000_owner_reads_inactive_member_profiles.sql`: leitura operacional de perfis inativos vinculados.
 7. `20260822020000_owner_provisioning_resume.sql`: retomada segura do provisionamento do primeiro dono.
 8. `20260822030000_invite_email_outbox.sql`: fila privada, lease, retry e reconciliação de expiração.
+9. `20260824010000_clientes_email.sql`: e-mail exibido/normalizado do cliente público.
+10. `20260824020000_owner_mfa_optional.sql`: TOTP recomendado, mas opcional para o dono permanente.
 
 Limites atuais:
 
-- as oito migrations e o seed foram aplicados por `db:reset`, com encerramento limpo e validação pós-reset aprovada;
+- as dez migrations e o seed atualizado foram aplicados por `db:reset` em 24/08, com encerramento limpo e validação pós-reset aprovada;
 - os três pgTAPs passaram 59 + 112 + 21 asserções; cobrem RLS, assurance/onboarding/lifecycle e outbox;
 - não há JWT real, TOTP, callback ou Data API nos testes SQL;
 - o bucket de selfies permanece deliberadamente sem policy pública/cliente até a etapa de privacidade;
-- os rollbacks 5–4, a reconciliação de `supabase_migrations` e o roll-forward foram ensaiados em 22/08; o procedimento está em [Runbook de rollback do banco](ROLLBACK-BANCO.md);
+- os rollbacks históricos 8–4 e o ensaio incremental 10–9, com reconciliação de `supabase_migrations` e roll-forward, estão registrados no [Runbook de rollback do banco](ROLLBACK-BANCO.md);
 - as migrations 5–8 passaram por `db:reset`; `db:lint` e `db:test` 192/192 passaram depois;
 - o runner concorrente exige confirmação exata e comentário marcador; as duas corridas foram aprovadas no banco local descartável em 22/08;
 - seed e fixtures SQL não equivalem a contas utilizáveis por `signInWithPassword`.
@@ -279,9 +281,9 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 - [x] abrir o Docker Desktop como `leoto`; processos de interface e backend ficaram ativos;
 - [x] comprovar que o engine da sessão `leoto` inicia PostgreSQL/containers e aplica migrations/seed; observado transitoriamente em 14/08;
 - [x] manter `54321`, `54322`, `54323`, Auth, Storage e Studio saudáveis com CLI 2.115.0;
-- [ ] repetir `db:reset` até exit `0`; migrations/seed, lint e pgTAP pós-reset já estão aprovados;
+- [x] repetir `db:reset` até exit `0`; dez migrations, seed e pgTAP pós-reset aprovados em 24/08;
 - [x] versionar testes para e-mail não confirmado, dono AAL1, dono AAL2, funcionário, convites, lifecycle e auditoria;
-- [x] executar as 192 asserções; runner concorrente permanece evidência histórica e deve ser repetido após o ensaio 8–4;
+- [x] executar as 192 asserções e repetir integração/concorrência após atualizar fixtures para as migrations 9–10;
 - [ ] confirmar que o bucket de selfies não possui acesso acidental;
 - [x] adicionar down scripts defensivos para assurance e onboarding/lifecycle;
 - [x] ensaiar rollback/roll-forward e definir o tratamento do histórico de migrations.
@@ -320,13 +322,12 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 
 ## Sequência canônica de validação
 
-1. Marcar o banco descartável, executar `db:test:concurrency` e guardar evidência.
-5. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
-6. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-7. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-8. Preservar a suíte Playwright aprovada e ampliá-la para lifecycle completo, refresh/expiração e falhas.
-9. Fechar gaps operacionais: provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-10. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Marcar o banco descartável, executar pgTAP, integração JWT/Storage e concorrência e guardar evidência.
+2. Usar o runbook para ensaiar rollbacks incrementais e repetir os gates após o roll-forward.
+3. Restringir o lint às schemas do aplicativo para não tratar incompatibilidades internas do pgTAP/PostgreSQL 17 como falha do produto.
+4. Preservar a suíte Playwright aprovada e ampliá-la para lifecycle completo, refresh/expiração e falhas.
+5. Fechar gaps operacionais: proteção distribuída, scheduler da outbox, reatribuição estreita, transferência de dono e seleção multi-tenant.
+6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 ## Privacidade e operação real
 

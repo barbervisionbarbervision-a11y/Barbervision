@@ -17,7 +17,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 | Passo | Estado | Gate atual |
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
-| 2 — Supabase, tenant e RLS | Oito migrations validadas localmente; dez aplicadas no hospedado | Atualizar o seed para as migrations 9–10, repetir os gates e integrá-los à CI |
+| 2 — Supabase, tenant e RLS | Dez migrations validadas localmente e aplicadas no hospedado | Isolar warnings internos do pgTAP no lint e integrar os gates à CI |
 | 3 — Auth real | Primeiro dono, callback e entrega Brevo comprovados; MFA opcional publicado | Provar recuperação, isolamento e operações administrativas na matriz remota |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
@@ -83,14 +83,13 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — atualizar e revalidar o banco local**: adicionar e-mails válidos ao seed e repetir reset, lint, pgTAP, integração e rollback/roll-forward com as dez migrations.
-2. **P0 — endurecer o cadastro público já funcional**: adicionar rate limit/CAPTCHA, teste automatizado e política de consentimento; remover o registro sintético antes do piloto.
-3. **P0 — fechar o hardening do primeiro dono**: o fluxo hospedado já chegou até ativação/MFA; agora testar a escolha **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
-4. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
+1. **P0 — endurecer o cadastro público já funcional**: adicionar rate limit/CAPTCHA, teste automatizado e política de consentimento; remover o registro sintético antes do piloto.
+2. **P0 — fechar o hardening do primeiro dono**: testar hospedado **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
+3. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
 5. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 6. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
-Concluídos nesta fundação: lifecycle de funcionário, Auth/e-mail/TOTP, compensações autoritativas, provisionamento retomável, sessão/recuperação, E2E atualizado da outbox, rollback/roll-forward 8–4 e corrida real entre dois workers.
+Concluídos nesta fundação: lifecycle de funcionário, Auth/e-mail/TOTP opcional, compensações autoritativas, provisionamento retomável, sessão/recuperação, reset das dez migrations, pgTAP 192/192, integração JWT/Storage, rollback/roll-forward 10–9 e corrida real da outbox.
 
 Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar painel, catálogo, produtos, financeiro e operação.
 
@@ -135,14 +134,14 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Executar `npm run db:test`: aprovado em 22/08 com 59/59 no passo 2 e 112/112 no passo 3.
 - [x] Corrigir os três cenários de `UPDATE` e o fixture que isola a constraint de formato do telefone.
 - [x] Confirmar que todas as 192 asserções passam após reset limpo.
-- [ ] Após o roll-forward, repetir `db:lint`, os 168 pgTAPs e o runner concorrente e comparar o resultado com a baseline.
+- [x] Após o roll-forward 10–9, repetir pgTAP 192/192 e confirmar as dez versões; integração e concorrência também passaram nesta rodada.
 - [x] Criar fixtures efêmeras Auth reais para dono AAL1/AAL2, funcionário e usuário cross-tenant nos harnesses locais, com limpeza ao final.
 - [x] Criar harness reproduzível para Data API e Storage: `npm run db:test:integration` aprovado com JWT/TOTP e blob reais.
 - [x] Testar Data API com JWTs reais, incluindo AAL1/AAL2, funcionário atribuído, suspenso, sem membership e cross-tenant.
 - [ ] Testar leitura/escrita de Storage com URLs assinadas.
-- [ ] Testar tenant A sem acesso ao tenant B.
-- [ ] Testar funcionário sem acesso a cliente não atribuído.
-- [ ] Testar dono AAL1 e AAL2 com acesso ao próprio tenant após a migration 10.
+- [x] Testar tenant A sem acesso ao tenant B no harness JWT/Storage.
+- [x] Testar funcionário sem acesso a cliente não atribuído.
+- [x] Testar dono AAL1 e AAL2 com acesso ao próprio tenant após a migration 10.
 - [ ] Testar conta, perfil, tenant ou membership inativos cortando acesso com JWT ainda válido.
 - [ ] Verificar plano de índices com volume representativo.
 - [ ] Registrar evidência, versão do PostgreSQL/CLI e procedimento de reprodução.
@@ -591,7 +590,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Inventário atual: 10 migrations, 10 rollbacks e 3 pgTAPs com 192 asserções históricas.
 - [x] Tornar o autenticador TOTP opcional, com ação **Configurar depois** e acesso posterior pela tela de Segurança.
 - [ ] Criar step-up explícito para futuras operações de alto risco, sem voltar a bloquear todo o painel em AAL1.
-- [ ] Adicionar testes de banco para a migration 9 e repetir reset/lint/pgTAP.
+- [x] Atualizar seed e fixtures para e-mail de cliente e repetir reset das dez migrations + pgTAP 192/192.
 - [x] Git operacional e baseline `7c34dab` confirmados; árvore limpa antes desta revisão.
 - [x] `npm run build` aprovado em 22/08 com 31 páginas, 2 Route Handlers e Proxy.
 - [x] `npm run db:lint` aprovado em 22/08 sem erros de schema.
@@ -599,7 +598,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] pgTAP do passo 2 aprovado com 59/59.
 - [x] Migration `20260813010000` identificada em fonte com duas tabelas e nove RPCs no schema `public`.
 - [x] Docker Desktop 4.86.0 e Docker CLI 29.7.2 instalados; ativação elevada do WSL terminou com exit `0`.
-- [x] Reset limpo de 23/08 aplicou as oito migrations e `supabase/seed.sql`.
+- [x] Reset limpo de 24/08 aplicou as dez migrations e o seed com e-mails fictícios válidos.
 - [x] Auth, Storage e Studio responderam `200`; containers necessários estão saudáveis.
 - [x] Simulador não foi alterado nesta revisão documental.
 
@@ -617,8 +616,8 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Rollbacks 4–5 ensaiados historicamente, com histórico reconciliado e roll-forward comprovado.
 - [x] Ensaiar o conjunto atual 8–4, reconciliar cinco versões e repetir lint, pgTAP 192/192 e concorrência em 23/08.
 - [x] Runner concorrente executado em 22/08 no banco local marcado: duas corridas aprovadas e limpeza dos fixtures concluída.
-- [ ] Data API autorizada por JWT e Storage funcional com upload/download real; health check `200` não encerra este gate.
-- [ ] Login, convite, recuperação e MFA reais.
+- [x] Data API autorizada por JWT e Storage funcional com upload/download real no ambiente local descartável.
+- [x] Login, recuperação TOTP opcional e isolamento local reais; matriz remota completa continua pendente.
 - [ ] Smoke visual atualizado de todas as rotas; o smoke HTTP de contenção já passou.
 
 ## Regra de atualização

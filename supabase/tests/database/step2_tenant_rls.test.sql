@@ -170,11 +170,11 @@ values
   ('91000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000004', 'funcionario', 'suspenso'),
   ('91000000-0000-4000-8000-000000000002', '90000000-0000-4000-8000-000000000003', 'dono', 'ativo');
 
-insert into public.clientes (id, barbearia_id, nome, whatsapp, whatsapp_normalizado)
+insert into public.clientes (id, barbearia_id, nome, email, email_normalizado, whatsapp, whatsapp_normalizado)
 values
-  ('92000000-0000-4000-8000-000000000001', '91000000-0000-4000-8000-000000000001', 'Cliente A1', '5585900000101', '5585900000101'),
-  ('92000000-0000-4000-8000-000000000002', '91000000-0000-4000-8000-000000000001', 'Cliente A2', '5585900000102', '5585900000102'),
-  ('92000000-0000-4000-8000-000000000003', '91000000-0000-4000-8000-000000000002', 'Cliente B1', '5585900000201', '5585900000201');
+  ('92000000-0000-4000-8000-000000000001', '91000000-0000-4000-8000-000000000001', 'Cliente A1', 'cliente-a1@teste.invalid', 'cliente-a1@teste.invalid', '5585900000101', '5585900000101'),
+  ('92000000-0000-4000-8000-000000000002', '91000000-0000-4000-8000-000000000001', 'Cliente A2', 'cliente-a2@teste.invalid', 'cliente-a2@teste.invalid', '5585900000102', '5585900000102'),
+  ('92000000-0000-4000-8000-000000000003', '91000000-0000-4000-8000-000000000002', 'Cliente B1', 'cliente-b1@teste.invalid', 'cliente-b1@teste.invalid', '5585900000201', '5585900000201');
 
 insert into public.atribuicoes_cliente (barbearia_id, cliente_id, usuario_id)
 values (
@@ -202,23 +202,29 @@ select is((select count(*)::bigint from public.membros_barbearia), 3::bigint, 'd
 select is((select count(*)::bigint from public.perfis), 3::bigint, 'dono A vê perfis vinculados ao tenant A, inclusive membership inativa');
 select is((select count(*)::bigint from public.atribuicoes_cliente), 1::bigint, 'dono A vê atribuições do tenant A');
 
-select lives_ok(
+select throws_ok(
   $$
     insert into public.clientes (
       id,
       barbearia_id,
       nome,
+      email,
+      email_normalizado,
       whatsapp,
       whatsapp_normalizado
     ) values (
       '92000000-0000-4000-8000-000000000004',
       '91000000-0000-4000-8000-000000000001',
       'Cliente A3',
+      'cliente-a3@teste.invalid',
+      'cliente-a3@teste.invalid',
       '5585900000103',
       '5585900000103'
     )
   $$,
-  'dono A cria cliente no próprio tenant'
+  '42501',
+  'permission denied for table clientes',
+  'dono não insere cliente diretamente; cadastro usa endpoint server-only'
 );
 
 select throws_ok(
@@ -227,18 +233,22 @@ select throws_ok(
       id,
       barbearia_id,
       nome,
+      email,
+      email_normalizado,
       whatsapp,
       whatsapp_normalizado
     ) values (
       '92000000-0000-4000-8000-000000000005',
       '91000000-0000-4000-8000-000000000002',
       'Tentativa Cross Tenant',
+      'cross-tenant@teste.invalid',
+      'cross-tenant@teste.invalid',
       '5585900000991',
       '5585900000991'
     )
   $$,
   '42501',
-  'new row violates row-level security policy for table "clientes"',
+  'permission denied for table clientes',
   'dono A não cria cliente no tenant B'
 );
 
@@ -337,18 +347,22 @@ select throws_ok(
       id,
       barbearia_id,
       nome,
+      email,
+      email_normalizado,
       whatsapp,
       whatsapp_normalizado
     ) values (
       '92000000-0000-4000-8000-000000000006',
       '91000000-0000-4000-8000-000000000001',
       'Tentativa do funcionário',
+      'funcionario@teste.invalid',
+      'funcionario@teste.invalid',
       '5585900000992',
       '5585900000992'
     )
   $$,
   '42501',
-  'new row violates row-level security policy for table "clientes"',
+  'permission denied for table clientes',
   'funcionário não cria cliente'
 );
 reset role;
@@ -510,11 +524,15 @@ select throws_ok(
     insert into public.clientes (
       barbearia_id,
       nome,
+      email,
+      email_normalizado,
       whatsapp,
       whatsapp_normalizado
     ) values (
       '91000000-0000-4000-8000-000000000001',
       'Telefone inválido',
+      'telefone-invalido@teste.invalid',
+      'telefone-invalido@teste.invalid',
       '123',
       '123'
     )
@@ -529,11 +547,15 @@ select throws_ok(
     insert into public.clientes (
       barbearia_id,
       nome,
+      email,
+      email_normalizado,
       whatsapp,
       whatsapp_normalizado
     ) values (
       '91000000-0000-4000-8000-000000000001',
       'Telefone divergente',
+      'telefone-divergente@teste.invalid',
+      'telefone-divergente@teste.invalid',
       '5585900000777',
       '5585900000888'
     )
@@ -548,11 +570,15 @@ select throws_ok(
     insert into public.clientes (
       barbearia_id,
       nome,
+      email,
+      email_normalizado,
       whatsapp,
       whatsapp_normalizado
     ) values (
       '91000000-0000-4000-8000-000000000001',
       'Telefone duplicado',
+      'telefone-duplicado@teste.invalid',
+      'telefone-duplicado@teste.invalid',
       '5585900000101',
       '5585900000101'
     )

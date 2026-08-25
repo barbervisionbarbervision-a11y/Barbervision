@@ -228,9 +228,9 @@ docs/                    documentação técnica e de produto
 - O build de 24/08 confirmou 32 páginas, 6 Route Handlers e Proxy. Sem rede, ele pode falhar ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
 - O Supabase necessário está saudável; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Storage foi validado com JWT e blob real.
 - As três suítes pgTAP passaram: 59/59, 112/112 e 21/21, totalizando 192/192.
-- O runner concorrente recusou conectar sem a confirmação explícita do banco descartável, conforme sua guarda de segurança.
+- O runner concorrente passou no banco local explicitamente marcado: último dono, revogação/atribuição e dois workers da outbox sem duplicação.
 - O Git está operacional, com baseline `7c34dab` confirmado.
-- Com CLI 2.115.0, `db:start`, `db:reset`, lint SQL e pgTAP 192/192 passam atualmente; concorrência, rollback 5–4, JWT/Data API, Storage e o E2E anterior de Auth/e-mail/TOTP/lifecycle são evidências históricas ainda válidas no escopo testado.
+- Em 24/08, um reset limpo aplicou as dez migrations e o seed atualizado. pgTAP 192/192, JWT/Data API, Storage, recuperação TOTP e concorrência passaram; rollback/roll-forward das migrations 10–9 também foi aprovado.
 - O smoke HTTP de contenção permanece evidência histórica de 13/08/2026, e o simulador continua sujeito a validação em aparelhos reais antes do piloto.
 
 Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
@@ -254,10 +254,10 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Corrigir e comprovar a gravação do cadastro público no Supabase; validar a URL pública configurada no Render e confirmar a existência do tenant usado pelo slug.
-2. Validar no hospedado `/barbeiro/criar-conta`, o convite Brevo, a confirmação, a definição de senha e o provisionamento transacional. O signup genérico de funcionários continua bloqueado.
-3. Validar SMTP Brevo com envio/recebimento real, aplicar os templates hospedados e testar convite, confirmação e recuperação.
-4. Publicar e validar o scheduler Cloudflare da outbox.
+1. Endurecer o cadastro público funcional com rate limit distribuído/CAPTCHA, teste automatizado e consentimento; remover o registro sintético antes do piloto.
+2. Provar no hospedado a opção **Configurar depois**, ativação posterior do TOTP, recuperação e isolamento multi-tenant.
+3. Aplicar os templates finais de e-mail e testar convite, confirmação e recuperação no hospedado.
+4. Publicar e validar o scheduler Cloudflare da outbox, incluindo `401`, retry e logs redigidos.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.
 
 Depois desses gates, o passo 5 persiste o fluxo vertical; painel, catálogo, produtos, financeiro e operação vêm nas fases seguintes.

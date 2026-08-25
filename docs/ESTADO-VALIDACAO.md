@@ -5,16 +5,16 @@
 ## Resumo executivo
 
 - O repositório Git está operacional e possui o commit baseline `7c34dab` (`chore: cria baseline inicial do Barber Vision`). A árvore estava limpa antes desta revisão documental.
-- O projeto possui dez migrations, dez rollbacks e três suítes pgTAP com 192 asserções históricas. As migrations 9 e 10 foram aplicadas no remoto, mas ainda não possuem pgTAP próprio.
+- O projeto possui dez migrations, dez rollbacks e três suítes pgTAP com 192 asserções. Em 24/08, reset limpo aplicou as dez migrations e o seed atualizado; as 192 asserções passaram.
 - O build de produção e o launcher passam.
 - O lint JavaScript passa com zero erros e 18 warnings.
 - O Supabase local necessário responde: PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos. Imgproxy, Analytics, Vector e Pooler estão desativados/não usados.
-- O lint do schema PostgreSQL passa sem erros.
+- O lint do schema do aplicativo não revelou regressão; no PostgreSQL 17, o lint amplo reporta incompatibilidades internas da extensão pgTAP e precisa ser restringido para virar gate limpo.
 - As suítes pgTAP do passo 3 passam com 112 + 21 asserções.
 - A suíte pgTAP do passo 2 passa com 59/59 asserções após a correção do harness.
 - O runner concorrente foi executado no banco local marcado como descartável: as duas corridas passaram e os fixtures foram removidos.
-- Com CLI 2.115.0, `db:start` e `db:reset` encerraram com exit `0`. Oito migrations, seed, lint e pgTAP 192/192 foram confirmados.
-- O rollback manual das migrations 5 e 4, a reconciliação do histórico e o roll-forward pelo CLI foram ensaiados com sucesso. As migrations/rollbacks 6–8 foram aplicadas por reset e testadas, mas ainda não entraram em um ensaio completo 8–4.
+- Em 24/08, `db:reset` encerrou com exit `0` sobre as dez migrations; seed, pgTAP 192/192, integração JWT/Storage e concorrência foram confirmados.
+- O rollback/roll-forward histórico 8–4 permanece válido; nesta rodada, as migrations 10–9 também foram revertidas, removidas do histórico e reaplicadas pelo CLI, com 192/192 após o roll-forward e dez versões confirmadas.
 - O harness JWT criou identidades Auth descartáveis, elevou um dono por TOTP a AAL2 e validou Data API/RLS e Storage com blob real. Também confirmou refresh válido, rejeição de access token expirado, logout global invalidando refresh token de outra sessão e recuperação operacional que remove o fator TOTP. A limpeza terminou sem fixtures temporários.
 - A suíte Playwright criou fixtures efêmeras e comprovou login do dono, bootstrap AAL1, enrollment/verify TOTP, AAL2, convite por Admin API, entrega no Mailpit, ativação do funcionário, recuperação de senha, revogação de convite e logout. A suíte passou em 29,9 s e removeu os fixtures ao final.
 - Durante o E2E foram corrigidos o efeito MFA incompatível com o replay do React Strict Mode, o QR `data:image/svg+xml` bloqueado pelo `next/image` e o redirecionamento do callback para usar a origem canônica validada da aplicação.
@@ -101,7 +101,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 | Passo | Estado em 24/08/2026 | Próximo gate |
 | ---: | --- | --- |
 | 1 | Concluído para demo controlada | preservar contenção e corrigir warnings sem regressão |
-| 2 | Oito migrations validadas localmente; nove sincronizadas no hospedado | atualizar o seed e repetir todos os gates sobre a migration 9; depois integrar à CI |
+| 2 | Dez migrations validadas localmente e sincronizadas no hospedado | restringir o lint às schemas do app e integrar os gates à CI |
 | 3 | Jornada local aprovada; redirects/SMTP e cadastro web do primeiro dono implementados | validar cadastro/e-mail hospedados, reforçar antiabuso e concluir Cloudflare/matriz remota |
 | 4 | Não iniciado como implementação de produção | fechar política de consentimento, retenção e descarte |
 | 5 | Não iniciado | persistir um fluxo público mínimo e seguro |
@@ -112,8 +112,8 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Corrigir e retestar `POST /api/clientes`, incluindo URL Supabase, secret server-only e existência do tenant do slug.
-2. Validar `/barbeiro/criar-conta` no hospedado e reforçar o antiabuso antes do piloto, sem abrir signup irrestrito de funcionários.
-3. Provar SMTP/templates hospedados com convite, confirmação e recuperação.
+1. Endurecer `POST /api/clientes` com proteção distribuída/CAPTCHA, consentimento e teste automatizado.
+2. Provar no hospedado TOTP opcional, recuperação e isolamento; manter signup irrestrito de funcionários bloqueado.
+3. Finalizar templates e provar confirmação/recuperação hospedadas.
 4. Publicar/testar o scheduler Cloudflare e executar a matriz remota controlada.
 5. Implementar privacidade e só então ampliar o fluxo persistido.

@@ -135,15 +135,15 @@ async function main() {
     await db.query("insert into public.perfis (usuario_id,nome,ativo) select * from unnest($1::uuid[],$2::text[],$3::boolean[])", [users.map((u) => u.id), users.map((u) => u.role), users.map(() => true)]);
     await db.query("insert into public.barbearias (id,nome,slug,status,criado_por) values ($1,'JWT A',$3,'ativa',$5),($2,'JWT B',$4,'ativa',$6)", [ids.tenantA, ids.tenantB, `jwt-a-${suffix}`, `jwt-b-${suffix}`, byRole["owner-a"].id, byRole["owner-b"].id]);
     await db.query("insert into public.membros_barbearia (barbearia_id,usuario_id,papel,status,convidado_por) values ($1,$3,'dono','ativo',$3),($2,$4,'dono','ativo',$4),($1,$5,'funcionario','ativo',$3),($1,$6,'funcionario','suspenso',$3)", [ids.tenantA, ids.tenantB, byRole["owner-a"].id, byRole["owner-b"].id, byRole.employee.id, byRole.suspended.id]);
-    await db.query("insert into public.clientes (id,barbearia_id,nome,whatsapp,whatsapp_normalizado,criado_por) values ($1,$4,'Atribuído','+55 85 90000-0201','5585900000201',$6),($2,$4,'Não atribuído','+55 85 90000-0202','5585900000202',$6),($3,$5,'Cross tenant','+55 85 90000-0203','5585900000203',$7)", [ids.clientAssigned, ids.clientUnassigned, ids.clientCross, ids.tenantA, ids.tenantB, byRole["owner-a"].id, byRole["owner-b"].id]);
+    await db.query("insert into public.clientes (id,barbearia_id,nome,email,email_normalizado,whatsapp,whatsapp_normalizado,criado_por) values ($1,$4,'Atribuído','atribuido@teste.invalid','atribuido@teste.invalid','+55 85 90000-0201','5585900000201',$6),($2,$4,'Não atribuído','nao-atribuido@teste.invalid','nao-atribuido@teste.invalid','+55 85 90000-0202','5585900000202',$6),($3,$5,'Cross tenant','cross-tenant@teste.invalid','cross-tenant@teste.invalid','+55 85 90000-0203','5585900000203',$7)", [ids.clientAssigned, ids.clientUnassigned, ids.clientCross, ids.tenantA, ids.tenantB, byRole["owner-a"].id, byRole["owner-b"].id]);
     await db.query("insert into public.atribuicoes_cliente (barbearia_id,cliente_id,usuario_id,atribuido_por) values ($1,$2,$3,$4)", [ids.tenantA, ids.clientAssigned, byRole.employee.id, byRole["owner-a"].id]);
     await db.query("commit");
 
     const ownerLogin = await signIn(byRole["owner-a"].email, password);
     const ownerAal1Client = client(publishableKey, ownerLogin.token);
-    await expectRows(ownerAal1Client, "perfis", 1, "dono AAL1 lê o próprio perfil para bootstrap");
-    await expectRows(ownerAal1Client, "membros_barbearia", 1, "dono AAL1 lê a própria membership para bootstrap");
-    await expectRows(ownerAal1Client, "barbearias", 0, "dono AAL1 não lê tenant");
+    await expectRows(ownerAal1Client, "perfis", 3, "dono sem TOTP lê perfis do próprio tenant");
+    await expectRows(ownerAal1Client, "membros_barbearia", 3, "dono sem TOTP lê memberships do próprio tenant");
+    await expectRows(ownerAal1Client, "barbearias", 1, "dono sem TOTP lê o próprio tenant");
     const ownerAal2 = await elevateOwner(ownerLogin.authClient);
     await expectRows(client(publishableKey, ownerAal2), "barbearias", 1, "dono AAL2 lê somente o próprio tenant");
 
@@ -177,8 +177,12 @@ async function main() {
 
     const blob = new Blob([Buffer.from("barbervision-storage-jwt-test")], { type: "image/png" });
     let result = await client(publishableKey, ownerLogin.token).storage.from(bucket).upload(validPath, blob);
-    invariant(result.error, "Upload de dono AAL1 deveria ser negado.");
-    console.log("[OK] Storage nega dono AAL1");
+    if (result.error) throw result.error;
+    const ownerAal1Download = await client(publishableKey, ownerLogin.token).storage.from(bucket).download(validPath);
+    if (ownerAal1Download.error) throw ownerAal1Download.error;
+    const ownerAal1Removal = await client(publishableKey, ownerLogin.token).storage.from(bucket).remove([validPath]);
+    if (ownerAal1Removal.error) throw ownerAal1Removal.error;
+    console.log("[OK] Storage permite dono sem TOTP no próprio tenant");
     result = await client(publishableKey, employeeLogin.token).storage.from(bucket).upload(validPath, blob);
     invariant(result.error, "Upload de funcionário deveria ser negado.");
     console.log("[OK] Storage nega funcionário");

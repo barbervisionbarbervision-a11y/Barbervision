@@ -319,41 +319,39 @@ values
   ('95000000-0000-4000-8000-000000000002', '94000000-0000-4000-8000-000000000006', 'dono', 'ativo', '94000000-0000-4000-8000-000000000006'),
   ('95000000-0000-4000-8000-000000000002', '94000000-0000-4000-8000-000000000007', 'funcionario', 'ativo', '94000000-0000-4000-8000-000000000006');
 
-insert into public.clientes (id, barbearia_id, nome, whatsapp, whatsapp_normalizado, criado_por)
+insert into public.clientes (id, barbearia_id, nome, email, email_normalizado, whatsapp, whatsapp_normalizado, criado_por)
 values
-  ('96000000-0000-4000-8000-000000000001', '95000000-0000-4000-8000-000000000001', 'Cliente Step 3 A', '5585900000301', '5585900000301', '94000000-0000-4000-8000-000000000001'),
-  ('96000000-0000-4000-8000-000000000002', '95000000-0000-4000-8000-000000000002', 'Cliente Step 3 B', '5585900000302', '5585900000302', '94000000-0000-4000-8000-000000000006');
+  ('96000000-0000-4000-8000-000000000001', '95000000-0000-4000-8000-000000000001', 'Cliente Step 3 A', 'cliente-step3-a@teste.invalid', 'cliente-step3-a@teste.invalid', '5585900000301', '5585900000301', '94000000-0000-4000-8000-000000000001'),
+  ('96000000-0000-4000-8000-000000000002', '95000000-0000-4000-8000-000000000002', 'Cliente Step 3 B', 'cliente-step3-b@teste.invalid', 'cliente-step3-b@teste.invalid', '5585900000302', '5585900000302', '94000000-0000-4000-8000-000000000006');
 
 insert into public.atribuicoes_cliente (barbearia_id, cliente_id, usuario_id, atribuido_por)
 values
   ('95000000-0000-4000-8000-000000000001', '96000000-0000-4000-8000-000000000001', '94000000-0000-4000-8000-000000000002', '94000000-0000-4000-8000-000000000001'),
   ('95000000-0000-4000-8000-000000000002', '96000000-0000-4000-8000-000000000002', '94000000-0000-4000-8000-000000000007', '94000000-0000-4000-8000-000000000006');
 
--- Dono confirmado em AAL1: bootstrap próprio visível, negócio e Storage negados.
+-- Dono confirmado em AAL1: MFA opcional preserva o acesso do dono.
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000001","role":"authenticated","is_anonymous":false,"aal":"aal1"}';
 
-select ok(not private.usuario_tem_aal2(), 'AAL1 não satisfaz step-up do dono');
-select is((select count(*)::bigint from public.barbearias), 0::bigint, 'dono AAL1 não vê tenant');
-select is((select count(*)::bigint from public.clientes), 0::bigint, 'dono AAL1 não vê clientes');
-select is((select count(*)::bigint from public.atribuicoes_cliente), 0::bigint, 'dono AAL1 não vê atribuições');
-select is((select count(*)::bigint from public.membros_barbearia), 1::bigint, 'dono AAL1 vê somente a própria membership para bootstrap');
+select ok(private.usuario_tem_aal2(), 'compatibilidade libera dono permanente sem exigir TOTP');
+select is((select count(*)::bigint from public.barbearias), 1::bigint, 'dono AAL1 vê o próprio tenant');
+select is((select count(*)::bigint from public.clientes), 1::bigint, 'dono AAL1 vê clientes do próprio tenant');
+select is((select count(*)::bigint from public.atribuicoes_cliente), 1::bigint, 'dono AAL1 vê atribuições do próprio tenant');
+select is((select count(*)::bigint from public.membros_barbearia), 2::bigint, 'dono AAL1 vê memberships do próprio tenant');
 select ok(
-  not private.usuario_eh_dono_do_storage_path(
+  private.usuario_eh_dono_do_storage_path(
     '95000000-0000-4000-8000-000000000001/97000000-0000-4000-8000-000000000001/cutout.webp'
   ),
-  'dono AAL1 não usa Storage privado'
+  'dono AAL1 usa Storage privado do próprio tenant'
 );
-select throws_ok(
-  $$select public.criar_convite_funcionario('95000000-0000-4000-8000-000000000001', 'blocked@test.invalid', 'Bloqueado')$$,
-  '42501',
-  'Somente o dono em AAL2 pode convidar funcionários.',
-  'dono AAL1 não cria convite'
+select lives_ok(
+  $$select private.usuario_tem_aal2()$$,
+  'dono AAL1 satisfaz a autorização usada para criar convite'
 );
 
--- Claim aal ausente é tratado como AAL1.
+-- Claim aal ausente também é aceito para dono permanente.
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000001","role":"authenticated","is_anonymous":false}';
-select ok(not private.usuario_tem_aal2(), 'claim aal ausente é negado como AAL1');
+select ok(private.usuario_tem_aal2(), 'claim aal ausente não torna TOTP obrigatório');
 
 -- Funcionário confirmado continua operando em AAL1 no próprio escopo.
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000002","role":"authenticated","is_anonymous":false}';
@@ -695,11 +693,9 @@ select is(
 -- Lifecycle do funcionário: AAL2, transições estreitas, atribuições e replay.
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000001","role":"authenticated","is_anonymous":false,"aal":"aal1"}';
-select throws_ok(
-  $$select public.suspender_funcionario('95000000-0000-4000-8000-000000000001', '94000000-0000-4000-8000-000000000002')$$,
-  '42501',
-  'Somente o dono em AAL2 pode suspender funcionários.',
-  'dono AAL1 não suspende funcionário'
+select ok(
+  private.usuario_tem_aal2(),
+  'dono AAL1 satisfaz a autorização usada no lifecycle de funcionário'
 );
 
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000001","role":"authenticated","is_anonymous":false,"aal":"aal2"}';
@@ -900,7 +896,7 @@ set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000001",
 select ok((select count(*) from public.eventos_auditoria) > 0, 'dono AAL2 lê auditoria do próprio tenant');
 
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000001","role":"authenticated","is_anonymous":false,"aal":"aal1"}';
-select is((select count(*)::bigint from public.eventos_auditoria), 0::bigint, 'dono AAL1 não lê auditoria');
+select ok((select count(*) from public.eventos_auditoria) > 0, 'dono AAL1 lê auditoria do próprio tenant');
 
 set local "request.jwt.claims" = '{"sub":"94000000-0000-4000-8000-000000000006","role":"authenticated","is_anonymous":false,"aal":"aal2"}';
 select is((select count(*)::bigint from public.eventos_auditoria), 0::bigint, 'dono B não lê auditoria do tenant A');

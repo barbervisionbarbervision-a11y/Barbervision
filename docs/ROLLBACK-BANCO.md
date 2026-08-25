@@ -1,10 +1,15 @@
 # Runbook de rollback e roll-forward do banco
 
-Última validação: **23/08/2026**, rollback/roll-forward 8–4 aprovado.
+Última validação: **24/08/2026**. O ensaio 8–4 foi aprovado em 23/08; o ensaio incremental 10–9 foi aprovado em 24/08.
 
 ## Escopo
 
-Este runbook cobre o downgrade manual e defensivo das migrations 8–4:
+Este runbook cobre o downgrade manual e defensivo das migrations 10–4. As duas migrations mais recentes são:
+
+1. `20260824020000_owner_mfa_optional`;
+2. `20260824010000_clientes_email`.
+
+O conjunto histórico 8–4 é:
 
 1. `20260822030000_invite_email_outbox`;
 2. `20260822020000_owner_provisioning_resume`;
@@ -13,6 +18,8 @@ Este runbook cobre o downgrade manual e defensivo das migrations 8–4:
 5. `20260808013000_auth_assurance`.
 
 Ele foi desenhado para o Supabase local descartável. Não autoriza execução em produção. Em ambiente persistente, interrompa writers, confirme o alvo, faça backup verificado, defina janela, responsáveis, critérios de abortar e restauração antes de qualquer downgrade.
+
+O ensaio incremental 10–9 executa primeiro `owner_mfa_optional.down.sql`, depois `clientes_email.down.sql`, remove somente essas duas versões do histórico e usa `supabase migration up --local`. Em 24/08, as dez versões retornaram e o pgTAP passou 192/192.
 
 ## Guardas obrigatórias
 
@@ -53,7 +60,7 @@ Use os arquivos oficiais de `supabase/migrations/`, não cópias manuais:
 npx.cmd supabase migration up --local
 ```
 
-Confirme que o histórico voltou a conter exatamente as oito versões e que os objetos das migrations 4–8 existem novamente.
+Confirme que o histórico voltou a conter exatamente as dez versões e que os objetos das migrations revertidas existem novamente.
 
 ## Validação obrigatória posterior
 
@@ -71,7 +78,7 @@ Critérios de aprovação:
 - corrida do último dono permite exatamente uma revogação;
 - atribuição/revogação termina com membership revogada, zero atribuições e um evento;
 - fixtures concorrentes são removidos;
-- oito versões voltam a existir em `supabase_migrations.schema_migrations`.
+- dez versões voltam a existir em `supabase_migrations.schema_migrations`.
 
 ## Recuperação
 
