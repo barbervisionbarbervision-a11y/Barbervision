@@ -24,7 +24,7 @@
 - Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
 - O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. O conteúdo público do commit `ab97b14` foi conferido na tela de login, que já informa que o autenticador é opcional.
 - Site URL e redirects de produção foram configurados no Supabase; signup direto permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real de convite foi comprovada.
-- O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. A migration remota passou, mas a tentativa hospedada de gravação retornou erro; o log indicou resposta HTML inesperada e a URL pública do Supabase no Render foi corrigida/reimplantada, sem reteste conclusivo registrado.
+- O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. O reteste no tenant real `barbervision` retornou `201`; uma segunda chamada com o mesmo WhatsApp retornou o mesmo UUID, comprovando o upsert. O slug mock `barbearia-joao` retorna corretamente `404` porque não existe no remoto.
 - Uma secret key Supabase apareceu em captura durante esse formulário. O usuário confirmou sua revogação e substituição em 24/08; nenhum valor foi reproduzido neste repositório.
 
 ## Evidências de 24/08/2026
@@ -46,7 +46,7 @@
 | Build dos commits `3125aef`, `681c2a7` e `9ec8bd6` | aprovado; 31 páginas, 5 handlers e Proxy | rota dinâmica corrigida, API de clientes publicada e diagnóstico ampliado |
 | `npx.cmd supabase db push` da migration `20260824010000_clientes_email.sql` | aplicada sem erro | remoto passou a aceitar e-mail normalizado em clientes |
 | `npx.cmd supabase db push --dry-run` após a migration 10 | `Remote database is up to date`; nenhuma migration pendente | as dez migrations locais e remotas estão sincronizadas |
-| Cadastro público hospedado | endpoint alcançado, mas resposta final `500` | persistência ainda não validada; não marcar passo 5 como iniciado/concluído |
+| Cadastro público hospedado no slug `barbervision` | duas respostas `201`; UUID idêntico na criação e atualização | persistência e deduplicação por tenant/WhatsApp comprovadas com dado sintético |
 | Supabase Auth hospedado | Site URL, redirects, signup direto bloqueado, confirmação e SMTP Brevo configurados | entrega de convite comprovada; recuperação e templates finais ainda pendentes |
 | Cadastro do primeiro dono | botão `Começar agora`, página/API, criação de tenant e convite exercitados no hospedado | fluxo chegou à ativação e à escolha de MFA |
 | Callback público | falha inicial em `0.0.0.0:10000`; depois corrigido para `/auth/complete` e allowlist atualizada | origem interna eliminada do fluxo versionado |

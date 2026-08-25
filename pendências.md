@@ -33,7 +33,8 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 - [x] Landing pública por slug visual.
 - [x] Formulário público de nome, e-mail e WhatsApp.
 - [x] `POST /api/clientes` server-side e migration remota de e-mail de cliente.
-- [ ] Corrigir e comprovar a gravação hospedada; tentativa atual termina em erro do Supabase.
+- [x] Comprovar a gravação hospedada no tenant `barbervision`: criação retornou `201` e repetição do mesmo WhatsApp preservou o mesmo UUID.
+- [ ] Remover o registro sintético de validação `945ffed9-783a-4ff6-a33e-dace675ca987` antes do piloto.
 - [x] Upload/captura de selfie.
 - [x] Processamento visual no navegador com MediaPipe.
 - [x] Preparação automática local da região do cabelo.
@@ -82,8 +83,8 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — concluir o cadastro público mínimo**: corrigir a conexão remota de `POST /api/clientes`, confirmar tenant por slug e provar insert/upsert sem duplicação.
-2. **P0 — atualizar e revalidar o banco local**: adicionar e-mails válidos ao seed e repetir reset, lint, pgTAP, integração e rollback/roll-forward com as dez migrations.
+1. **P0 — atualizar e revalidar o banco local**: adicionar e-mails válidos ao seed e repetir reset, lint, pgTAP, integração e rollback/roll-forward com as dez migrations.
+2. **P0 — endurecer o cadastro público já funcional**: adicionar rate limit/CAPTCHA, teste automatizado e política de consentimento; remover o registro sintético antes do piloto.
 3. **P0 — fechar o hardening do primeiro dono**: o fluxo hospedado já chegou até ativação/MFA; agora testar a escolha **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
 4. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
 5. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.

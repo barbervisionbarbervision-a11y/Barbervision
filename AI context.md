@@ -17,7 +17,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
-- O cadastro público agora coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`; a migration de e-mail foi aplicada no remoto. A tentativa hospedada ainda retorna erro e não constitui persistência validada.
+- O cadastro público coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`. Em 24/08, o tenant real `barbervision` respondeu `201`; repetir o mesmo WhatsApp preservou o mesmo UUID, comprovando o upsert. `barbearia-joao` era apenas um slug mock e retornava corretamente `404`; o atalho inicial foi corrigido para `barbervision`.
 - `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo hospedado criou o primeiro dono, enviou o convite e chegou à ativação/MFA. Usa honeypot e limite básico por origem; ainda requer proteção distribuída mais forte antes do piloto.
 - O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
@@ -468,8 +468,8 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Encerrar o diagnóstico de `POST /api/clientes`: conferir credencial server-only e tenant do slug; comprovar insert/upsert e retry idempotente sem expor dados pessoais.
-2. Atualizar o seed e repetir reset, lint SQL, pgTAP, integração e rollback/roll-forward com as dez migrations.
+1. Atualizar o seed e repetir reset, lint SQL, pgTAP, integração e rollback/roll-forward com as dez migrations.
+2. Endurecer `POST /api/clientes` com rate limit/CAPTCHA e teste automatizado; remover o registro sintético antes do piloto.
 3. Provar hospedado **Configurar depois**, ativação posterior de TOTP e recuperação de senha; substituir o limite em memória por proteção distribuída/CAPTCHA.
 4. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
 5. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento sem dados reais.
