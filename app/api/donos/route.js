@@ -21,16 +21,31 @@ function excedeuLimite(chave) {
 function validar(valor) {
   const nome = String(valor?.nome || "").trim();
   const barbearia = String(valor?.barbearia || "").trim();
-  const slug = String(valor?.slug || "").trim().toLocaleLowerCase("pt-BR");
   const email = String(valor?.email || "").trim().toLocaleLowerCase("pt-BR");
   const website = String(valor?.website || "").trim();
 
   if (website) return null;
   if (nome.length < 2 || nome.length > 120 || /[\p{Cc}]/u.test(nome)) return null;
   if (barbearia.length < 2 || barbearia.length > 120 || /[\p{Cc}]/u.test(barbearia)) return null;
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length < 3 || slug.length > 80) return null;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return null;
-  return { nome, barbearia, slug, email };
+  return { nome, barbearia, email };
+}
+
+function slugBase(nome) {
+  const slug = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 72);
+  return slug.length >= 3 ? slug : `barbearia-${slug || "nova"}`;
+}
+
+async function encontrarSlugDisponivel(admin, nome) {
+  const base = slugBase(nome);
+  for (let numero = 1; numero <= 50; numero += 1) {
+    const candidato = numero === 1 ? base : `${base}-${numero}`;
+    const { data, error } = await admin.from("barbearias").select("id").eq("slug", candidato).maybeSingle();
+    if (error) throw new Error("Falha ao verificar o link da barbearia.");
+    if (!data) return candidato;
+  }
+  throw new Error("Não foi possível gerar um link disponível.");
 }
 
 export async function POST(request) {
@@ -47,8 +62,12 @@ export async function POST(request) {
   if (!entrada) return NextResponse.json({ erro: "Revise os dados informados." }, { status: 400 });
 
   const admin = criarClienteSupabaseAdmin();
-  const { data: tenant } = await admin.from("barbearias").select("id").eq("slug", entrada.slug).maybeSingle();
-  if (tenant) return NextResponse.json({ erro: "Esse endereço público já está em uso." }, { status: 409 });
+  let slug;
+  try {
+    slug = await encontrarSlugDisponivel(admin, entrada.barbearia);
+  } catch {
+    return NextResponse.json({ erro: "Não foi possível preparar a página da barbearia agora." }, { status: 500 });
+  }
 
   const origem = obterUrlBaseAplicacao();
   const convite = await admin.auth.admin.inviteUserByEmail(entrada.email, {
@@ -65,7 +84,7 @@ export async function POST(request) {
     p_usuario_id: usuarioId,
     p_nome: entrada.nome,
     p_barbearia_nome: entrada.barbearia,
-    p_slug: entrada.slug
+    p_slug: slug
   });
 
   if (provisionamento.error) {
@@ -74,5 +93,5 @@ export async function POST(request) {
     return NextResponse.json({ erro: "Não foi possível concluir o cadastro agora." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  return NextResponse.json({ ok: true, link: `${origem}/b/${slug}` }, { status: 201 });
 }
