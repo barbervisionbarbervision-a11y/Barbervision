@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **25/08/2026**. O Supabase remoto recebeu onze migrations e o Render está Live. A proteção do cadastro público — rate limit distribuído, Turnstile server-side e aceite versionado — está ativa e validada no hospedado. As prioridades seguintes são higienizar os dados de teste, executar a matriz Auth remota e publicar o Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. A proteção do cadastro público está ativa e validada no hospedado, e o cliente sintético foi removido com o cadastro real preservado. As prioridades seguintes são executar a matriz Auth remota e publicar o Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -34,7 +34,7 @@ Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operac
 6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das onze migrations e pgTAP 205/205 passaram localmente, incluindo rollback/roll-forward da migration 11. As evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/RLS, Storage real e Playwright permanecem válidas no escopo testado. Onze migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite, cadastro idempotente e proteção antiabuso foram comprovados remotamente.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das doze migrations e pgTAP 205/205 passaram localmente, incluindo rollback/roll-forward da migration 11. As evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/RLS, Storage real e Playwright permanecem válidas no escopo testado. Doze migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite, cadastro idempotente, proteção antiabuso e limpeza do dado sintético foram comprovados remotamente.
 
 ## Passo 1 — segurança da demonstração
 

@@ -348,7 +348,7 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Higienizar os registros sintéticos usados na validação e executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
+1. Executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
 2. Integrar à CI os gates locais já aprovados e adicionar casos específicos para as constraints de e-mail da migration 9.
 3. Provar **Configurar depois**, ativação posterior de TOTP e recuperação de senha no ambiente hospedado.
 4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.

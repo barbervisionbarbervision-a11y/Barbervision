@@ -5,7 +5,7 @@
 ## Resumo executivo
 
 - O repositório Git está operacional e possui o commit baseline `7c34dab` (`chore: cria baseline inicial do Barber Vision`). A árvore estava limpa antes desta revisão documental.
-- O projeto possui onze migrations, onze rollbacks e quatro suítes pgTAP com 205 asserções. Em 25/08, reset limpo aplicou as onze migrations e o seed atualizado; as 205 asserções passaram.
+- O projeto possui doze migrations, onze rollbacks e quatro suítes pgTAP com 205 asserções. Em 25/08, reset limpo aplicou as doze migrations e o seed atualizado; as 205 asserções passaram. A migration 12 remove somente o cliente sintético identificado simultaneamente por UUID, tenant e e-mail `.invalid`.
 - O build de produção e o launcher passam.
 - O lint JavaScript passa com zero erros e 18 warnings.
 - O Supabase local necessário responde: PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos. Imgproxy, Analytics, Vector e Pooler estão desativados/não usados.
@@ -19,7 +19,7 @@
 - A suíte Playwright criou fixtures efêmeras e comprovou login do dono, bootstrap AAL1, enrollment/verify TOTP, AAL2, convite por Admin API, entrega no Mailpit, ativação do funcionário, recuperação de senha, revogação de convite e logout. A suíte passou em 29,9 s e removeu os fixtures ao final.
 - Durante o E2E foram corrigidos o efeito MFA incompatível com o replay do React Strict Mode, o QR `data:image/svg+xml` bloqueado pelo `next/image` e o redirecionamento do callback para usar a origem canônica validada da aplicação.
 - Em 23/08, a outbox de convites foi validada por reset, lint SQL e 21 asserções próprias. O E2E foi atualizado, mas não reexecutado porque a instância `next dev` aberta pelo usuário mantém o lock de `.next` e impede o webServer isolado do Playwright.
-- O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu onze migrations.
+- O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu doze migrations.
 - A entrega hospedada de convite pelo Brevo foi comprovada. O callback de convite foi corrigido para a origem canônica do Render.
 - Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
 - O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. O conteúdo público do commit `ab97b14` foi conferido na tela de login, que já informa que o autenticador é opcional.
@@ -34,7 +34,7 @@
 | --- | --- | --- |
 | `npm.cmd run test:unit` | exit `0`; 5/5 | extração de IP, identificadores HMAC e validação do Turnstile aprovados |
 | `npm.cmd run lint` e `npm.cmd run build` | exit `0`; lint com 18 warnings preexistentes | proteção compila no Next.js 16 sem novo erro estático |
-| `npm.cmd run db:reset` e `npm.cmd run db:test` | exit `0`; onze migrations e 205/205 | consentimento e rate limit reconstruídos e aprovados do zero |
+| `npm.cmd run db:reset` e `npm.cmd run db:test` | exit `0`; doze migrations e 205/205 | consentimento, rate limit e limpeza exata reconstruídos e aprovados do zero |
 | rollback/roll-forward da migration 11 | down, remoção do histórico, reaplicação pelo CLI e 205/205 | reversibilidade incremental comprovada |
 | HTTP local com credenciais oficiais de teste do Turnstile | sem consentimento `400`; cadastro válido `201`; 11ª tentativa da rede `429` | contrato e limite distribuído exercitados pela rota real |
 | `npx.cmd supabase db push --linked --yes` | migration 11 aplicada sem erro | schema hospedado preparado para a proteção |
@@ -113,7 +113,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 | Passo | Estado em 24/08/2026 | Próximo gate |
 | ---: | --- | --- |
 | 1 | Concluído para demo controlada | preservar contenção e corrigir warnings sem regressão |
-| 2 | Onze migrations validadas localmente e sincronizadas no hospedado | restringir o lint às schemas do app e integrar os gates à CI |
+| 2 | Doze migrations validadas localmente e sincronizadas no hospedado | restringir o lint às schemas do app e integrar os gates à CI |
 | 3 | Jornada local aprovada; redirects/SMTP e cadastro web do primeiro dono implementados | validar cadastro/e-mail hospedados, reforçar antiabuso e concluir Cloudflare/matriz remota |
 | 4 | Não iniciado como implementação de produção | fechar política de consentimento, retenção e descarte |
 | 5 | Não iniciado | persistir um fluxo público mínimo e seguro |
@@ -124,7 +124,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Remover os registros sintéticos de validação antes do piloto e executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
+1. Executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
 2. Provar no hospedado TOTP opcional, recuperação e isolamento; manter signup irrestrito de funcionários bloqueado.
 3. Finalizar templates e provar confirmação/recuperação hospedadas.
 4. Publicar/testar o scheduler Cloudflare e executar a matriz remota controlada.

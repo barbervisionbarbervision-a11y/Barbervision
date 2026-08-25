@@ -89,7 +89,7 @@ Regras:
 - dado do tenant não pode ser enviado ao navegador antes do filtro seguro;
 - RLS e código server-side precisam negar acessos cruzados.
 
-Há onze migrations versionadas. Em 25/08, o conjunto completo passou por reset, pgTAP 205/205 e rollback/roll-forward incremental da migration 11; as onze também estão aplicadas no Supabase hospedado. As evidências anteriores de integração JWT/Storage, concorrência e rollback/roll-forward 10–9 permanecem válidas.
+Há doze migrations versionadas. Em 25/08, o conjunto completo passou por reset, pgTAP 205/205 e rollback/roll-forward incremental da migration 11; as doze também estão aplicadas no Supabase hospedado. A migration 12 é limpeza operacional exata, sem mudança de produto ou schema. As evidências anteriores de integração JWT/Storage, concorrência e rollback/roll-forward 10–9 permanecem válidas.
 
 ## Cadastro e identidade do cliente no MVP
 

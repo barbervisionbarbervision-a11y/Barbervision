@@ -12,8 +12,8 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O simulador atual usa preparação automática da foto e **placement manual** do cabelo.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
-- O passo 2 foi revalidado localmente em 25/08 sobre as onze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu onze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
+- O passo 2 foi revalidado localmente em 25/08 sobre as doze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. A migration 12 é uma limpeza operacional, limitada por UUID, tenant e e-mail `.invalid`, sem alteração de schema. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
@@ -98,7 +98,7 @@ Após a revisão documental:
 - 6 Route Handlers, incluindo `POST /api/clientes` e `POST /api/donos`;
 - 11 layouts;
 - 25 arquivos Markdown, dos quais 17 ficam em `docs/`;
-- 11 migrations, 11 rollbacks, seed atualizado, schema-aviso e 4 pgTAPs com 205 asserções aprovadas sobre o conjunto completo;
+- 12 migrations, 11 rollbacks, seed atualizado, schema-aviso e 4 pgTAPs com 205 asserções aprovadas sobre o conjunto completo; a migration 12 é limpeza exata de dado sintético e não possui rollback por não ser possível restaurar PII removida;
 - código JS/JSX e SQL distribuído entre `app`, `components`, `lib` e Supabase; a contagem de linhas é deliberadamente omitida porque muda a cada migration e não representa avanço funcional.
 
 Os documentos especializados de Auth e dos passos 4–5 são `docs/AUTENTICACAO-E-SESSOES.md` e `docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md`. Contagens são inventário, não critério de qualidade.
@@ -331,7 +331,7 @@ As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As s
 - `scripts/test-db-concurrency.mjs` usa sessões concorrentes e uma conexão observadora/administrativa. Em 24/08 passou para último dono, atribuição/revogação e dois workers da outbox sem duplicação.
 - O harness JWT integrado passou com Auth real local, Data API/RLS, Storage com blob, refresh, token expirado, logout global e recuperação TOTP. Callback/e-mail hospedados têm evidência separada.
 - Em 22/08, a atualização do CLI 2.112.0 para 2.115.0 e a desativação explícita de Analytics/Vector opcionais eliminaram a corrida de health check sem expor o daemon Docker em `2375`.
-- `db:start` e `db:reset` encerram com exit `0`; onze migrations, seed atualizado e pgTAP 205/205 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
+- `db:start` e `db:reset` encerram com exit `0`; doze migrations, seed atualizado e pgTAP 205/205 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
 - Na auditoria de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Não há `.env.local` nem projeto remoto vinculado.
 - O reset de 24/08 encerrou com exit `0`, aplicou as dez migrations e o seed atualizado; pgTAP 192/192, RLS/JWT, Data API, Storage real, recuperação TOTP opcional, lifecycle, concorrência e rollback/roll-forward 10–9 passaram.
 
@@ -410,7 +410,7 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 
 ### P0 — antes de chamar Auth hospedado de encerrado
 
-1. Acrescentar cobertura específica para as constraints de e-mail da migration 9; os gates gerais das onze migrations e o rollback/roll-forward da migration 11 passaram, e as evidências anteriores de concorrência e 10–9 permanecem válidas.
+1. Acrescentar cobertura específica para as constraints de e-mail da migration 9; os gates gerais das doze migrations e o rollback/roll-forward da migration 11 passaram, e as evidências anteriores de concorrência e 10–9 permanecem válidas.
 2. Provar no hospedado que o dono AAL1 pode escolher **Configurar depois**, ativar TOTP posteriormente e recuperar o acesso.
 3. Executar a matriz remota de isolamento entre dois tenants, papéis e AALs relevantes; Data API e Storage já passaram localmente com JWT real.
 4. Finalizar templates e operacionalizar a outbox com Worker Cloudflare, scheduler, alertas, retry e logs sem PII.
@@ -466,7 +466,7 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Remover os registros sintéticos de validação antes do piloto e executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
+1. Executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
 2. Provar hospedado **Configurar depois**, ativação posterior de TOTP e recuperação de senha; substituir o limite em memória por proteção distribuída/CAPTCHA.
 3. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
 4. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento sem dados reais.

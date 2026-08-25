@@ -548,7 +548,7 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 ### Banco versionado
 
-`supabase/schema.sql` é somente um índice documental. A fonte de verdade são onze migrations, incluindo retomada do dono, outbox, e-mail de clientes, MFA opcional e proteção do cadastro público. Há onze rollbacks; o ensaio da migration 11 foi aprovado em 25/08, além dos ensaios incremental 10–9 e histórico 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
+`supabase/schema.sql` é somente um índice documental. A fonte de verdade são doze migrations, incluindo retomada do dono, outbox, e-mail de clientes, MFA opcional, proteção do cadastro público e limpeza exata do cliente sintético. Há onze rollbacks; a migration 12 não recria PII removida. O ensaio da migration 11 foi aprovado em 25/08, além dos ensaios incremental 10–9 e histórico 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
 
 Os pgTAPs passaram 59 + 112 + 21 + 13 asserções, totalizando 205/205. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
 
@@ -556,7 +556,7 @@ Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema
 
 ### Sequência canônica de validação
 
-Os gates locais anteriores foram executados, onze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite, persistência e proteção antiabuso da API de clientes foram comprovados. Faltam publicar o scheduler Cloudflare, higienizar registros sintéticos e repetir a matriz Auth remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais anteriores foram executados, doze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite, persistência, proteção antiabuso e limpeza do cliente sintético foram comprovados. Faltam publicar o scheduler Cloudflare e repetir a matriz Auth remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 

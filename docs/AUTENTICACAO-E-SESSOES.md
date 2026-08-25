@@ -264,7 +264,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Evidência atual
 
-- onze migrations e onze rollbacks presentes; o conjunto completo passou reset e pgTAP 205/205, incluindo rollback/roll-forward da migration 11; as evidências anteriores de integração e rollback/roll-forward 10–9 permanecem válidas;
+- doze migrations e onze rollbacks presentes; o conjunto completo passou reset e pgTAP 205/205, incluindo rollback/roll-forward da migration 11; a migration 12 é limpeza operacional sem restauração de PII, e as evidências anteriores de integração e rollback/roll-forward 10–9 permanecem válidas;
 - CLI 2.115.0, `db:start`, reset, lint e pgTAP 205/205 aprovados; Auth, Storage e Studio respondem `200`;
 - rollbacks de Auth assurance e onboarding/lifecycle ensaiados, com roll-forward e repetição dos gates aprovados;
 - quatro pgTAPs com 205 asserções: 59 do passo 2, 112 de onboarding/lifecycle, 21 da outbox e 13 da proteção do cadastro público;

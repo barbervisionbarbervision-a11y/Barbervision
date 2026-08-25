@@ -4,11 +4,11 @@
 
 ## Estado executivo
 
-O repositório possui uma fundação Supabase em onze migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes, MFA opcional e proteção do cadastro público. Há seed fictício atualizado, onze rollbacks e quatro suítes pgTAP com 205 asserções aprovadas sobre o conjunto completo.
+O repositório possui uma fundação Supabase em doze migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes, MFA opcional, proteção do cadastro público e limpeza exata do cliente sintético. Há seed fictício atualizado, onze rollbacks e quatro suítes pgTAP com 205 asserções aprovadas sobre o conjunto completo. A migration 12 não possui rollback porque dados pessoais removidos não devem ser recriados.
 
 Isso ainda **não significa backend de negócio operacional**. Auth, RLS, Storage privado e lifecycle de funcionário foram validados localmente, mas as telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, nenhuma selfie é enviada ao Storage e os passos de privacidade/persistência ainda não foram implementados.
 
-Em 25/08, `db:reset` encerrou com exit `0`, aplicou onze migrations e o seed; pgTAP 205/205 e rollback/roll-forward 11 passaram. Concorrência, Data API/Storage com JWT e blob real, rollback/roll-forward 10–9 e o ensaio histórico 8–4 permanecem aprovados. O lint amplo no PostgreSQL 17 sinaliza funções internas da extensão pgTAP, não regressões identificadas nas schemas do aplicativo.
+Em 25/08, `db:reset` encerrou com exit `0`, aplicou doze migrations e o seed; pgTAP 205/205 e rollback/roll-forward 11 passaram. Concorrência, Data API/Storage com JWT e blob real, rollback/roll-forward 10–9 e o ensaio histórico 8–4 permanecem aprovados. O lint amplo no PostgreSQL 17 sinaliza funções internas da extensão pgTAP, não regressões identificadas nas schemas do aplicativo.
 
 ## Fonte de verdade e arquivos
 
@@ -317,6 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-O passo 2 possui validação local sobre as onze migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite, API de clientes e sua proteção antiabuso foram comprovados remotamente. Faltam integrar gates à CI, publicar o scheduler Cloudflare, higienizar registros sintéticos e executar a matriz Auth remota.
+O passo 2 possui validação local sobre as doze migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite, API de clientes, proteção antiabuso e limpeza do cliente sintético foram comprovados remotamente. Faltam integrar gates à CI, publicar o scheduler Cloudflare e executar a matriz Auth remota.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

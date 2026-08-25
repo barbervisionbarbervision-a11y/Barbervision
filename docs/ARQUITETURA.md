@@ -8,7 +8,7 @@ O Barber Vision é uma aplicação Next.js 16 com App Router e duas partes em es
 
 Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono com e-mail confirmado, perfil e membership ativos alcança o próprio tenant em AAL1 ou AAL2; TOTP é opcional e pode ser configurado depois. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
 
-O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem onze migrations, onze rollbacks e quatro suítes pgTAP com 205/205 sobre o conjunto completo. A API mínima de clientes e sua proteção com rate limit distribuído, Turnstile e aceite versionado foram comprovadas remotamente. O painel de negócio continua consumindo mocks/armazenamento local.
+O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem doze migrations, onze rollbacks e quatro suítes pgTAP com 205/205 sobre o conjunto completo. A migration 12 é uma limpeza operacional exata e não altera o schema. A API mínima de clientes e sua proteção com rate limit distribuído, Turnstile e aceite versionado foram comprovadas remotamente. O painel de negócio continua consumindo mocks/armazenamento local.
 
 Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
@@ -392,7 +392,7 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - há Server Actions de convite e dois Route Handlers de Auth; o SQL passou pgTAP, mas ainda não teste funcional pela aplicação;
 - os UUIDs de procedência são históricos, sem FK destrutiva para Auth; o `UPDATE` direto da atribuição foi revogado, mas ainda não existe RPC estreita de reatribuição;
 - auditoria exige ator em eventos de usuário e não duplica evento em replay no-op, porém a verificação de nomes de segredo em `metadados` cobre somente o nível superior;
-- as onze migrations passaram por reset e pgTAP 205/205; houve ensaio histórico 8–4, incremental 10–9 e da migration 11, seguido de roll-forward e confirmação das onze versões;
+- as doze migrations passaram por reset e pgTAP 205/205; houve ensaio histórico 8–4, incremental 10–9 e da migration 11, seguido de roll-forward; a migration 12 é limpeza operacional exata;
 - as migrations 4–5 tiveram rollback/roll-forward ensaiado; lint, pgTAP e concorrência passaram após a restauração;
 - três buckets privados estão definidos nas migrations; no runtime do aplicativo, porém, não há upload/leitura de Storage e as imagens continuam somente na persistência demonstrativa do navegador;
 - no fluxo ativo existem segmentação, FaceLandmarker com 478 pontos, síntese automática aproximada para a remoção e matte alpha do cutout, mas não há reconstrução anatômica 3D, deformação de malha, oclusão semântica avançada ou adaptação automática de luz/perspectiva;
