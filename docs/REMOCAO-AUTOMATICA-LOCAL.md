@@ -31,7 +31,7 @@ Decisão atual: congelar temporariamente esta implementação porque o conjunto 
 
 A remoção local e o placement manual v7 permanecem congelados e tecnicamente inalterados; nenhum código visual mudou nesta revisão. Ao redor deles, Auth/lifecycle com Supabase SSR, cookies e membership foram validados localmente; TOTP é opcional. Os dados do painel, catálogos e financeiro continuam demonstrativos em `localStorage` ou mocks.
 
-Sem configuração do Supabase, o desenvolvimento usa o fallback demo; em produção, `/admin` e `/barbeiro/*` ficam bloqueados por padrão. A baseline atual de banco passa 192/192; demais evidências estão em `ESTADO-VALIDACAO.md`. Privacidade/persistência ainda não existem.
+Sem configuração do Supabase, o desenvolvimento usa o fallback demo; em produção, `/admin` e `/barbeiro/*` ficam bloqueados por padrão. A baseline atual de banco passa 205/205; demais evidências estão em `ESTADO-VALIDACAO.md`. A persistência de clientes já exige consentimento versionado; retenção/exclusão e selfies persistidas continuam fora do escopo atual.
 
 ## Decisão de arquitetura
 

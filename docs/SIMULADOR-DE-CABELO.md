@@ -30,7 +30,7 @@ Decisão de foco: o cabelo fica **congelado temporariamente** nesse estado porqu
 
 O pipeline descrito neste documento permanece congelado e sem mudança: preparo automático local, placement manual v7 e confirmação em **Pronto**. Nenhum código visual mudou nesta revisão. Auth/lifecycle com sessão Supabase SSR, cookies e membership foram validados localmente; TOTP é opcional, mas isso não torna simulador, catálogo ou jornada persistentes.
 
-Sem variáveis do Supabase, o desenvolvimento continua no fallback demonstrativo. Em produção, `/admin` e `/barbeiro/*` permanecem bloqueados. Os dados do painel, catálogo e jornada continuam em armazenamento local ou mocks. A baseline atual de banco passa 192/192; privacidade e fluxo persistido ainda não foram implementados.
+Sem variáveis do Supabase, o desenvolvimento continua no fallback demonstrativo. Em produção, `/admin` e `/barbeiro/*` permanecem bloqueados. Os dados do painel, catálogo e jornada continuam em armazenamento local ou mocks. A baseline atual de banco passa 205/205; somente o cadastro básico de clientes possui persistência e consentimento versionado, enquanto selfies continuam sem persistência.
 
 ## Objetivo e limite do produto
 

@@ -1,6 +1,6 @@
 # Deploy gratuito: Render + Cloudflare + Supabase
 
-> Estado em **24/08/2026**: GitHub e Supabase estão vinculados; dez migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects e SMTP Brevo foram configurados, e a entrega real de convite foi comprovada. O Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
+> Estado em **25/08/2026**: GitHub e Supabase estão vinculados; onze migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects e SMTP Brevo foram configurados, e a entrega real de convite foi comprovada. O código protegido do cadastro público aguarda chaves reais do Turnstile antes do deploy. O Worker Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
 
 ## Arquitetura
 
@@ -13,11 +13,11 @@ Essa composição serve para demonstração e piloto técnico. O Render Free pod
 ## 1. Preparar o Supabase hospedado
 
 1. Crie um projeto Supabase controlado.
-2. Aplique as dez migrations oficiais em ordem.
+2. Aplique as onze migrations oficiais em ordem.
 
 ### Diagnóstico atual do cadastro público
 
-`POST /api/clientes` usa `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SECRET_KEY` apenas no servidor. Em 24/08, a rota chegou ao Render mas a operação no Supabase falhou com resposta HTML inesperada. A URL pública foi revisada para o formato `https://<project-ref>.supabase.co` e um novo deploy foi iniciado; ainda falta reteste conclusivo. Nunca use a URL do Dashboard (`supabase.com/dashboard/...`) como `NEXT_PUBLIC_SUPABASE_URL`.
+`POST /api/clientes` usa `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SECRET_KEY` apenas no servidor. A persistência hospedada foi comprovada em 24/08. Para publicar a proteção de 25/08, o Render também exige `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `BARBERVISION_TURNSTILE_HOSTNAMES=barbervision.onrender.com` e um `BARBERVISION_RATE_LIMIT_SECRET` aleatório com pelo menos 32 caracteres. Nunca use chaves de teste do Turnstile em produção nem a URL do Dashboard como URL do Supabase.
 3. Publique os templates `supabase/templates/invite.html` e `recovery.html`.
 4. Mantenha signup público desabilitado.
 5. Anote URL, publishable key e secret key. Nunca coloque a secret key no navegador ou Git.

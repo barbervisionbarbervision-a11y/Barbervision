@@ -50,9 +50,9 @@ Para o Supabase local são necessários:
 - dependências instaladas com `npm ci`;
 - Docker Desktop ou runtime compatível em execução.
 
-O CLI está fixado como `supabase@2.115.0`. Em 24/08, `db:reset` encerrou com exit `0`, aplicou as dez migrations e o seed atualizado. pgTAP 192/192, Data API/RLS por JWT, Storage com blob real, concorrência e rollback/roll-forward 10–9 passaram. O lint amplo no PostgreSQL 17 inclui incompatibilidades internas da extensão pgTAP; ainda é preciso restringir esse gate às schemas do aplicativo. Analytics/Vector opcionais estão desativados.
+O CLI está fixado como `supabase@2.115.0`. Em 25/08, `db:reset` encerrou com exit `0`, aplicou as onze migrations e o seed atualizado. pgTAP 205/205 e rollback/roll-forward 11 passaram; Data API/RLS por JWT, Storage com blob real, concorrência e rollback/roll-forward 10–9 já haviam passado. O lint amplo no PostgreSQL 17 inclui incompatibilidades internas da extensão pgTAP; ainda é preciso restringir esse gate às schemas do aplicativo. Analytics/Vector opcionais estão desativados.
 
-Na auditoria de 23/08, os serviços necessários estavam saudáveis; Imgproxy, Analytics, Vector e Pooler estavam desativados/não usados. `db:lint` e pgTAP passaram 192/192. O projeto remoto `ftwdfobgwxjmeickktmy` foi vinculado em 24/08 e recebeu as dez migrations. Storage foi validado anteriormente por operação real com JWT e blob.
+Na auditoria de 23/08, os serviços necessários estavam saudáveis; Imgproxy, Analytics, Vector e Pooler estavam desativados/não usados. O projeto remoto `ftwdfobgwxjmeickktmy` foi vinculado em 24/08 e recebeu a migration 11 em 25/08. Storage foi validado anteriormente por operação real com JWT e blob.
 
 ## Comandos locais
 
@@ -66,7 +66,7 @@ npm.cmd run db:lint
 npm.cmd run db:stop
 ```
 
-`db:reset` recria o banco local, aplica as dez migrations e executa o seed, que já fornece e-mails fictícios `.invalid`. `db:test` roda os três arquivos em `tests/database/`. `db:test:concurrency` prova locks com conexões reais. `db:test:integration` cria identidades temporárias, testa dono com e sem TOTP, Data API/RLS e Storage com blob real e exige confirmação/marcação do banco descartável. O signup direto do Supabase permanece bloqueado; a primeira conta de dono é criada pela API controlada `/api/donos`. Nunca use `service_role` como prova de RLS: esse papel ignora policies.
+`db:reset` recria o banco local, aplica as onze migrations e executa o seed, que já fornece e-mails fictícios `.invalid`. `db:test` roda os quatro arquivos em `tests/database/`, incluindo aceite versionado, privilégios e contador distribuído do cadastro público. `db:test:concurrency` prova locks com conexões reais. `db:test:integration` cria identidades temporárias, testa dono com e sem TOTP, Data API/RLS e Storage com blob real e exige confirmação/marcação do banco descartável. O signup direto do Supabase permanece bloqueado; a primeira conta de dono é criada pela API controlada `/api/donos`. Nunca use `service_role` como prova de RLS: esse papel ignora policies.
 
 Para um projeto remoto de teste explicitamente criado e revisado:
 
@@ -229,12 +229,12 @@ O HTTP 502 observado em 14/08 foi um incidente histórico de inicialização. Em
 
 `seed.sql` cria fixtures fictícias com e-mails `.invalid`: dois tenants, donos diferentes, funcionário ativo, membro suspenso, clientes e atribuição. As identidades não são uma preparação de contas reais para login com senha.
 
-`tests/database/step2_tenant_rls.test.sql` passou 59/59. `step3_auth_onboarding_lifecycle.test.sql` passou 112/112 e `step3_invite_email_outbox.test.sql` passou 21/21. Total aprovado: 192/192.
+`tests/database/step2_tenant_rls.test.sql` passou 59/59. `step3_auth_onboarding_lifecycle.test.sql` passou 112/112, `step3_invite_email_outbox.test.sql` passou 21/21 e `step4_public_registration_protection.test.sql` passou 13/13. Total aprovado: 205/205.
 
 Limites da suíte:
 
-- as três suítes passaram integralmente; preservar a cobertura nas próximas mudanças;
-- a contagem conferida em fonte é `plan(59)` + `plan(109)`;
+- as quatro suítes passaram integralmente; preservar a cobertura nas próximas mudanças;
+- a contagem conferida em fonte é `plan(59)` + `plan(112)` + `plan(21)` + `plan(13)`;
 - TOTP, callbacks, outbox e concorrência real não cabem no pgTAP;
 - não usa JWTs reais na Data API nem prova upload/download de blob no endpoint de Storage.
 
@@ -242,16 +242,17 @@ Limites da suíte:
 
 ## Rollback
 
-Há oito rollbacks manuais. O ensaio 8–4 passou em 23/08: cinco versões foram removidas do histórico após os downs, reaplicadas pelo CLI e validadas com lint, pgTAP 192/192 e concorrência. Os scripts usam transação/locks e não usam `CASCADE`.
+Há onze rollbacks manuais. O ensaio 8–4 passou em 23/08 e o incremental 10–9, em 24/08. Em 25/08, a migration 11 também foi revertida e reaplicada pelo CLI, seguida de pgTAP 205/205. Os scripts usam transação/locks e não usam `CASCADE`.
 
 Os down scripts não atualizam automaticamente `supabase_migrations.schema_migrations`. O procedimento aprovado está no [Runbook de rollback do banco](../docs/ROLLBACK-BANCO.md): reverter 5–4, remover somente essas duas versões do histórico e usar `supabase migration up --local`. O ensaio de 22/08 restaurou as cinco entradas e passou novamente lint, 168 asserções e concorrência. Em ambiente persistente, ainda é obrigatório validar o alvo, exportar dados, documentar a janela e testar a restauração.
 
 ## Próxima ordem segura
 
-1. operacionalizar a outbox com scheduler, segredo, alertas e E2E atualizado;
-2. definir reatribuição estreita, transferência de dono e seleção multi-tenant;
+1. configurar as chaves reais do Turnstile no Render, publicar a proteção e executar o smoke hospedado;
+2. operacionalizar a outbox com scheduler, segredo, alertas e E2E atualizado;
+3. definir reatribuição estreita, transferência de dono e seleção multi-tenant;
 4. integrar lint, SQL, integração e E2E à CI;
-5. implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+5. completar retenção e exclusão antes de persistir selfies reais.
 
 Depois desses gates, persistir o fluxo vertical do passo 5 e somente então substituir mocks e migrar painel, catálogo, produtos, financeiro e operação.
 

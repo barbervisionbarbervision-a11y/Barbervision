@@ -23,7 +23,7 @@ Não existem estoque transacional, interesse/reserva persistido, pedido, checkou
 
 A autenticação e o lifecycle foram validados localmente: quando o Supabase está configurado, sessão SSR, e-mail confirmado, membership e layout de servidor do dono protegem `/barbeiro/produtos`; TOTP é opcional. Sem configuração, o desenvolvimento usa o fallback demonstrativo e, em produção, o painel fica bloqueado por padrão. Em ambos os modos, catálogo, recomendações, avaliação e contato comercial permanecem locais e não passam por operações server-side de negócio.
 
-Dez migrations estão versionadas; o conjunto completo passou reset e pgTAP 192/192 em 24/08. As demais evidências estão centralizadas em `ESTADO-VALIDACAO.md`. Os passos 4 e 5 ainda não foram implementados.
+Onze migrations estão versionadas; o conjunto completo passou reset e pgTAP 205/205 em 25/08. As demais evidências estão centralizadas em `ESTADO-VALIDACAO.md`. Os passos 4 e 5 ainda não foram implementados.
 
 O novo fechamento em `/barbeiro/financeiro` também não transforma a vitrine em venda: produtos vendidos precisam ser lançados manualmente como `produto`. Catálogo, quantidade demonstrativa, clique no WhatsApp e fechamento local são fontes separadas; nenhuma ação na vitrine cria lançamento financeiro automático.
 

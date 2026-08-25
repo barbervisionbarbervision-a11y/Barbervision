@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **24/08/2026**. O Supabase remoto recebeu dez migrations e o Render está Live. A secret exposta foi rotacionada; redirects, SMTP, criação do primeiro dono, entrega de convite e API de clientes foram comprovados. Os gates locais das dez migrations passaram. As prioridades agora são antiabuso/consentimento, matriz Auth remota e Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **25/08/2026**. O Supabase remoto recebeu onze migrations e o Render está Live. A proteção do cadastro público — rate limit distribuído, Turnstile server-side e aceite versionado — passou localmente; sua ativação aguarda chaves reais do Turnstile no Render. As prioridades seguintes são a matriz Auth remota e o Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -34,7 +34,7 @@ Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operac
 6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das dez migrations, pgTAP 192/192, concorrência, rollback/roll-forward 10–9, JWT/RLS e Storage com blob real passaram localmente. A jornada Playwright histórica de Auth/e-mail/TOTP/lifecycle/outbox permanece válida no escopo testado. Dez migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite e cadastro público idempotente foram comprovados.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das onze migrations e pgTAP 205/205 passaram localmente, incluindo rollback/roll-forward da migration 11. As evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/RLS, Storage real e Playwright permanecem válidas no escopo testado. Onze migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite e cadastro público idempotente foram comprovados. A proteção antiabuso aguarda somente as chaves reais do Turnstile no Render para publicação.
 
 ## Passo 1 — segurança da demonstração
 

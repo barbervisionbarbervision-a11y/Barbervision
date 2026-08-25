@@ -33,11 +33,11 @@ A sequência abaixo é obrigatória porque Auth isolado não protege dados locai
 - Supabase local: serviços necessários saudáveis; Imgproxy, Analytics, Vector e Pooler desativados/não usados;
 - lint SQL: aprovado sem erros;
 - pgTAP de onboarding/lifecycle: 112/112; outbox: 21/21;
-- pgTAP total: 59 + 112 + 21, totalizando 192/192;
+- pgTAP total: 59 + 112 + 21 + 13, totalizando 205/205;
 - concorrência: duas corridas aprovadas no banco local marcado como descartável;
-- oito rollbacks presentes; rollback/roll-forward 8–4 aprovado em 23/08, seguido de lint, pgTAP 192/192 e concorrência;
+- onze rollbacks presentes; rollback/roll-forward 8–4, 10–9 e migration 11 aprovados nas respectivas rodadas;
 - somente `.env.example`; não existe `.env.local`;
-- `db:start`, `db:reset` e `db:lint` encerraram com exit `0`; pgTAP 192/192 passou; concorrência, rollback 5–4, JWT/Data API, Storage e Auth/E2E anterior permanecem evidências históricas válidas no escopo testado;
+- `db:start`, `db:reset` e `db:lint` encerraram com exit `0`; pgTAP 205/205 passou; concorrência, rollback 5–4, JWT/Data API, Storage e Auth/E2E anterior permanecem evidências históricas válidas no escopo testado;
 - simulador manual congelado e não alterado.
 
 ## Passo 1 — segurança da demonstração
@@ -348,7 +348,7 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Endurecer `POST /api/clientes`, já comprovado no hospedado, com proteção distribuída/CAPTCHA, consentimento e teste automatizado.
+1. Ativar no Render a proteção já implementada e validada de `POST /api/clientes`: configurar chaves reais do Turnstile, publicar e executar smoke hospedado 400/403/201/429.
 2. Integrar à CI os gates locais já aprovados e adicionar casos específicos para as constraints de e-mail da migration 9.
 3. Provar **Configurar depois**, ativação posterior de TOTP e recuperação de senha no ambiente hospedado.
 4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.

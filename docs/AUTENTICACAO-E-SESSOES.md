@@ -264,10 +264,10 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Evidência atual
 
-- dez migrations e dez rollbacks presentes; o conjunto completo passou reset, pgTAP 192/192, integração e rollback/roll-forward 10–9; a migration 9 ainda precisa de casos específicos para suas constraints;
-- CLI 2.115.0, `db:start`, reset, lint e pgTAP 192/192 aprovados; Auth, Storage e Studio respondem `200`;
+- onze migrations e onze rollbacks presentes; o conjunto completo passou reset e pgTAP 205/205, incluindo rollback/roll-forward da migration 11; as evidências anteriores de integração e rollback/roll-forward 10–9 permanecem válidas;
+- CLI 2.115.0, `db:start`, reset, lint e pgTAP 205/205 aprovados; Auth, Storage e Studio respondem `200`;
 - rollbacks de Auth assurance e onboarding/lifecycle ensaiados, com roll-forward e repetição dos gates aprovados;
-- três pgTAPs com 192 asserções: 59 do passo 2, 112 de onboarding/lifecycle e 21 da outbox;
+- quatro pgTAPs com 205 asserções: 59 do passo 2, 112 de onboarding/lifecycle, 21 da outbox e 13 da proteção do cadastro público;
 - runner com duas sessões concorrentes, uma conexão observadora, marcador obrigatório e cleanup independente; as duas corridas passaram localmente;
 - `.env.local` ausente;
 - serviços necessários do Supabase estão saudáveis; opcionais não usados estão desativados;
@@ -275,12 +275,12 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 - build aprovado novamente em 14/08/2026 sem `.env.local`, validando somente o modo demonstrativo; smoke HTTP permanece histórico de 13/08;
 - lint repetido em 21/08/2026: 0 erros e 18 warnings;
 - `db:lint` aprovado; onboarding/lifecycle 112/112 e outbox 21/21 aprovados em 23/08;
-- três suítes pgTAP aprovadas, com `plan(59)`, `plan(112)` e `plan(21)`, totalizando 192/192.
+- quatro suítes pgTAP aprovadas, com `plan(59)`, `plan(112)`, `plan(21)` e `plan(13)`, totalizando 205/205.
 
 ## Próxima sequência canônica
 
 1. Executar o runner concorrente no banco local explicitamente marcado como descartável e guardar evidência.
-2. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
+2. Usar o runbook existente para ensaiar rollback/roll-forward quando houver nova migration e repetir `db:lint`, as 205 asserções pgTAP e `db:test:concurrency`.
 3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
 4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
 5. Preservar no harness as provas de refresh/expiração/logout global/recuperação TOTP e ampliar casos adversários de callback.

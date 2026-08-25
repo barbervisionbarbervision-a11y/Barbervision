@@ -4,11 +4,11 @@
 
 ## Estado executivo
 
-O repositório possui uma fundação Supabase em dez migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes e MFA opcional. Há seed fictício atualizado, dez rollbacks e três suítes pgTAP com 192 asserções aprovadas sobre o conjunto completo; a migration 9 ainda requer casos próprios para suas constraints.
+O repositório possui uma fundação Supabase em onze migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes, MFA opcional e proteção do cadastro público. Há seed fictício atualizado, onze rollbacks e quatro suítes pgTAP com 205 asserções aprovadas sobre o conjunto completo.
 
 Isso ainda **não significa backend de negócio operacional**. Auth, RLS, Storage privado e lifecycle de funcionário foram validados localmente, mas as telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, nenhuma selfie é enviada ao Storage e os passos de privacidade/persistência ainda não foram implementados.
 
-Em 24/08, `db:reset` encerrou com exit `0`, aplicou dez migrations e o seed; pgTAP 192/192, concorrência e Data API/Storage com JWT e blob real passaram. O rollback/roll-forward incremental 10–9 foi aprovado, além do ensaio histórico 8–4. O lint amplo no PostgreSQL 17 sinaliza funções internas da extensão pgTAP, não regressões identificadas nas schemas do aplicativo.
+Em 25/08, `db:reset` encerrou com exit `0`, aplicou onze migrations e o seed; pgTAP 205/205 e rollback/roll-forward 11 passaram. Concorrência, Data API/Storage com JWT e blob real, rollback/roll-forward 10–9 e o ensaio histórico 8–4 permanecem aprovados. O lint amplo no PostgreSQL 17 sinaliza funções internas da extensão pgTAP, não regressões identificadas nas schemas do aplicativo.
 
 ## Fonte de verdade e arquivos
 
@@ -261,7 +261,7 @@ O HTTP 502 observado durante o bootstrap de 14/08 foi um incidente histórico de
 
 `supabase/tests/database/step3_auth_onboarding_lifecycle.test.sql` declara outras 111 asserções. Ele cobre estrutura/ACL, owner AAL1/AAL2, e-mail confirmado, convites, expiração, aceite/replay, lifecycle, auditoria e leitura de perfis suspensos/revogados pelo dono. `provisionar_dono_controlado` e `marcar_convite_falhou` aparecem somente nas verificações estruturais/ACL; seu comportamento funcional e outbox não são simulados no pgTAP.
 
-As três suítes, com `plan(59)` + `plan(112)` + `plan(21)`, passaram integralmente: 192/192. A terceira cobre estrutura, ACL, enqueue, lease, retry, conclusão idempotente, expiração e cancelamento da outbox.
+As quatro suítes, com `plan(59)` + `plan(112)` + `plan(21)` + `plan(13)`, passaram integralmente: 205/205. A terceira cobre a outbox; a quarta cobre consentimento e rate limit distribuído do cadastro público.
 
 O harness `db:test:integration` executa contra o Supabase local real: cria identidades Auth, eleva TOTP/AAL2, consulta a Data API com RLS e envia/baixa/remove um blob pelo endpoint de Storage. Ele também prova negações AAL1, funcionário, cross-tenant, suspenso, sem membership e bucket de selfies.
 
@@ -295,7 +295,7 @@ Confirme o project ref, revise o dry-run, faça backup e execute os testes antes
 
 ## Rollback
 
-Existem oito rollbacks. O ensaio completo 8–4 passou em 23/08, com histórico reconciliado, roll-forward pelo CLI e repetição de lint, pgTAP 192/192 e concorrência.
+Existem onze rollbacks. O ensaio completo 8–4 passou em 23/08 e o incremental 10–9, em 24/08. Em 25/08, a migration 11 foi revertida e reaplicada pelo CLI, seguida de pgTAP 205/205.
 
 Os scripts não reconciliam automaticamente `supabase_migrations.schema_migrations`. O procedimento aprovado está em [Runbook de rollback do banco](ROLLBACK-BANCO.md) e foi ensaiado no ambiente local descartável em 22/08. Em ambiente persistente, ainda é obrigatório exportar dados, validar o alvo e documentar janela, responsáveis e recuperação.
 
@@ -317,6 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-O passo 2 possui validação local sobre as dez migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite e API de clientes foram comprovados. Ainda faltam casos específicos de e-mail, integrar gates à CI, publicar Cloudflare e executar a matriz remota.
+O passo 2 possui validação local sobre as onze migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite e API de clientes foram comprovados. A proteção do cadastro público passou localmente e aguarda chaves reais do Turnstile no Render; depois faltam integrar gates à CI, publicar o scheduler Cloudflare e executar a matriz remota.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

@@ -8,7 +8,7 @@ O Barber Vision é uma aplicação Next.js 16 com App Router e duas partes em es
 
 Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono com e-mail confirmado, perfil e membership ativos alcança o próprio tenant em AAL1 ou AAL2; TOTP é opcional e pode ser configurado depois. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
 
-O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem dez migrations, dez rollbacks e três suítes pgTAP com 192/192 sobre o conjunto completo; ainda faltam casos específicos para as constraints de e-mail. A API mínima de clientes foi comprovada remotamente com criação e upsert idempotente no tenant `barbervision`. O painel de negócio continua consumindo mocks/armazenamento local.
+O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem onze migrations, onze rollbacks e quatro suítes pgTAP com 205/205 sobre o conjunto completo. A API mínima de clientes foi comprovada remotamente com criação e upsert idempotente; sua proteção com rate limit distribuído, Turnstile e aceite versionado passou localmente e aguarda ativação no Render. O painel de negócio continua consumindo mocks/armazenamento local.
 
 Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
@@ -107,7 +107,7 @@ Todo o fluxo que usa formulário, câmera, timers, roteador, sessão ou filtros 
 
 No modo real, papel e tenant vêm do contexto de servidor e das policies; `sessionStorage` não é autoridade. No modo demo, a sessão continua adulterável e serve somente a dados fictícios. Várias páginas internas ainda executam filtros sobre mocks completos no cliente, portanto Auth parcial não torna o domínio operacional pronto para dados reais.
 
-O inventário de 24/08/2026 possui **31 arquivos `page.js`** e **cinco Route Handlers** (`/auth/callback`, `/auth/confirm`, `/api/health`, `/api/internal/convites/processar` e `/api/clientes`), além do Proxy.
+O build de 25/08/2026 lista **31 páginas de aplicação** e **seis Route Handlers** (`/auth/callback`, `/auth/confirm`, `/api/health`, `/api/internal/convites/processar`, `/api/clientes` e `/api/donos`), além do Proxy.
 
 O inventário precisa ser regenerado sempre que arquivos de configuração/documentação forem adicionados; `proxy.js` e a configuração ESLint agora fazem parte da arquitetura. Perfis temporários em `tmp/`, dependências, artefatos de build e as cinco fontes privadas ignoradas continuam fora desse inventário.
 
@@ -120,7 +120,7 @@ Existem dois Route Handlers de Auth:
 - `/auth/callback`: troca o `code` PKCE por sessão e, se houver `convite`, tenta a RPC `aceitar_convite_barbearia`;
 - `/auth/confirm`: verifica `token_hash` para confirmação, convite, recovery ou alteração de e-mail e também tenta aceitar convite quando aplicável.
 
-Existem Server Actions na tela de equipe, um script de provisionamento de dono e `POST /api/clientes`. A API usa o admin server-only, resolve tenant ativo por slug e faz upsert por telefone; está publicada, mas falha no remoto e ainda não é operacional. Não existem APIs de domínio para agenda, simulações, avaliações, produtos ou financeiro.
+Existem Server Actions na tela de equipe, um script de provisionamento de dono e `POST /api/clientes`. A API usa o admin server-only, resolve tenant ativo por slug, aplica rate limit distribuído por HMAC, valida Turnstile server-side, registra aceite versionado e faz upsert por telefone. A versão protegida está validada localmente e sua migration está remota; o deploy aguarda as chaves reais do Turnstile. Não existem APIs de domínio para agenda, simulações, avaliações, produtos ou financeiro.
 
 O provisionamento não possui transação distribuída entre Auth e Postgres, mas agora valida entrada/origem/slug antes da mutação e retoma com a identidade existente por e-mail ou UUID quando a RPC falha. A membership nasce ativa antes da senha para permitir bootstrap; o link inicial conduz à definição de senha e TOTP pode ser configurado depois. As compensações de convite também releem o estado autoritativo antes de afirmar a transição.
 
@@ -392,7 +392,7 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - há Server Actions de convite e dois Route Handlers de Auth; o SQL passou pgTAP, mas ainda não teste funcional pela aplicação;
 - os UUIDs de procedência são históricos, sem FK destrutiva para Auth; o `UPDATE` direto da atribuição foi revogado, mas ainda não existe RPC estreita de reatribuição;
 - auditoria exige ator em eventos de usuário e não duplica evento em replay no-op, porém a verificação de nomes de segredo em `metadados` cobre somente o nível superior;
-- as dez migrations passaram por reset e pgTAP 192/192; houve ensaio histórico 8–4 e incremental 10–9, seguido de roll-forward e confirmação das dez versões;
+- as onze migrations passaram por reset e pgTAP 205/205; houve ensaio histórico 8–4, incremental 10–9 e da migration 11, seguido de roll-forward e confirmação das onze versões;
 - as migrations 4–5 tiveram rollback/roll-forward ensaiado; lint, pgTAP e concorrência passaram após a restauração;
 - três buckets privados estão definidos nas migrations; no runtime do aplicativo, porém, não há upload/leitura de Storage e as imagens continuam somente na persistência demonstrativa do navegador;
 - no fluxo ativo existem segmentação, FaceLandmarker com 478 pontos, síntese automática aproximada para a remoção e matte alpha do cutout, mas não há reconstrução anatômica 3D, deformação de malha, oclusão semântica avançada ou adaptação automática de luz/perspectiva;
@@ -402,7 +402,7 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - o pipeline local de cabelo e pele/cabeça faz parte do grafo ativo e possui limite de 45 segundos para carregar selfie/runtime/dois modelos; qualidade e desempenho ainda não foram validados em aparelhos-alvo;
 - sem fila, webhook, cron ou processamento assíncrono;
 - sem analytics, logs estruturados, tracing ou monitoramento;
-- Playwright cobre Auth/lifecycle/outbox; três pgTAPs passaram 192/192 e dois workers concorrentes não duplicaram reivindicações;
+- Playwright cobre Auth/lifecycle/outbox; quatro pgTAPs passaram 205/205 e dois workers concorrentes não duplicaram reivindicações;
 - sem CI/CD, container ou configuração específica de provedor de deploy;
 - sem internacionalização; textos são pt-BR embutidos nos componentes.
 

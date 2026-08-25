@@ -83,13 +83,13 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — endurecer o cadastro público já funcional**: adicionar rate limit/CAPTCHA, teste automatizado e política de consentimento; remover o registro sintético antes do piloto.
+1. **P0 — ativar a proteção do cadastro público no Render**: migration 11, rate limit distribuído, aceite versionado, Turnstile server-side, testes unitários, HTTP local e 205/205 pgTAP estão concluídos; faltam criar/configurar as chaves reais, publicar o commit e executar o smoke hospedado. Remover o registro sintético antes do piloto.
 2. **P0 — fechar o hardening do primeiro dono**: testar hospedado **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
 3. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
 4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
-Concluídos nesta fundação: lifecycle de funcionário, Auth/e-mail/TOTP opcional, compensações autoritativas, provisionamento retomável, sessão/recuperação, reset das dez migrations, pgTAP 192/192, integração JWT/Storage, rollback/roll-forward 10–9 e corrida real da outbox.
+Concluídos nesta fundação: lifecycle de funcionário, Auth/e-mail/TOTP opcional, compensações autoritativas, provisionamento retomável, sessão/recuperação, reset das onze migrations, pgTAP 205/205, integração JWT/Storage, rollback/roll-forward 11 e 10–9 e corrida real da outbox.
 
 Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar painel, catálogo, produtos, financeiro e operação.
 
@@ -586,7 +586,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Inventário reconciliado em 24/08: 202 arquivos visíveis a `rg --files`; o build lista 31 páginas de aplicação e 6 Route Handlers.
 - [x] Integridade documental: UTF-8, links locais e fences sem falhas.
 - [x] 31 páginas e 6 Route Handlers identificados pelo build.
-- [x] Inventário atual: 10 migrations, 10 rollbacks e 3 pgTAPs com 192 asserções históricas.
+- [x] Inventário atual: 11 migrations, 11 rollbacks e 4 pgTAPs com 205 asserções aprovadas.
 - [x] Tornar o autenticador TOTP opcional, com ação **Configurar depois** e acesso posterior pela tela de Segurança.
 - [ ] Criar step-up explícito para futuras operações de alto risco, sem voltar a bloquear todo o painel em AAL1.
 - [x] Atualizar seed e fixtures para e-mail de cliente e repetir reset das dez migrations + pgTAP 192/192.

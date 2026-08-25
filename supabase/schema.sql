@@ -8,6 +8,12 @@
 --   supabase/migrations/20260808012000_private_storage.sql
 --   supabase/migrations/20260808013000_auth_assurance.sql
 --   supabase/migrations/20260813010000_onboarding_invites_lifecycle_audit.sql
+--   supabase/migrations/20260822010000_owner_reads_inactive_member_profiles.sql
+--   supabase/migrations/20260822020000_owner_provisioning_resume.sql
+--   supabase/migrations/20260822030000_invite_email_outbox.sql
+--   supabase/migrations/20260824010000_clientes_email.sql
+--   supabase/migrations/20260824020000_owner_mfa_optional.sql
+--   supabase/migrations/20260825010000_public_registration_protection.sql
 --
 -- Não cole este arquivo no SQL Editor e não replique DDL fora das migrations.
 -- Use `npm run db:reset` no ambiente local ou `supabase db push` num projeto

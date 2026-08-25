@@ -38,7 +38,7 @@ Totais:
 
 - cinco cabelos ativos: `4.756.595` bytes;
 - ativos + selfie: `6.748.191` bytes;
-- oito rollbacks versionados; tamanho de inventário não é usado como gate;
+- onze rollbacks versionados; tamanho de inventário não é usado como gate;
 - doze cabelos públicos: `13.468.697` bytes;
 - cabelos públicos + selfie: `15.460.293` bytes.
 

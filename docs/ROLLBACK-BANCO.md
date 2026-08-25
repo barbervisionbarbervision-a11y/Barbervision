@@ -1,13 +1,14 @@
 # Runbook de rollback e roll-forward do banco
 
-Última validação: **24/08/2026**. O ensaio 8–4 foi aprovado em 23/08; o ensaio incremental 10–9 foi aprovado em 24/08.
+Última validação: **25/08/2026**. O ensaio 8–4 foi aprovado em 23/08; o incremental 10–9, em 24/08; e o rollback/roll-forward da migration 11, em 25/08.
 
 ## Escopo
 
-Este runbook cobre o downgrade manual e defensivo das migrations 10–4. As duas migrations mais recentes são:
+Este runbook cobre o downgrade manual e defensivo das migrations 11–4. As três migrations mais recentes são:
 
-1. `20260824020000_owner_mfa_optional`;
-2. `20260824010000_clientes_email`.
+1. `20260825010000_public_registration_protection`;
+2. `20260824020000_owner_mfa_optional`;
+3. `20260824010000_clientes_email`.
 
 O conjunto histórico 8–4 é:
 
@@ -20,6 +21,8 @@ O conjunto histórico 8–4 é:
 Ele foi desenhado para o Supabase local descartável. Não autoriza execução em produção. Em ambiente persistente, interrompa writers, confirme o alvo, faça backup verificado, defina janela, responsáveis, critérios de abortar e restauração antes de qualquer downgrade.
 
 O ensaio incremental 10–9 executa primeiro `owner_mfa_optional.down.sql`, depois `clientes_email.down.sql`, remove somente essas duas versões do histórico e usa `supabase migration up --local`. Em 24/08, as dez versões retornaram e o pgTAP passou 192/192.
+
+O ensaio da migration 11 executa `20260825010000_public_registration_protection.down.sql`, remove somente a versão `20260825010000` do histórico e usa `supabase migration up --local`. Em 25/08, as onze versões retornaram e o pgTAP passou 205/205.
 
 ## Guardas obrigatórias
 
@@ -60,7 +63,7 @@ Use os arquivos oficiais de `supabase/migrations/`, não cópias manuais:
 npx.cmd supabase migration up --local
 ```
 
-Confirme que o histórico voltou a conter exatamente as dez versões e que os objetos das migrations revertidas existem novamente.
+Confirme que o histórico voltou a conter exatamente as onze versões e que os objetos das migrations revertidas existem novamente.
 
 ## Validação obrigatória posterior
 
@@ -74,11 +77,11 @@ npm.cmd run db:test:concurrency
 Critérios de aprovação:
 
 - lint PostgreSQL sem erros;
-- pgTAP 59/59 + 112/112 + 21/21, total 192/192;
+- pgTAP 59/59 + 112/112 + 21/21 + 13/13, total 205/205;
 - corrida do último dono permite exatamente uma revogação;
 - atribuição/revogação termina com membership revogada, zero atribuições e um evento;
 - fixtures concorrentes são removidos;
-- dez versões voltam a existir em `supabase_migrations.schema_migrations`.
+- onze versões voltam a existir em `supabase_migrations.schema_migrations`.
 
 ## Recuperação
 

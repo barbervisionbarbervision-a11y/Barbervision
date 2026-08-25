@@ -307,7 +307,7 @@ Até isso existir, nenhum texto deve afirmar que houve envio, agendamento, reser
 ## Sequência canônica de validação
 
 1. Executar o runner concorrente no banco descartável e guardar evidência.
-5. Usar o runbook existente para ensaiar rollback/roll-forward 8–4 e repetir `db:lint`, as 192 asserções pgTAP e `db:test:concurrency`.
+5. Usar o runbook existente para ensaiar rollback/roll-forward quando houver nova migration e repetir `db:lint`, as 205 asserções pgTAP e `db:test:concurrency`.
 6. Criar um `.env.local` controlado e fixtures/identidades Auth reais para dono em AAL1 e AAL2, funcionário e cenário cross-tenant.
 7. Criar harness/scripts e validar Data API e Storage com JWTs reais e cenários adversários.
 8. Ampliar o Playwright aprovado para lifecycle completo, refresh/expiração e cenários adversários.

@@ -12,12 +12,12 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O simulador atual usa preparação automática da foto e **placement manual** do cabelo.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
-- O passo 2 foi revalidado localmente em 24/08 sobre as dez migrations: reset e seed, pgTAP 192/192, concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 passaram. O lint não apontou falhas no schema do app, mas o novo PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu dez migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
+- O passo 2 foi revalidado localmente em 25/08 sobre as onze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu onze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
-- O cadastro público coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`. Em 24/08, o tenant real `barbervision` respondeu `201`; repetir o mesmo WhatsApp preservou o mesmo UUID, comprovando o upsert. `barbearia-joao` era apenas um slug mock e retornava corretamente `404`; o atalho inicial foi corrigido para `barbervision`.
+- O cadastro público coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`. Em 24/08, o tenant real `barbervision` respondeu `201`; repetir o mesmo WhatsApp preservou o mesmo UUID. Em 25/08, a migration 11 adicionou aceite versionado e rate limit atômico distribuído; o código local passou a exigir Turnstile validado no servidor. A migration já está no Supabase hospedado, mas o código aguarda as chaves reais do Turnstile no Render antes do push/deploy.
 - `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo hospedado criou o primeiro dono, enviou o convite e chegou à ativação/MFA. Usa honeypot e limite básico por origem; ainda requer proteção distribuída mais forte antes do piloto.
 - O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
@@ -98,7 +98,7 @@ Após a revisão documental:
 - 6 Route Handlers, incluindo `POST /api/clientes` e `POST /api/donos`;
 - 11 layouts;
 - 25 arquivos Markdown, dos quais 17 ficam em `docs/`;
-- 10 migrations, 10 rollbacks, seed atualizado, schema-aviso e 3 pgTAPs com 192 asserções aprovadas sobre o conjunto completo; ainda faltam casos pgTAP específicos para as constraints de e-mail da migration 9;
+- 11 migrations, 11 rollbacks, seed atualizado, schema-aviso e 4 pgTAPs com 205 asserções aprovadas sobre o conjunto completo;
 - código JS/JSX e SQL distribuído entre `app`, `components`, `lib` e Supabase; a contagem de linhas é deliberadamente omitida porque muda a cada migration e não representa avanço funcional.
 
 Os documentos especializados de Auth e dos passos 4–5 são `docs/AUTENTICACAO-E-SESSOES.md` e `docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md`. Contagens são inventário, não critério de qualidade.
@@ -297,7 +297,7 @@ Não reintroduzir auto-fit como experiência principal. Não transformar novamen
 - `public.convites_barbearia`;
 - `public.eventos_auditoria`.
 
-No contrato atual do MVP, cliente exige nome, e-mail e telefone/WhatsApp. A deduplicação continua por `barbearia_id + whatsapp_normalizado` (somente dígitos); o e-mail é normalizado e indexado, mas não é chave única. A nona migration foi aplicada no remoto, porém o endpoint hospedado ainda falha e a causa está em diagnóstico.
+No contrato atual do MVP, cliente exige nome, e-mail, telefone/WhatsApp, aceite `cadastro-v1` e token Turnstile. A deduplicação continua por `barbearia_id + whatsapp_normalizado`; o e-mail é normalizado e indexado, mas não é chave única. A persistência hospedada foi comprovada; a proteção nova está validada localmente e aguarda chaves reais no Render.
 
 ### Buckets atuais
 
@@ -331,7 +331,7 @@ As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As s
 - `scripts/test-db-concurrency.mjs` usa sessões concorrentes e uma conexão observadora/administrativa. Em 24/08 passou para último dono, atribuição/revogação e dois workers da outbox sem duplicação.
 - O harness JWT integrado passou com Auth real local, Data API/RLS, Storage com blob, refresh, token expirado, logout global e recuperação TOTP. Callback/e-mail hospedados têm evidência separada.
 - Em 22/08, a atualização do CLI 2.112.0 para 2.115.0 e a desativação explícita de Analytics/Vector opcionais eliminaram a corrida de health check sem expor o daemon Docker em `2375`.
-- `db:start` e `db:reset` encerram com exit `0`; dez migrations, seed atualizado e pgTAP 192/192 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
+- `db:start` e `db:reset` encerram com exit `0`; onze migrations, seed atualizado e pgTAP 205/205 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
 - Na auditoria de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Não há `.env.local` nem projeto remoto vinculado.
 - O reset de 24/08 encerrou com exit `0`, aplicou as dez migrations e o seed atualizado; pgTAP 192/192, RLS/JWT, Data API, Storage real, recuperação TOTP opcional, lifecycle, concorrência e rollback/roll-forward 10–9 passaram.
 
@@ -410,7 +410,7 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 
 ### P0 — antes de chamar Auth hospedado de encerrado
 
-1. Acrescentar cobertura específica para as constraints de e-mail da migration 9; os gates gerais das dez migrations, concorrência e rollback/roll-forward 10–9 já passaram.
+1. Acrescentar cobertura específica para as constraints de e-mail da migration 9; os gates gerais das onze migrations e o rollback/roll-forward da migration 11 passaram, e as evidências anteriores de concorrência e 10–9 permanecem válidas.
 2. Provar no hospedado que o dono AAL1 pode escolher **Configurar depois**, ativar TOTP posteriormente e recuperar o acesso.
 3. Executar a matriz remota de isolamento entre dois tenants, papéis e AALs relevantes; Data API e Storage já passaram localmente com JWT real.
 4. Finalizar templates e operacionalizar a outbox com Worker Cloudflare, scheduler, alertas, retry e logs sem PII.
@@ -456,9 +456,9 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - `npm.cmd run build`: aprovado novamente em 24/08/2026, com 32 páginas, 6 Route Handlers e Proxy;
 - smoke HTTP: evidência histórica de 13/08/2026, com páginas públicas `200` e superfícies internas `307` para o modo seguro;
 - Git: repositório operacional, árvore limpa antes desta revisão e baseline `7c34dab` confirmado;
-- banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 192/192 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
+- banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 205/205 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
 - migrations 4–5: rollbacks defensivos ensaiados no PostgreSQL local, histórico reconciliado e roll-forward reaplicado pelo CLI; lint, pgTAP e concorrência passaram depois;
-- pgTAP: três suítes transacionais passaram 59 + 112 + 21, totalizando 192/192 asserções;
+- pgTAP: quatro suítes transacionais passaram 59 + 112 + 21 + 13, totalizando 205/205 asserções;
 - concorrência: runner executado em 22/08 no banco local marcado; as corridas de último dono e atribuição/revogação passaram, e os fixtures foram removidos;
 - simulador: arquivos permaneceram sem alteração nesta rodada documental.
 
@@ -466,7 +466,7 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Endurecer `POST /api/clientes` com rate limit/CAPTCHA, consentimento e teste automatizado; remover o registro sintético antes do piloto.
+1. Configurar as chaves reais do Turnstile no Render, publicar o código já validado de `POST /api/clientes` e executar o smoke hospedado de 400/403/201/429; remover o registro sintético antes do piloto.
 2. Provar hospedado **Configurar depois**, ativação posterior de TOTP e recuperação de senha; substituir o limite em memória por proteção distribuída/CAPTCHA.
 3. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
 4. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento sem dados reais.

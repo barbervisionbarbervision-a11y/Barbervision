@@ -22,7 +22,7 @@ Situação confirmada nesta revisão:
 - o Git está operacional e o commit baseline `7c34dab` foi confirmado;
 - convites e provisionamento têm código e contratos SQL cobertos por pgTAP, mas nenhuma jornada real foi executada/testada;
 - o lint foi repetido em 21/08 e terminou com zero erros e 18 warnings; o build aprovado continua sendo o de 14/08 e o smoke HTTP permanece evidência histórica de 13/08;
-- reset das dez migrations, pgTAP 192/192, concorrência, rollback/roll-forward 10–9, JWT/Data API, Storage com blob real e Auth/E2E com lifecycle passam localmente; o lint amplo do PostgreSQL 17 ainda inclui falsos positivos internos do pgTAP;
+- reset das onze migrations e pgTAP 205/205 passam localmente; as evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/Data API, Storage com blob real e Auth/E2E com lifecycle permanecem válidas; o lint amplo do PostgreSQL 17 ainda inclui falsos positivos internos do pgTAP;
 - privacidade de selfies e primeiro fluxo vertical persistido ainda não começaram como implementação de produção.
 
 Consequência operacional: o projeto está adequado para demonstração controlada com dados fictícios. Ainda não está adequado para cadastrar barbearias, usuários ou clientes reais.
@@ -138,7 +138,7 @@ Regras obrigatórias:
 | `npm run lint` | ESLint | Repetido em 21/08: exit `0`, zero erros e 18 warnings |
 | `npm run db:start` | Inicia Supabase local | aprovado com exit `0`; serviços necessários saudáveis |
 | `npm run db:reset` | Aplica migrations e seed | aprovado com exit `0` no CLI 2.115.0 |
-| `npm run db:test` | Executa pgTAP | aprovado: 59/59 + 112/112 + 21/21 = 192/192 |
+| `npm run db:test` | Executa pgTAP | aprovado: 59/59 + 112/112 + 21/21 + 13/13 = 205/205 |
 | `npm run db:test:concurrency` | Executa duas corridas com conexões reais | aprovado: último dono e atribuição/revogação serializados corretamente |
 | `npm run db:test:integration` | Executa Auth/TOTP, JWT-RLS e Storage com blob real | aprovado; cenários permitidos/negados e limpeza 0/0/0 |
 | `npm run db:lint` | Lint do PostgreSQL local | aprovado sem erros em 22/08 |
@@ -182,13 +182,13 @@ npm.cmd run db:lint
 npm.cmd run db:test
 ```
 
-As três suítes pgTAP precisam comprovar as 192 asserções. Só execute `db:test:concurrency` depois do reset, de configurar as três variáveis de teste e de marcar explicitamente o banco descartável conforme a seção anterior. Após o ensaio documentado de rollback/roll-forward, repita `db:lint`, as 192 asserções e a concorrência.
+As quatro suítes pgTAP precisam comprovar as 205 asserções. Só execute `db:test:concurrency` depois do reset, de configurar as três variáveis de teste e de marcar explicitamente o banco descartável conforme a seção anterior. Após o ensaio documentado de rollback/roll-forward, repita `db:lint`, as 205 asserções e a concorrência.
 
 No smoke HTTP histórico de 13/08 do build sem `.env.local`, `/` e `/b/barbearia-exemplo` responderam `200`; `/barbeiro/login`, `/barbeiro/dashboard` e `/admin` responderam `307` para `/?modo=seguro`. Isso comprova a contenção desse modo, não o Auth Supabase nem o smoke visual.
 
 ## Banco e Storage
 
-Dez migrations estão versionadas:
+Onze migrations estão versionadas:
 
 1. `20260808010000_tenant_core.sql`: `barbearias`, `perfis`, `membros_barbearia`, `clientes` e `atribuicoes_cliente`;
 2. `20260808011000_tenant_rls.sql`: grants, policies e funções de escopo por tenant/papel;
@@ -200,15 +200,16 @@ Dez migrations estão versionadas:
 8. `20260822030000_invite_email_outbox.sql`: fila privada, lease, retry e reconciliação de expiração.
 9. `20260824010000_clientes_email.sql`: e-mail exibido/normalizado do cliente público.
 10. `20260824020000_owner_mfa_optional.sql`: TOTP recomendado, mas opcional para o dono permanente.
+11. `20260825010000_public_registration_protection.sql`: consentimento versionado e contador distribuído do cadastro público.
 
 Limites atuais:
 
-- as dez migrations e o seed atualizado foram aplicados por `db:reset` em 24/08, com encerramento limpo e validação pós-reset aprovada;
-- os três pgTAPs passaram 59 + 112 + 21 asserções; cobrem RLS, assurance/onboarding/lifecycle e outbox;
+- as onze migrations e o seed atualizado foram aplicados por `db:reset` em 25/08, com encerramento limpo e validação pós-reset aprovada;
+- os quatro pgTAPs passaram 59 + 112 + 21 + 13 asserções; cobrem RLS, assurance/onboarding/lifecycle, outbox e proteção do cadastro público;
 - não há JWT real, TOTP, callback ou Data API nos testes SQL;
 - o bucket de selfies permanece deliberadamente sem policy pública/cliente até a etapa de privacidade;
-- os rollbacks históricos 8–4 e o ensaio incremental 10–9, com reconciliação de `supabase_migrations` e roll-forward, estão registrados no [Runbook de rollback do banco](ROLLBACK-BANCO.md);
-- todas as migrations passaram por `db:reset`; `db:test` 192/192 passou depois;
+- os rollbacks históricos 8–4, o ensaio incremental 10–9 e o da migration 11, com reconciliação de `supabase_migrations` e roll-forward, estão registrados no [Runbook de rollback do banco](ROLLBACK-BANCO.md);
+- todas as onze migrations passaram por `db:reset`; `db:test` 205/205 passou depois;
 - o runner concorrente exige confirmação exata e comentário marcador; último dono, atribuição/revogação e dois workers da outbox passaram no banco local descartável em 24/08;
 - seed e fixtures SQL não equivalem a contas utilizáveis por `signInWithPassword`.
 
@@ -280,9 +281,9 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 - [x] abrir o Docker Desktop como `leoto`; processos de interface e backend ficaram ativos;
 - [x] comprovar que o engine da sessão `leoto` inicia PostgreSQL/containers e aplica migrations/seed; observado transitoriamente em 14/08;
 - [x] manter `54321`, `54322`, `54323`, Auth, Storage e Studio saudáveis com CLI 2.115.0;
-- [x] repetir `db:reset` até exit `0`; dez migrations, seed e pgTAP pós-reset aprovados em 24/08;
+- [x] repetir `db:reset` até exit `0`; onze migrations, seed e pgTAP pós-reset aprovados em 25/08;
 - [x] versionar testes para e-mail não confirmado, dono AAL1, dono AAL2, funcionário, convites, lifecycle e auditoria;
-- [x] executar as 192 asserções e repetir integração/concorrência após atualizar fixtures para as migrations 9–10;
+- [x] executar as 205 asserções; integração/concorrência anteriores permanecem válidas e devem ser repetidas antes do piloto;
 - [ ] confirmar que o bucket de selfies não possui acesso acidental;
 - [x] adicionar down scripts defensivos para assurance e onboarding/lifecycle;
 - [x] ensaiar rollback/roll-forward e definir o tratamento do histórico de migrations.
@@ -375,7 +376,7 @@ Verifique confirmação de e-mail, membership ativa, claim `aal`, factors TOTP e
 
 ### A tela Equipe falha
 
-Confirme que as dez migrations foram aplicadas e que a sessão pertence a um dono ativo do tenant correto. Depois revise a Admin API, SMTP, callbacks e o status do convite. TOTP não é mais obrigatório para esse fluxo.
+Confirme que as onze migrations foram aplicadas e que a sessão pertence a um dono ativo do tenant correto. Depois revise a Admin API, SMTP, callbacks e o status do convite. TOTP não é mais obrigatório para esse fluxo.
 
 ### `auth:provision-owner` convida, mas não cria a barbearia
 

@@ -25,5 +25,13 @@ services:
         sync: false
       - key: BARBERVISION_CRON_SECRET
         sync: false
+      - key: NEXT_PUBLIC_TURNSTILE_SITE_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: BARBERVISION_TURNSTILE_HOSTNAMES
+        value: barbervision.onrender.com
+      - key: BARBERVISION_RATE_LIMIT_SECRET
+        generateValue: true
       - key: BARBERVISION_ENABLE_UNSAFE_INTERNAL_DEMO
         value: "false"

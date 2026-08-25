@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Logo from "@/components/Logo";
 import Button from "@/components/Button";
 import ProgressSteps from "@/components/ProgressSteps";
+import TurnstileWidget from "@/components/TurnstileWidget";
 import { setFluxo } from "@/lib/clienteFlow";
 
 export default function Cadastro() {
@@ -16,10 +17,13 @@ export default function Cadastro() {
   const [codigoIndicacao, setCodigoIndicacao] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
+  const [aceiteCadastro, setAceiteCadastro] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
 
   async function continuar(e) {
     e.preventDefault();
-    if (!nome.trim() || !email.trim() || !whatsapp.trim()) return;
+    if (!nome.trim() || !email.trim() || !whatsapp.trim() || !aceiteCadastro || !turnstileToken) return;
 
     setEnviando(true);
     setErro("");
@@ -28,7 +32,14 @@ export default function Cadastro() {
       const resposta = await fetch("/api/clientes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ barbeariaSlug: barbearia, nome, email, whatsapp })
+        body: JSON.stringify({
+          barbeariaSlug: barbearia,
+          nome,
+          email,
+          whatsapp,
+          aceiteCadastro,
+          turnstileToken
+        })
       });
       const resultado = await resposta.json();
       if (!resposta.ok) throw new Error(resultado.erro || "Não foi possível salvar o cadastro.");
@@ -45,6 +56,7 @@ export default function Cadastro() {
       router.push(`/b/${encodeURIComponent(barbearia)}/selfie`);
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Não foi possível salvar o cadastro.");
+      setTurnstileResetKey((valor) => valor + 1);
       setEnviando(false);
     }
   }
@@ -104,9 +116,25 @@ export default function Cadastro() {
           />
         </label>
 
+        <label className="flex items-start gap-3 text-sm text-steel leading-relaxed">
+          <input
+            type="checkbox"
+            checked={aceiteCadastro}
+            onChange={(e) => setAceiteCadastro(e.target.checked)}
+            required
+            className="mt-1 h-4 w-4 accent-brass"
+          />
+          <span>
+            Li e autorizo o uso dos dados acima para meu cadastro e para continuar esta experiência.
+            Este aceite não autoriza mensagens de marketing nem o armazenamento da selfie.
+          </span>
+        </label>
+
+        <TurnstileWidget onToken={setTurnstileToken} resetKey={turnstileResetKey} />
+
         {erro && <p role="alert" className="text-sm text-red-400">{erro}</p>}
 
-        <Button type="submit" disabled={enviando} className="mt-4">
+        <Button type="submit" disabled={enviando || !aceiteCadastro || !turnstileToken} className="mt-4">
           {enviando ? "Salvando..." : "Continuar"}
         </Button>
       </form>

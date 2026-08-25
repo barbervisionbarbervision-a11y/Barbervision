@@ -19,9 +19,11 @@ O placement ativo é **v7**, `manual-placement-v1`, `manual-local`, `automatico:
 
 Existem integrações server-side estreitas para Auth, incluindo callbacks, clientes Supabase SSR, Server Actions e o worker protegido da outbox. Em 23/08, reset, lint, pgTAP 192/192, rollback/roll-forward 8–4, concorrência e E2E atualizado passaram.
 
-Existe um endpoint de domínio mínimo, `POST /api/clientes`, para resolver a barbearia por slug e criar/atualizar nome, e-mail e WhatsApp por telefone normalizado usando cliente admin server-only. A migration correspondente foi aplicada no remoto, mas a tentativa hospedada ainda falha e não comprova persistência. Não há endpoints de domínio para catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas. O painel ainda lê mocks/armazenamento local.
+Existe um endpoint de domínio mínimo, `POST /api/clientes`, para resolver a barbearia por slug e criar/atualizar nome, e-mail e WhatsApp por telefone normalizado usando cliente admin server-only. A persistência e a idempotência foram comprovadas no hospedado em 24/08. Em 25/08, a migration 11 adicionou aceite versionado e rate limit atômico no Supabase, e o endpoint passou a validar Cloudflare Turnstile no servidor. A migration está remota; a nova versão da aplicação aguarda chaves reais do Turnstile no Render. Não há endpoints de domínio para catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas.
 
 ### `POST /api/clientes`
+
+Contrato protegido: exige `barbeariaSlug`, nome, e-mail, WhatsApp, `aceiteCadastro: true` e `turnstileToken`. O servidor aplica 10 tentativas por rede/tenant em 10 minutos e 5 por contato/tenant em uma hora, usando somente HMAC no banco. Respostas adicionais: `403` para desafio inválido, `429` com `Retry-After` para limite excedido e `503` quando a origem ou a configuração de segurança não pode ser validada. O aceite `cadastro-v1` não autoriza marketing nem persistência de selfie.
 
 - entrada: `barbeariaSlug`, `nome`, `email` e `whatsapp`;
 - valida e normaliza no servidor;
@@ -546,15 +548,15 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 ### Banco versionado
 
-`supabase/schema.sql` é somente um índice documental. A fonte de verdade são dez migrations, incluindo retomada do dono, outbox, e-mail de clientes e MFA opcional. Há dez rollbacks; o ensaio incremental 10–9 foi aprovado em 24/08, além do histórico 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
+`supabase/schema.sql` é somente um índice documental. A fonte de verdade são onze migrations, incluindo retomada do dono, outbox, e-mail de clientes, MFA opcional e proteção do cadastro público. Há onze rollbacks; o ensaio da migration 11 foi aprovado em 25/08, além dos ensaios incremental 10–9 e histórico 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
 
-Os pgTAPs passaram 59 + 112 + 21 asserções, totalizando 192/192. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
+Os pgTAPs passaram 59 + 112 + 21 + 13 asserções, totalizando 205/205. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
 
 Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema, usuários, SMTP, redirects ou integrações de domínio. O modo real não deve ser habilitado para usuários até essas dependências serem aplicadas e testadas.
 
 ### Sequência canônica de validação
 
-Os gates locais anteriores foram executados, dez migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback e entrega de convite foram comprovados; faltam corrigir/provar a API de clientes, publicar Cloudflare e repetir a matriz remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais anteriores foram executados, onze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite e persistência da API de clientes foram comprovados. A proteção antiabuso passou localmente e aguarda chaves reais do Turnstile no Render; depois faltam o smoke hospedado, publicar o scheduler Cloudflare e repetir a matriz remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 

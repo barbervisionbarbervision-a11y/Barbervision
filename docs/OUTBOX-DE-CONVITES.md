@@ -38,9 +38,9 @@ Se um worker cair depois de enviar o e-mail e antes de confirmar no banco, o lea
 
 Após a migration, passaram localmente:
 
-- `npm run db:reset` com dez migrations e seed atualizado;
+- `npm run db:reset` com onze migrations e seed atualizado;
 - `npm run db:lint` sem erros;
-- `npm run db:test` com 59 + 112 + 21 = 192 asserções;
+- `npm run db:test` com 59 + 112 + 21 + 13 = 205 asserções;
 - `npm run lint` com zero erros e 18 warnings já existentes;
 - verificação sintática dos módulos do worker e da rota.
 
