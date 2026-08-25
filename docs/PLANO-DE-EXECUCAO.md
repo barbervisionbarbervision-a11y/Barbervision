@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. A proteção do cadastro público está ativa e validada no hospedado, e o cliente sintético foi removido com o cadastro real preservado. As prioridades seguintes são executar a matriz Auth remota e publicar o Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. Cadastro público protegido, primeiro dono, recuperação e login foram comprovados no hospedado; o cliente sintético foi removido. O callback de convite foi corrigido em `def60d3` e aguarda reteste com um convite novo. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -26,12 +26,11 @@ O simulador de cabelo fica congelado durante os passos 2–5, salvo correção c
 
 Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operacional é única:
 
-1. Revogar e substituir a `SUPABASE_SECRET_KEY` exposta na captura do Render.
-2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
-3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
-4. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
-5. Executar a matriz remota controlada de Auth, TOTP, convite/outbox, RLS e Storage.
-6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
+1. Retestar um convite novo de funcionário após `def60d3` e comprovar senha, login, papel e membership.
+2. Provar isolamento do segundo usuário, **Configurar depois** e ativação posterior de TOTP.
+3. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
+4. Executar os casos adversários restantes de Auth/outbox, RLS e Storage no ambiente remoto controlado.
+5. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
 Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das doze migrations e pgTAP 205/205 passaram localmente, incluindo rollback/roll-forward da migration 11. As evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/RLS, Storage real e Playwright permanecem válidas no escopo testado. Doze migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite, cadastro idempotente, proteção antiabuso e limpeza do dado sintético foram comprovados remotamente.

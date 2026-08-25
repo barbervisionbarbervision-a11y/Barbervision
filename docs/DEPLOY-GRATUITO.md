@@ -1,6 +1,6 @@
 # Deploy gratuito: Render + Cloudflare + Supabase
 
-> Estado em **25/08/2026**: GitHub e Supabase estão vinculados; doze migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects, SMTP Brevo e Turnstile foram configurados. Entrega real de convite e cadastro público protegido foram comprovados; o smoke remoto confirmou `400`, `403` e `201`. O cliente sintético foi removido e o cadastro real preservado. O Worker Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
+> Estado em **25/08/2026**: GitHub e Supabase estão vinculados; doze migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects, SMTP Brevo e Turnstile foram configurados. Primeiro dono, recuperação, redefinição, login, painel, transporte de convite e cadastro público protegido foram comprovados; o smoke remoto confirmou `400`, `403` e `201`. A ativação de um funcionário com convite novo após `def60d3` ainda precisa de reteste. O cliente sintético foi removido e o cadastro real preservado. O Worker Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
 
 ## Arquitetura
 

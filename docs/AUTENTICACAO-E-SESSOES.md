@@ -1,6 +1,14 @@
 # Autenticação e sessões
 
-> Estado reconciliado em **22/08/2026**: Auth, lifecycle e provisionamento retomável do primeiro dono aprovados localmente; hardening operacional permanece parcial. O pgTAP do passo 3 passa 112/112. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
+> Estado reconciliado em **25/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, login e painel foram comprovados. O convite de funcionário passou a usar `/auth/complete` no commit `def60d3` e aguarda reteste com um convite novo. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
+
+## Compatibilidade dos links hospedados
+
+- `/auth/confirm` aceita `token_hash` dos templates personalizados e `code` do fluxo PKCE hospedado;
+- `/auth/complete` consome no navegador sessões entregues no fragmento `#access_token`, remove os tokens da URL e aceita a membership quando existe `convite`;
+- recuperação aprovada no hospedado direciona para `/barbeiro/redefinir-senha`;
+- convites antigos emitidos antes de `def60d3` apontam para o callback anterior e devem ser revogados, não reutilizados;
+- um convite novo ainda precisa comprovar ativação, definição de senha e acesso limitado de funcionário no ambiente hospedado.
 
 ## Objetivo
 

@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **24/08/2026**. O Render está publicado, o Supabase remoto recebeu dez migrations e o SMTP Brevo foi configurado. O cadastro público e o primeiro acesso do dono estão publicados. E-mail confirmado continua obrigatório; o autenticador TOTP passou a ser opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
+> Estado reconciliado em **25/08/2026**. O Render está publicado, o Supabase remoto recebeu doze migrations e o SMTP Brevo está operacional. Cadastro público protegido, primeiro dono, recuperação de senha e login foram comprovados no hospedado. O novo callback de convite de funcionário está publicado e aguarda reteste com um convite novo. E-mail confirmado continua obrigatório; TOTP é opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -18,8 +18,8 @@ O simulador de cabelo está **congelado por decisão de produto**: a preparaçã
 | Passo | Estado real | Observação |
 |---|---|---|
 | 1. Segurança da demonstração | Concluído para a demo controlada | Em produção sem Auth, `/admin` permanece sempre bloqueado; uma flag explicitamente insegura pode liberar somente a demo de `/barbeiro/*`. |
-| 2. Supabase, tenant e RLS | Validado localmente | Reset, lint, pgTAP 192/192, concorrência histórica, RLS via JWT e Storage com blob real passam. |
-| 3. Autenticação real | Jornada principal aprovada; gaps operacionais abertos | Playwright comprova login, TOTP/AAL2 do dono, convite/ativação de funcionário, recuperação de senha, revogação de convite e logout com Auth e Mailpit locais reais. |
+| 2. Supabase, tenant e RLS | Validado localmente e migrado no hospedado | Doze migrations; reset e pgTAP 205/205 passam, com evidências de concorrência, RLS via JWT e Storage com blob real. |
+| 3. Autenticação real | Dono e recuperação aprovados no hospedado; convite em reteste | Login e recuperação hospedados funcionam. O fluxo de convite por fragmento foi corrigido no commit `def60d3`, mas a ativação de um segundo usuário ainda precisa ser comprovada em produção. |
 | 4. Privacidade e consentimento | Não iniciado | Ainda faltam consentimento afirmativo, retenção, exclusão, termos e governança LGPD. |
 | 5. Fluxo vertical persistido | Não iniciado | A jornada pública continua em `sessionStorage`/`localStorage`; não cria simulação, agenda ou avaliação no banco. |
 | 6. Painel operacional real | Não iniciado | As telas de negócio ainda usam mocks e armazenamento do navegador. |
@@ -76,7 +76,7 @@ As migrations criam:
 - exigência de e-mail confirmado, perfil e membership ativos; TOTP opcional para reforçar a conta do dono;
 - nove RPCs estreitas para criar, aceitar, revogar e registrar envio/falha de convite, provisionar o primeiro dono e suspender, reativar ou revogar funcionário.
 
-As migrations de onboarding, leitura operacional, retomada do primeiro dono e outbox entregam os contratos de Auth. Reset, lint e pgTAP 192/192 passam localmente. A criação do convite e o enqueue são atômicos; um worker server-only reivindica itens com lease, aplica backoff exponencial, conclui de forma idempotente e materializa convites vencidos. O disparo imediato usa `after()`, mas produção ainda exige um agendador externo chamando a rota interna protegida. Transferência de dono continua pendente.
+As migrations de onboarding, leitura operacional, retomada do primeiro dono, outbox, consentimento e proteção de cadastro entregam os contratos atuais. Reset e pgTAP 205/205 passam localmente sobre as doze migrations. A criação do convite e o enqueue são atômicos; um worker server-only reivindica itens com lease, aplica backoff exponencial, conclui de forma idempotente e materializa convites vencidos. O disparo imediato usa `after()`, mas produção ainda exige um agendador externo chamando a rota interna protegida. Transferência de dono continua pendente.
 
 ## Stack
 
@@ -227,10 +227,10 @@ docs/                    documentação técnica e de produto
 - Em 22/08/2026, `npm run lint`, `npm run build`, `launcher.bat --check` e `npm run db:lint` passaram. O lint possui 0 erros e 18 warnings.
 - O build de 24/08 confirmou 32 páginas, 6 Route Handlers e Proxy. Sem rede, ele pode falhar ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
 - O Supabase necessário está saudável; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Storage foi validado com JWT e blob real.
-- As três suítes pgTAP passaram: 59/59, 112/112 e 21/21, totalizando 192/192.
+- As quatro suítes pgTAP passam: 59/59, 112/112, 21/21 e 13/13, totalizando 205/205.
 - O runner concorrente passou no banco local explicitamente marcado: último dono, revogação/atribuição e dois workers da outbox sem duplicação.
 - O Git está operacional, com baseline `7c34dab` confirmado.
-- Em 24/08, um reset limpo aplicou as dez migrations e o seed atualizado. pgTAP 192/192, JWT/Data API, Storage, recuperação TOTP e concorrência passaram; rollback/roll-forward das migrations 10–9 também foi aprovado.
+- Em 25/08, um reset limpo aplicou as doze migrations e o seed atualizado. pgTAP 205/205 passou; JWT/Data API, Storage, recuperação TOTP, concorrência e rollback/roll-forward 10–9 permanecem aprovados, e a migration 11 teve rollback/roll-forward validado.
 - O smoke HTTP de contenção permanece evidência histórica de 13/08/2026, e o simulador continua sujeito a validação em aparelhos reais antes do piloto.
 
 Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
@@ -254,11 +254,11 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Endurecer o cadastro público funcional com rate limit distribuído/CAPTCHA, teste automatizado e consentimento; remover o registro sintético antes do piloto.
-2. Provar no hospedado a opção **Configurar depois**, ativação posterior do TOTP, recuperação e isolamento multi-tenant.
-3. Aplicar os templates finais de e-mail e testar convite, confirmação e recuperação no hospedado.
-4. Publicar e validar o scheduler Cloudflare da outbox, incluindo `401`, retry e logs redigidos.
-5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.
+1. Criar um convite novo após o deploy `def60d3` e comprovar ativação, definição de senha, login e permissões do funcionário.
+2. Com o segundo usuário, provar isolamento por papel e tenant; validar também **Configurar depois** e ativação posterior de TOTP para o dono.
+3. Publicar e validar o scheduler Cloudflare da outbox, incluindo `401`, retry e logs redigidos.
+4. Finalizar os modelos hospedados de convite e recuperação e testar links inválidos, reutilizados e expirados.
+5. Implementar privacidade, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.
 
 Depois desses gates, o passo 5 persiste o fluxo vertical; painel, catálogo, produtos, financeiro e operação vêm nas fases seguintes.
 

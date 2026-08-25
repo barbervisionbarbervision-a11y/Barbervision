@@ -1,6 +1,6 @@
 # Pendências — Barber Vision
 
-Backlog oficial do projeto, reconciliado com o código e as evidências de execução em **24/08/2026**. A evidência temporal detalhada está em [Estado de validação](docs/ESTADO-VALIDACAO.md).
+Backlog oficial do projeto, reconciliado com o código e as evidências de execução em **25/08/2026**. A evidência temporal detalhada está em [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 Este arquivo separa o que existe em fonte do que foi executado e validado. Uma tela, migration ou função criada não encerra uma etapa sem teste proporcional ao risco.
 
@@ -17,8 +17,8 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 | Passo | Estado | Gate atual |
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
-| 2 — Supabase, tenant e RLS | Dez migrations validadas localmente e aplicadas no hospedado | Isolar warnings internos do pgTAP no lint e integrar os gates à CI |
-| 3 — Auth real | Primeiro dono, callback e entrega Brevo comprovados; MFA opcional publicado | Provar recuperação, isolamento e operações administrativas na matriz remota |
+| 2 — Supabase, tenant e RLS | Doze migrations validadas localmente e aplicadas no hospedado | Isolar warnings internos do pgTAP no lint e integrar os gates à CI |
+| 3 — Auth real | Dono, recuperação e login comprovados; convite corrigido e em reteste | Provar ativação do funcionário, isolamento e MFA opcional na matriz remota |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -34,7 +34,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 - [x] Formulário público de nome, e-mail e WhatsApp.
 - [x] `POST /api/clientes` server-side e migration remota de e-mail de cliente.
 - [x] Comprovar a gravação hospedada no tenant `barbervision`: criação retornou `201` e repetição do mesmo WhatsApp preservou o mesmo UUID.
-- [ ] Remover o registro sintético de validação `945ffed9-783a-4ff6-a33e-dace675ca987` antes do piloto.
+- [x] Remover exatamente o registro sintético de validação `945ffed9-783a-4ff6-a33e-dace675ca987`, preservando o cadastro real.
 - [x] Upload/captura de selfie.
 - [x] Processamento visual no navegador com MediaPipe.
 - [x] Preparação automática local da região do cabelo.
@@ -83,9 +83,9 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — fechar o hardening do primeiro dono**: testar hospedado **Configurar depois**, recuperação, isolamento e proteção antiabuso dos fluxos Auth.
-2. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente hospedado.
-3. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
+1. **P0 — retestar o convite de funcionário**: após o commit `def60d3`, revogar o convite antigo, emitir um novo e comprovar ativação, senha, login e membership correta.
+2. **P0 — fechar a matriz Auth hospedada**: recuperação já foi aprovada; faltam isolamento, **Configurar depois**, ativação posterior de TOTP e casos adversários de links.
+3. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente hospedado.
 4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
@@ -133,7 +133,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Executar `npm run db:test`: aprovado em 22/08 com 59/59 no passo 2 e 112/112 no passo 3.
 - [x] Corrigir os três cenários de `UPDATE` e o fixture que isola a constraint de formato do telefone.
 - [x] Confirmar que todas as 192 asserções passam após reset limpo.
-- [x] Após o roll-forward 10–9, repetir pgTAP 192/192 e confirmar as dez versões; integração e concorrência também passaram nesta rodada.
+- [x] Após o roll-forward 10–9, repetir a suíte então vigente e confirmar as dez versões; integração e concorrência também passaram nessa rodada histórica. O estado atual é doze migrations e pgTAP 205/205.
 - [x] Criar fixtures efêmeras Auth reais para dono AAL1/AAL2, funcionário e usuário cross-tenant nos harnesses locais, com limpeza ao final.
 - [x] Criar harness reproduzível para Data API e Storage: `npm run db:test:integration` aprovado com JWT/TOTP e blob reais.
 - [x] Testar Data API com JWTs reais, incluindo AAL1/AAL2, funcionário atribuído, suspenso, sem membership e cross-tenant.
@@ -239,12 +239,13 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 ## P0 — e-mail, convite e recuperação
 
 - [ ] Criar `.env.local` apenas no ambiente controlado.
-- [ ] Configurar `NEXT_PUBLIC_SUPABASE_URL` e publishable key.
-- [ ] Configurar `SUPABASE_SECRET_KEY` somente no servidor.
-- [ ] Definir `BARBERVISION_APP_URL` HTTPS em produção.
-- [ ] Configurar allowlist exata de redirects no projeto hospedado.
+- [x] Configurar `NEXT_PUBLIC_SUPABASE_URL` e publishable key no Render.
+- [x] Configurar `SUPABASE_SECRET_KEY` somente no servidor e rotacionar a chave exposta anteriormente.
+- [x] Definir `BARBERVISION_APP_URL=https://barbervision.onrender.com` em produção.
+- [x] Configurar allowlist exata de redirects hospedados, incluindo `/auth/confirm`, `/auth/callback` e `/auth/complete`.
 - [x] Configurar SMTP Brevo no Supabase e desativar bloqueio de IP incompatível com IP dinâmico do Render.
-- [ ] Provar entrega real de convite, confirmação e recuperação pelo SMTP hospedado.
+- [x] Provar entrega real pelo SMTP Brevo e recuperação completa de senha no hospedado.
+- [ ] Provar novamente o convite de funcionário após a correção do callback por fragmento no commit `def60d3`.
 - [ ] Publicar templates de convite e recuperação.
 - [x] Testar convite real pelo Admin API, entrega no Mailpit, confirmação e ativação pela aplicação.
 - [ ] Testar confirmação de e-mail.
@@ -253,16 +254,16 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Criar reconciliação idempotente para materializar convites vencidos como `expirado` durante cada lote do worker.
 - [ ] Configurar um agendador no ambiente hospedado para chamar periodicamente a rota protegida do worker.
 - [x] Versionar Blueprint Render Free, health check e Cloudflare Cron Trigger a cada minuto com webhook opcional.
-- [x] Criar o projeto Supabase hospedado em São Paulo, vincular a CLI e aplicar as dez migrations atuais.
+- [x] Criar o projeto Supabase hospedado em São Paulo, vincular a CLI e aplicar as doze migrations atuais.
 - [x] Conectar o repositório privado ao Blueprint Render e chegar ao formulário das cinco variáveis.
 - [x] Revogar a `SUPABASE_SECRET_KEY` exposta em captura e criar uma substituta antes do deploy; confirmação do usuário em 24/08, sem registrar o novo valor.
 - [x] Concluir o deploy Render no commit `fbed47b`; URL `https://barbervision.onrender.com` Live e `/api/health` validado com HTTP 200.
 - [x] Diagnosticar o primeiro build Render: `tailwindcss` foi omitido pelo `npm ci` sob `NODE_ENV=production`; corrigir o Blueprint com `--include=dev`.
 - [x] Configurar Site URL e redirects exatos de `/auth/confirm` e `/auth/callback` no Supabase hospedado.
 - [x] Manter signup público desabilitado e confirmação de e-mail habilitada.
-- [ ] Aplicar/revisar templates hospedados e provar SMTP em entrega real.
+- [ ] Finalizar/revisar os textos dos templates hospedados; transporte SMTP e recuperação já foram comprovados.
 - [x] Implementar `/barbeiro/criar-conta` e o botão `Começar agora`, reutilizando a RPC controlada e confirmação por convite.
-- [ ] Validar o fluxo hospedado e reforçar a proteção contra abuso com mecanismo distribuído/CAPTCHA.
+- [x] Validar cadastro público hospedado com consentimento, Turnstile server-side e rate limit distribuído; smoke comprovou `400`, `403` e `201`.
 - [ ] Publicar o Worker Cloudflare e provar o cron em logs remotos com convite controlado.
 - [x] Fazer a revogação reler/retornar o estado autoritativo e exibir `expirado` quando a RPC expirar um convite vencido, em vez de sempre anunciar “Convite revogado”.
 - [x] Verificar e tratar o erro da compensação `revogar_convite_barbearia`; não afirmar que nenhum convite ficou ativo sem confirmação do banco.
@@ -589,7 +590,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Inventário atual: 12 migrations, 11 rollbacks e 4 pgTAPs com 205 asserções aprovadas; a migration 12 é limpeza operacional sem rollback de PII.
 - [x] Tornar o autenticador TOTP opcional, com ação **Configurar depois** e acesso posterior pela tela de Segurança.
 - [ ] Criar step-up explícito para futuras operações de alto risco, sem voltar a bloquear todo o painel em AAL1.
-- [x] Atualizar seed e fixtures para e-mail de cliente e repetir reset das dez migrations + pgTAP 192/192.
+- [x] Atualizar seed e fixtures para e-mail de cliente; o estado atual foi repetido com reset das doze migrations + pgTAP 205/205.
 - [x] Git operacional e baseline `7c34dab` confirmados; árvore limpa antes desta revisão.
 - [x] `npm run build` aprovado em 22/08 com 31 páginas, 2 Route Handlers e Proxy.
 - [x] `npm run db:lint` aprovado em 22/08 sem erros de schema.
@@ -597,7 +598,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] pgTAP do passo 2 aprovado com 59/59.
 - [x] Migration `20260813010000` identificada em fonte com duas tabelas e nove RPCs no schema `public`.
 - [x] Docker Desktop 4.86.0 e Docker CLI 29.7.2 instalados; ativação elevada do WSL terminou com exit `0`.
-- [x] Reset limpo de 24/08 aplicou as dez migrations e o seed com e-mails fictícios válidos.
+- [x] Reset limpo de 25/08 aplicou as doze migrations e o seed com e-mails fictícios válidos.
 - [x] Auth, Storage e Studio responderam `200`; containers necessários estão saudáveis.
 - [x] Simulador não foi alterado nesta revisão documental.
 
@@ -611,12 +612,12 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Obter encerramento limpo do CLI no reset com Supabase CLI 2.115.0.
 - [x] SQL lint em PostgreSQL local aprovado.
 - [x] Corrigir e repetir o pgTAP do passo 2: aprovado 59/59.
-- [x] As três suítes pgTAP aprovadas integralmente: 192/192.
+- [x] As quatro suítes pgTAP aprovadas integralmente no estado atual: 205/205.
 - [x] Rollbacks 4–5 ensaiados historicamente, com histórico reconciliado e roll-forward comprovado.
 - [x] Ensaiar o conjunto atual 8–4, reconciliar cinco versões e repetir lint, pgTAP 192/192 e concorrência em 23/08.
 - [x] Runner concorrente executado em 22/08 no banco local marcado: duas corridas aprovadas e limpeza dos fixtures concluída.
 - [x] Data API autorizada por JWT e Storage funcional com upload/download real no ambiente local descartável.
-- [x] Login, recuperação TOTP opcional e isolamento local reais; matriz remota completa continua pendente.
+- [x] Login, recuperação TOTP opcional e isolamento local reais; recuperação de senha, login e painel do primeiro dono também aprovados no hospedado. Convite novo de funcionário e isolamento remoto continuam pendentes.
 - [ ] Smoke visual atualizado de todas as rotas; o smoke HTTP de contenção já passou.
 
 ## Regra de atualização

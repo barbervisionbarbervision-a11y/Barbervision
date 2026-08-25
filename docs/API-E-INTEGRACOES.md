@@ -1,6 +1,6 @@
 # API e integrações
 
-Última atualização: **24/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
+Última atualização: **25/08/2026**. Evidência operacional atual: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Visão geral
 
@@ -31,7 +31,7 @@ Contrato protegido: exige `barbeariaSlug`, nome, e-mail, WhatsApp, `aceiteCadast
 - faz upsert por `barbearia_id + whatsapp_normalizado`;
 - retorna apenas `clienteId` em sucesso;
 - não expõe `SUPABASE_SECRET_KEY` ao navegador;
-- estado hospedado: publicado, migration aplicada, gravação ainda em diagnóstico.
+- estado hospedado: publicado; persistência/idempotência e proteção por consentimento, Turnstile e rate limit foram comprovadas.
 
 ## Plataforma HTTP e modo seguro
 
@@ -39,7 +39,7 @@ O runtime usa Next `16.3.0`. `proxy.js` corresponde a `/admin/:path*`, `/barbeir
 
 - **sem variáveis Supabase:** desenvolvimento preserva a demonstração local; em produção, `/admin` permanece sempre bloqueado e `/barbeiro/*` responde `307` para `/?modo=seguro`, salvo `BARBERVISION_ENABLE_UNSAFE_INTERNAL_DEMO=true`;
 - **com variáveis Supabase:** renova cookies e valida claims com `getClaims()`; permite `/barbeiro/login`, `/barbeiro/esqueci-senha` e `/auth/*`; protege as demais rotas `/barbeiro/*`; redireciona anônimo ao login e usuário autenticado no login ao dashboard;
-- `/admin` permanece bloqueado em produção e sempre que o Supabase está configurado, pois o Auth da plataforma ainda não foi criado;
+- `/admin` permanece bloqueado em produção e sempre que o Supabase está configurado; a administração da plataforma exige um domínio de autorização próprio, ainda não implementado;
 - a flag insegura nunca contorna Auth quando o Supabase está configurado.
 
 O redirect substitui a query anterior, usa `Cache-Control: private, no-store, max-age=0` e informa `X-BarberVision-Safe-Mode: active`. A flag é server-only e não pode receber o prefixo `NEXT_PUBLIC_`.
@@ -56,13 +56,13 @@ CSP e HSTS continuam pendentes. A CSP precisa ser testada contra scripts/estilos
 
 No modo real, o Proxy é apenas a primeira fronteira. Os layouts consultam perfil/membership/tenant no servidor; módulos exclusivos do dono exigem dono confirmado e ativo no próprio tenant. TOTP é opcional desde a migration 10. No modo demo, o `sessionStorage` continua adulterável e não constitui autorização. Em ambos os modos, chunks mock não são confidenciais e não podem conter dados reais.
 
-Inventário de 14/08/2026:
+Inventário reconciliado em 25/08/2026:
 
 - 32 páginas, seis Route Handlers e Proxy;
 - 10 páginas públicas, 20 páginas `/barbeiro` e uma página `/admin`;
 - modelos `.task`/`.tflite` e WASM continuam same-origin;
 - simulador manual permanece congelado nesta etapa;
-- validação de Auth, e-mail, MFA, SQL e RLS com infraestrutura real continua pendente.
+- SQL, RLS, Storage e a jornada Auth local foram aprovados; primeiro dono, recuperação, redefinição, login e painel foram comprovados no hospedado. Convite novo de funcionário, isolamento remoto e MFA opcional completo permanecem pendentes.
 
 ## Geração de imagem
 

@@ -292,7 +292,7 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 ### Auth
 
 - [x] testar login, logout local/global, refresh e expiração;
-- [ ] testar confirmação, recuperação e redefinição com links reais;
+- [x] testar confirmação, recuperação e redefinição com links reais para o primeiro dono no hospedado;
 - [ ] testar matrícula e challenge TOTP do dono;
 - [ ] testar bootstrap AAL1 sem liberar dados da barbearia;
 - [ ] executar e testar convites, aceite, revogação, expiração, provisionamento e auditoria;
@@ -308,7 +308,8 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 - [ ] configurar scheduler, segredo e alertas no ambiente hospedado;
 - [ ] definir transferência segura do dono;
 - [ ] definir seleção de tenant para usuários com mais de uma membership;
-- [ ] validar allowlist de redirects, templates, SMTP, rate limits e proteção contra abuso;
+- [x] validar allowlist de redirects, SMTP, rate limits e proteção contra abuso;
+- [ ] revisar templates finais e testar links expirados, reutilizados e inválidos;
 - [x] definir e testar recuperação operacional server-only quando o dono perde o TOTP.
 
 ### Aplicação
@@ -346,7 +347,7 @@ Antes de qualquer uso com clientes reais, são necessários:
 
 ## Deploy e release
 
-Ainda não existem configuração de hospedagem, CI/CD, ambientes, monitoramento, alertas, backup, restore testado, health check ou runbook de incidente.
+Render e Supabase hospedados estão operacionais, o deploy automático pelo GitHub funciona e `/api/health` responde. Ainda faltam CI independente, monitoramento e alertas, backup/restore testado e runbook de incidente; o scheduler Cloudflare da outbox também não foi publicado.
 
 Gates mínimos de release:
 

@@ -13,13 +13,13 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2 foi revalidado localmente em 25/08 sobre as doze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. A migration 12 é uma limpeza operacional, limitada por UUID, tenant e e-mail `.invalid`, sem alteração de schema. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, login e acesso ao painel foram comprovados no hospedado. O transporte de convite funciona, mas um convite novo de funcionário ainda precisa validar a correção de callback `def60d3`. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - O cadastro público coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`. Em 24/08, o tenant real `barbervision` respondeu `201`; repetir o mesmo WhatsApp preservou o mesmo UUID. Em 25/08, a migration 11, aceite versionado, rate limit atômico distribuído e Turnstile server-side foram publicados no Render pelo commit `52c9cf2`. O smoke hospedado confirmou `400` sem consentimento, `403` com token inválido e o fluxo real retornou `201`, avançando para selfie.
 - `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo hospedado criou o primeiro dono, enviou o convite e chegou à ativação/MFA. Usa honeypot e limite básico por origem; ainda requer proteção distribuída mais forte antes do piloto.
-- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação.
+- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação. A recuperação hospedada foi corrigida em `1110236` e aprovada; o convite de funcionário passou a apontar para o callback de navegador e aceitar a membership em `def60d3`, ainda pendente de reteste com um convite recém-gerado.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
 ## Intenção do produto confirmada
@@ -126,7 +126,7 @@ Supabase versionado e aplicado transitoriamente
 └─ Storage privado: fontes, recortes e selfies
 ```
 
-O bloco Supabase está versionado e foi recriado de forma limpa em 23/08 com CLI 2.115.0. Reset, lint, pgTAP 192/192, rollback/roll-forward 8–4, concorrência de domínio/outbox e E2E atualizado passam.
+O bloco Supabase está versionado e foi recriado de forma limpa em 25/08 com CLI 2.115.0. Reset, seed e pgTAP 205/205 passam sobre as doze migrations; rollback/roll-forward 11 e 10–9, concorrência de domínio/outbox, JWT/RLS, Storage e E2E local permanecem evidências aprovadas.
 
 ## Dois modos de runtime
 
@@ -333,7 +333,7 @@ As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As s
 - Em 22/08, a atualização do CLI 2.112.0 para 2.115.0 e a desativação explícita de Analytics/Vector opcionais eliminaram a corrida de health check sem expor o daemon Docker em `2375`.
 - `db:start` e `db:reset` encerram com exit `0`; doze migrations, seed atualizado e pgTAP 205/205 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
 - Na auditoria de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Não há `.env.local` nem projeto remoto vinculado.
-- O reset de 24/08 encerrou com exit `0`, aplicou as dez migrations e o seed atualizado; pgTAP 192/192, RLS/JWT, Data API, Storage real, recuperação TOTP opcional, lifecycle, concorrência e rollback/roll-forward 10–9 passaram.
+- A rodada histórica de 24/08 aplicou dez migrations e passou 192/192; o estado atual de 25/08 aplica doze migrations e passa 205/205. RLS/JWT, Data API, Storage real, recuperação TOTP opcional, lifecycle, concorrência e rollback/roll-forward 10–9 permanecem aprovados.
 
 ## Auth: arquivos e contratos
 
@@ -435,25 +435,25 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - redução dos 18 warnings de lint;
 - manifesto reproduzível dos arquivos congelados do simulador.
 
-## Validação reconciliada em 24/08/2026
+## Validação reconciliada em 25/08/2026
 
 ### Estado remoto comprovado
 
 - GitHub privado: `barbervisionbarbervision-a11y/Barbervision`, branch `main`, commit remoto inicial `6cea627`.
 - Supabase hospedado: projeto `barbervision`, ref pública `ftwdfobgwxjmeickktmy`, região `sa-east-1`, estado `ACTIVE_HEALTHY` no momento da vinculação.
 - `supabase link` terminou com sucesso.
-- Historicamente, o primeiro `db push` aplicou oito migrations; em 24/08, as migrations de e-mail de clientes e MFA opcional também foram aplicadas, totalizando dez no remoto.
-- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. O commit mais recente enviado é `ab97b14`.
+- Historicamente, o primeiro `db push` aplicou oito migrations; o remoto agora possui as doze migrations oficiais, incluindo consentimento/rate limit e limpeza exata do cliente sintético.
+- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A correção de convite mais recente enviada é `def60d3`.
 - Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
 - Cloudflare: nenhum login, secret, deploy, Cron Trigger ou log remoto foi comprovado.
-- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono e entrega de convite estão configurados/comprovados. Recuperação hospedada e templates finais ainda precisam de prova.
+- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, login e painel estão configurados/comprovados. A entrega de e-mail de convite funciona; falta gerar um convite novo e comprovar a ativação de funcionário após `def60d3`. Templates finais e casos adversários de links ainda precisam de prova.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
 - `npm audit`: 0 vulnerabilidades em 14/08; não foi repetido nesta revisão;
 - `launcher.bat --check`: aprovado em 21/08; o atalho da Área de Trabalho permanece como evidência validada em 14/08;
 - documentos: UTF-8 válido, links locais e fences íntegros;
-- `npm.cmd run build`: aprovado novamente em 24/08/2026, com 32 páginas, 6 Route Handlers e Proxy;
+- `npm.cmd run build`: aprovado novamente em 25/08/2026 após `def60d3`, com as rotas Auth `/auth/confirm`, `/auth/callback` e `/auth/complete` incluídas;
 - smoke HTTP: evidência histórica de 13/08/2026, com páginas públicas `200` e superfícies internas `307` para o modo seguro;
 - Git: repositório operacional, árvore limpa antes desta revisão e baseline `7c34dab` confirmado;
 - banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 205/205 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
@@ -466,12 +466,12 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
-2. Provar hospedado **Configurar depois**, ativação posterior de TOTP e recuperação de senha; substituir o limite em memória por proteção distribuída/CAPTCHA.
+1. Revogar o convite antigo, gerar um convite novo de funcionário e comprovar aceite, definição de senha, login e membership após `def60d3`.
+2. Provar isolamento por tenant/papel e os dois caminhos de MFA opcional: **Configurar depois** e ativação posterior de TOTP.
 3. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
-4. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento sem dados reais.
-6. Completar reatribuição, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
+4. Testar links expirados, reutilizados e inválidos, além dos templates finais de confirmação, convite e recuperação.
+5. Completar reatribuição, transferência de dono e seleção multi-tenant.
+6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou operar com clientes reais.
 
 Depois desses gates, persistir o fluxo vertical do passo 5 e só então migrar painel, catálogo/produtos, financeiro e operação.
 

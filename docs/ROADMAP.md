@@ -1,6 +1,6 @@
 # Roadmap técnico e de produto
 
-Estado reconciliado em **24/08/2026**. O Supabase remoto está migrado; Render e Cloudflare ainda não estão operacionalmente validados. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **25/08/2026**. Supabase e Render estão operacionais; cadastro público protegido e recuperação de senha foram comprovados no hospedado. O convite de funcionário corrigido ainda precisa de reteste e o scheduler Cloudflare não foi publicado. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -96,7 +96,7 @@ Critério de conclusão: banco recriado do zero, lint SQL e suíte de isolamento
 
 ## Passo 3 — Auth real, sessões e MFA
 
-Estado: **parcial e não validado**.
+Estado: **validado localmente; primeiro dono e recuperação aprovados no hospedado; convite de funcionário em reteste**.
 
 ### Já existe no código
 
@@ -118,7 +118,7 @@ Estado: **parcial e não validado**.
 
 ### Lacunas bloqueadoras
 
-- nenhuma configuração real de Supabase/SMTP/redirect foi testada;
+- Supabase hospedado, redirects, SMTP Brevo, primeiro dono e recuperação foram testados; falta fechar o convite novo de funcionário, isolamento remoto e os casos adversários;
 - as migrations de onboarding/lifecycle, leitura operacional, retomada e outbox estão aplicadas; pgTAP 133/133 do passo 3 passou;
 - envio de convite usa outbox durável com lease/retry e expiração reconciliada; E2E e dois workers concorrentes passaram, restando scheduler hospedado;
 - usuário Auth existente e retomada por UUID foram comprovados pelo script contra o ambiente local;
@@ -141,9 +141,9 @@ Estado: **parcial e não validado**.
 
 ### Sequência canônica para concluir a fundação
 
-1. Revogar e substituir a `SUPABASE_SECRET_KEY` exposta na captura do formulário Render.
-2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
-3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
+1. Revogar o convite antigo de funcionário e emitir um novo após `def60d3`.
+2. Comprovar aceite, definição de senha, login, membership e isolamento do funcionário no hospedado.
+3. Provar **Configurar depois** e ativação posterior de TOTP; revisar templates e links adversários.
 4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
 5. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento.
 6. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
@@ -348,9 +348,9 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
+1. Retestar um convite novo de funcionário após `def60d3`; recuperação hospedada já foi aprovada.
 2. Integrar à CI os gates locais já aprovados e adicionar casos específicos para as constraints de e-mail da migration 9.
-3. Provar **Configurar depois**, ativação posterior de TOTP e recuperação de senha no ambiente hospedado.
+3. Provar **Configurar depois** e ativação posterior de TOTP no ambiente hospedado.
 4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
 5. Executar a matriz remota de Auth, TOTP opcional, convite/outbox, RLS e isolamento.
 6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
