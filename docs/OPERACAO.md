@@ -188,13 +188,12 @@ No smoke HTTP histórico de 13/08 do build sem `.env.local`, `/` e `/b/barbearia
 
 ## Banco e Storage
 
-Oito migrations estão versionadas:
+Dez migrations estão versionadas:
 
 1. `20260808010000_tenant_core.sql`: `barbearias`, `perfis`, `membros_barbearia`, `clientes` e `atribuicoes_cliente`;
 2. `20260808011000_tenant_rls.sql`: grants, policies e funções de escopo por tenant/papel;
 3. `20260808012000_private_storage.sql`: buckets privados para fontes, cutouts e selfies;
-4. `20260808013000_auth_assurance.sql`: e-mail confirmado e requisito histórico de AAL2.
-10. `20260824020000_owner_mfa_optional.sql`: mantém e-mail/perfil/membership ativos e torna TOTP opcional.
+4. `20260808013000_auth_assurance.sql`: e-mail confirmado e requisito histórico de AAL2;
 5. `20260813010000_onboarding_invites_lifecycle_audit.sql`: convites, auditoria append-only e nove RPCs de onboarding/lifecycle.
 6. `20260822010000_owner_reads_inactive_member_profiles.sql`: leitura operacional de perfis inativos vinculados.
 7. `20260822020000_owner_provisioning_resume.sql`: retomada segura do provisionamento do primeiro dono.
@@ -209,8 +208,8 @@ Limites atuais:
 - não há JWT real, TOTP, callback ou Data API nos testes SQL;
 - o bucket de selfies permanece deliberadamente sem policy pública/cliente até a etapa de privacidade;
 - os rollbacks históricos 8–4 e o ensaio incremental 10–9, com reconciliação de `supabase_migrations` e roll-forward, estão registrados no [Runbook de rollback do banco](ROLLBACK-BANCO.md);
-- as migrations 5–8 passaram por `db:reset`; `db:lint` e `db:test` 192/192 passaram depois;
-- o runner concorrente exige confirmação exata e comentário marcador; as duas corridas foram aprovadas no banco local descartável em 22/08;
+- todas as migrations passaram por `db:reset`; `db:test` 192/192 passou depois;
+- o runner concorrente exige confirmação exata e comentário marcador; último dono, atribuição/revogação e dois workers da outbox passaram no banco local descartável em 24/08;
 - seed e fixtures SQL não equivalem a contas utilizáveis por `signInWithPassword`.
 
 O código de Equipe chama contratos versionados (`criar_convite_funcionario`, `revogar_convite_barbearia`, `marcar_convite_enviado` e `marcar_convite_falhou`). Depois de cada transição de envio/compensação/revogação, a action relê o convite por `id + barbearia_id`; a interface só afirma o estado confirmado pelo banco e orienta revisão quando a confirmação falha. Banco, SMTP, Admin API, callback, aceite e estados adversários ainda precisam permanecer cobertos em conjunto.

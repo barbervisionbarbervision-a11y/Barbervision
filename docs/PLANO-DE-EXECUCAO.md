@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **24/08/2026**. O Supabase remoto recebeu dez migrations e o Render está Live. A secret exposta foi rotacionada; redirects, SMTP, criação do primeiro dono e entrega de convite foram comprovados. Os gates imediatos são corrigir e provar a API de clientes, revalidar as migrations 9–10 e publicar o Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **24/08/2026**. O Supabase remoto recebeu dez migrations e o Render está Live. A secret exposta foi rotacionada; redirects, SMTP, criação do primeiro dono, entrega de convite e API de clientes foram comprovados. Os gates locais das dez migrations passaram. As prioridades agora são antiabuso/consentimento, matriz Auth remota e Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -34,7 +34,7 @@ Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operac
 6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 192/192, concorrência, rollback/roll-forward 8–4, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle/outbox passaram localmente sobre as oito migrations anteriores. Dez migrations estão aplicadas no Supabase hospedado; as migrations 9–10 ainda requerem nova validação local integral. Primeiro dono, callback e entrega hospedada de convite já foram comprovados.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das dez migrations, pgTAP 192/192, concorrência, rollback/roll-forward 10–9, JWT/RLS e Storage com blob real passaram localmente. A jornada Playwright histórica de Auth/e-mail/TOTP/lifecycle/outbox permanece válida no escopo testado. Dez migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite e cadastro público idempotente foram comprovados.
 
 ## Passo 1 — segurança da demonstração
 

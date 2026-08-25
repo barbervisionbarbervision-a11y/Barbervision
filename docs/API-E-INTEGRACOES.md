@@ -546,7 +546,7 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 ### Banco versionado
 
-`supabase/schema.sql` é somente um índice documental. A fonte de verdade são dez migrations, incluindo retomada do dono, outbox, e-mail de clientes e MFA opcional. Há dez rollbacks; o próximo ensaio integral deve incluir as migrations 9–10. Os scripts não reconciliam automaticamente `supabase_migrations`.
+`supabase/schema.sql` é somente um índice documental. A fonte de verdade são dez migrations, incluindo retomada do dono, outbox, e-mail de clientes e MFA opcional. Há dez rollbacks; o ensaio incremental 10–9 foi aprovado em 24/08, além do histórico 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
 
 Os pgTAPs passaram 59 + 112 + 21 asserções, totalizando 192/192. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
 

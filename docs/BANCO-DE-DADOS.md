@@ -4,11 +4,11 @@
 
 ## Estado executivo
 
-O repositório possui uma fundação Supabase em dez migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes e MFA opcional. Há seed fictício, dez rollbacks e três suítes pgTAP com 192 asserções históricas; as migrations 9–10 ainda requerem cobertura própria.
+O repositório possui uma fundação Supabase em dez migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes e MFA opcional. Há seed fictício atualizado, dez rollbacks e três suítes pgTAP com 192 asserções aprovadas sobre o conjunto completo; a migration 9 ainda requer casos próprios para suas constraints.
 
 Isso ainda **não significa backend de negócio operacional**. Auth, RLS, Storage privado e lifecycle de funcionário foram validados localmente, mas as telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, nenhuma selfie é enviada ao Storage e os passos de privacidade/persistência ainda não foram implementados.
 
-Em 23/08, `db:reset` encerrou com exit `0`, aplicou oito migrations e seed; `db:lint` e pgTAP 192/192 passaram. Os rollbacks 5–4 e o roll-forward foram ensaiados historicamente; o próximo ensaio deve cobrir 8–4. Data API/Storage com JWT e blob real passaram anteriormente.
+Em 24/08, `db:reset` encerrou com exit `0`, aplicou dez migrations e o seed; pgTAP 192/192, concorrência e Data API/Storage com JWT e blob real passaram. O rollback/roll-forward incremental 10–9 foi aprovado, além do ensaio histórico 8–4. O lint amplo no PostgreSQL 17 sinaliza funções internas da extensão pgTAP, não regressões identificadas nas schemas do aplicativo.
 
 ## Fonte de verdade e arquivos
 
@@ -317,6 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-O passo 2 possui validação local completa no baseline anterior e as dez migrations foram aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono e entrega de convite foram comprovados. Ainda faltam retestar as migrations 9–10, corrigir/provar a API de clientes, publicar Cloudflare e executar a matriz remota.
+O passo 2 possui validação local sobre as dez migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite e API de clientes foram comprovados. Ainda faltam casos específicos de e-mail, integrar gates à CI, publicar Cloudflare e executar a matriz remota.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

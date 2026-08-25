@@ -86,8 +86,8 @@ Execute nesta ordem:
 1. **P0 — endurecer o cadastro público já funcional**: adicionar rate limit/CAPTCHA, teste automatizado e política de consentimento; remover o registro sintético antes do piloto.
 2. **P0 — fechar o hardening do primeiro dono**: testar hospedado **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
 3. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
-5. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
-6. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
+4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
+5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
 Concluídos nesta fundação: lifecycle de funcionário, Auth/e-mail/TOTP opcional, compensações autoritativas, provisionamento retomável, sessão/recuperação, reset das dez migrations, pgTAP 192/192, integração JWT/Storage, rollback/roll-forward 10–9 e corrida real da outbox.
 
@@ -125,8 +125,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] No usuário Windows `leoto`, abrir o Docker Desktop; os processos `Docker Desktop` e `com.docker.backend` ficaram ativos.
 - [x] Confirmar que o engine ficou funcional pelo menos durante a janela de 14/08: o CLI iniciou PostgreSQL 15.8, aplicou cinco migrations, executou o seed e iniciou containers.
 - [x] Executar `npm.cmd run db:start` em terminal de `leoto`; a execução transitória criou as tabelas esperadas e duas barbearias do seed, mas não permaneceu saudável.
-- [ ] Reproduzir `db:start -- --debug` preservando a saída final redigida e diagnosticar por que a pilha encerra; não publicar chaves/credenciais locais impressas pelo CLI.
-- [ ] Enquanto a falha ocorre, registrar `supabase status`, `docker ps -a` e logs redigidos de Storage, Kong e PostgreSQL.
+- [x] Encerrar o incidente antigo de inicialização: CLI 2.115.0 e serviços opcionais desativados estabilizaram reset, Auth, Storage e banco local.
 - [x] Corrigir a saúde local atualizando o CLI para 2.115.0 e desativando Analytics/Vector opcionais; `54321`, `54322`, `54323`, Auth, Storage e Studio permanecem disponíveis sem expor `2375`.
 - [x] Executar `npm run db:reset` do zero: migrations e seed aplicados; validação pós-reset aprovada.
 - [x] Atualizar Supabase CLI para 2.115.0, desativar Analytics/Vector opcionais e obter `db:start` + `db:reset` com exit `0`.
@@ -144,7 +143,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Testar dono AAL1 e AAL2 com acesso ao próprio tenant após a migration 10.
 - [ ] Testar conta, perfil, tenant ou membership inativos cortando acesso com JWT ainda válido.
 - [ ] Verificar plano de índices com volume representativo.
-- [ ] Registrar evidência, versão do PostgreSQL/CLI e procedimento de reprodução.
+- [x] Registrar evidência e procedimento de reprodução; o reset de 24/08 baixou PostgreSQL 17.6.1.155 e usou CLI fixado em 2.115.0.
 
 ## P0 — hardening de domínio
 
@@ -161,8 +160,8 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Revisar todas as funções `SECURITY DEFINER`, `search_path`, grants e retornos.
 - [x] Versionar rollback defensivo da migration `13000`.
 - [x] Versionar rollback defensivo da migration `20260813010000`.
-- [ ] Escrever runbook reproduzível, com preflight, ordem, evidência, reconciliação de `supabase_migrations` e recuperação em falha.
-- [ ] Ensaiar rollback/roll-forward das migrations 4–5 em clone, seguir o runbook e comprovar o estado restaurado com toda a validação de banco.
+- [x] Escrever runbook reproduzível, com preflight, ordem, evidência, reconciliação de `supabase_migrations` e recuperação em falha.
+- [x] Ensaiar rollback/roll-forward histórico 8–4 e incremental 10–9 no banco local descartável.
 
 # Passo 3 — autenticação real
 
@@ -584,9 +583,9 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] `launcher.bat --check` passou.
 - [x] `node --check` passou em `scripts/provision-owner.mjs` e `scripts/test-db-concurrency.mjs`.
 - [x] Atalho da Área de Trabalho corrigido e revalidado para o `launcher.bat` atual em 14/08.
-- [x] Inventário de 24/08: 195 arquivos visíveis a `rg --files`, 31 páginas e 5 Route Handlers.
+- [x] Inventário reconciliado em 24/08: 202 arquivos visíveis a `rg --files`; o build lista 31 páginas de aplicação e 6 Route Handlers.
 - [x] Integridade documental: UTF-8, links locais e fences sem falhas.
-- [x] 31 páginas e 5 Route Handlers identificados em fonte.
+- [x] 31 páginas e 6 Route Handlers identificados pelo build.
 - [x] Inventário atual: 10 migrations, 10 rollbacks e 3 pgTAPs com 192 asserções históricas.
 - [x] Tornar o autenticador TOTP opcional, com ação **Configurar depois** e acesso posterior pela tela de Segurança.
 - [ ] Criar step-up explícito para futuras operações de alto risco, sem voltar a bloquear todo o painel em AAL1.

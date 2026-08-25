@@ -264,7 +264,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Evidência atual
 
-- dez migrations e dez rollbacks presentes; a nona trata e-mail de clientes e a décima torna MFA opcional; ambas ainda requerem teste próprio;
+- dez migrations e dez rollbacks presentes; o conjunto completo passou reset, pgTAP 192/192, integração e rollback/roll-forward 10–9; a migration 9 ainda precisa de casos específicos para suas constraints;
 - CLI 2.115.0, `db:start`, reset, lint e pgTAP 192/192 aprovados; Auth, Storage e Studio respondem `200`;
 - rollbacks de Auth assurance e onboarding/lifecycle ensaiados, com roll-forward e repetição dos gates aprovados;
 - três pgTAPs com 192 asserções: 59 do passo 2, 112 de onboarding/lifecycle e 21 da outbox;

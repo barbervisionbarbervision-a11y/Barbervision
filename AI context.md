@@ -98,7 +98,7 @@ Após a revisão documental:
 - 6 Route Handlers, incluindo `POST /api/clientes` e `POST /api/donos`;
 - 11 layouts;
 - 25 arquivos Markdown, dos quais 17 ficam em `docs/`;
-- 10 migrations, 10 rollbacks, seed, schema-aviso e 3 pgTAPs com 192 asserções históricas; as migrations 9 e 10 ainda não possuem pgTAP próprio;
+- 10 migrations, 10 rollbacks, seed atualizado, schema-aviso e 3 pgTAPs com 192 asserções aprovadas sobre o conjunto completo; ainda faltam casos pgTAP específicos para as constraints de e-mail da migration 9;
 - código JS/JSX e SQL distribuído entre `app`, `components`, `lib` e Supabase; a contagem de linhas é deliberadamente omitida porque muda a cada migration e não representa avanço funcional.
 
 Os documentos especializados de Auth e dos passos 4–5 são `docs/AUTENTICACAO-E-SESSOES.md` e `docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md`. Contagens são inventário, não critério de qualidade.
@@ -333,7 +333,7 @@ As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As s
 - Em 22/08, a atualização do CLI 2.112.0 para 2.115.0 e a desativação explícita de Analytics/Vector opcionais eliminaram a corrida de health check sem expor o daemon Docker em `2375`.
 - `db:start` e `db:reset` encerram com exit `0`; dez migrations, seed atualizado e pgTAP 192/192 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
 - Na auditoria de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Não há `.env.local` nem projeto remoto vinculado.
-- O reset encerrou com exit `0`; `db:lint` e pgTAP 192/192 passaram, e as oito migrations foram confirmadas. RLS/JWT, Data API, Storage real, e-mail, recuperação, MFA, lifecycle e provisionamento foram exercitados anteriormente.
+- O reset de 24/08 encerrou com exit `0`, aplicou as dez migrations e o seed atualizado; pgTAP 192/192, RLS/JWT, Data API, Storage real, recuperação TOTP opcional, lifecycle, concorrência e rollback/roll-forward 10–9 passaram.
 
 ## Auth: arquivos e contratos
 
@@ -408,15 +408,13 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 
 ## Riscos prioritários
 
-### P0 — antes de chamar Auth de funcional
+### P0 — antes de chamar Auth hospedado de encerrado
 
-1. Preservar o Supabase descartável e executar as dez migrations do zero, seed, lint e 192 testes existentes; acrescentar cobertura própria para as migrations 9–10.
-2. Executar o runner de concorrência em banco marcado e guardar a evidência das duas corridas.
-3. Ensaiar os dois novos rollbacks/roll-forward e definir o tratamento do histórico `supabase_migrations`.
-4. Provar que o dono AAL1 acessa o painel, pode pular o TOTP e pode ativá-lo depois.
-5. Executar Data API e Storage em dois tenants e todos os papéis/AALs relevantes.
-6. Configurar redirects, templates, SMTP e segredos em ambiente descartável.
-7. Operacionalizar a outbox com scheduler/alertas e fechar transferência de dono, reatribuição e seleção multi-tenant.
+1. Acrescentar cobertura específica para as constraints de e-mail da migration 9; os gates gerais das dez migrations, concorrência e rollback/roll-forward 10–9 já passaram.
+2. Provar no hospedado que o dono AAL1 pode escolher **Configurar depois**, ativar TOTP posteriormente e recuperar o acesso.
+3. Executar a matriz remota de isolamento entre dois tenants, papéis e AALs relevantes; Data API e Storage já passaram localmente com JWT real.
+4. Finalizar templates e operacionalizar a outbox com Worker Cloudflare, scheduler, alertas, retry e logs sem PII.
+5. Fechar transferência de dono, reatribuição transacional e seleção multi-tenant.
 
 ### P0 — antes de usar clientes reais
 

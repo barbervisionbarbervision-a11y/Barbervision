@@ -348,12 +348,11 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Corrigir e comprovar a persistência de `POST /api/clientes` no Supabase hospedado.
-2. Reexecutar os gates locais e rollbacks com as dez migrations, incluindo cobertura das migrations 9–10.
+1. Endurecer `POST /api/clientes`, já comprovado no hospedado, com proteção distribuída/CAPTCHA, consentimento e teste automatizado.
+2. Integrar à CI os gates locais já aprovados e adicionar casos específicos para as constraints de e-mail da migration 9.
 3. Provar **Configurar depois**, ativação posterior de TOTP e recuperação de senha no ambiente hospedado.
-4. Substituir o rate limit em memória por proteção distribuída/CAPTCHA.
-5. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-6. Executar a matriz remota de Auth, TOTP opcional, convite/outbox, RLS e isolamento.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+5. Executar a matriz remota de Auth, TOTP opcional, convite/outbox, RLS e isolamento.
+6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Referência oficial detalhada: [Plano de execução](PLANO-DE-EXECUCAO.md). Pendências rastreáveis: [pendências.md](../pend%C3%AAncias.md).
