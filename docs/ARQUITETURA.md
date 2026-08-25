@@ -296,7 +296,7 @@ Portanto, a identidade SSR já carrega tenant por desenho, mas “multi-tenant s
 6. dono em AAL2 pode alcançar layouts exclusivos, e a migration `auth_assurance` reforça o mesmo step-up em RLS/Storage;
 7. login com senha, recuperação, redefinição, ativação, TOTP, logout local/global e templates locais existem no código.
 
-Esse caminho principal está validado localmente, mas continua parcial em produção. Projeto remoto, redirects e SMTP Brevo existem; faltam prova de entrega, criação web do primeiro dono, scheduler hospedado, matriz remota, transferência de dono e seletor de tenant.
+Esse caminho principal está validado localmente, mas continua parcial em produção. Projeto remoto, redirects, SMTP Brevo e criação web do primeiro dono existem; faltam prova hospedada do novo cadastro/entrega, proteção distribuída contra abuso, scheduler, matriz remota, transferência de dono e seletor de tenant.
 
 ### Modo demonstração sem Supabase
 

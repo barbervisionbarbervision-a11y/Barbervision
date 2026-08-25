@@ -46,6 +46,7 @@
 | `npx.cmd supabase db push --dry-run` após a revisão documental | `Remote database is up to date`; nenhuma migration pendente | as nove migrations locais e remotas estão sincronizadas |
 | Cadastro público hospedado | endpoint alcançado, mas resposta final `500` | persistência ainda não validada; não marcar passo 5 como iniciado/concluído |
 | Supabase Auth hospedado | Site URL, dois redirects, signup bloqueado, confirmação e SMTP Brevo configurados | falta provar entrega e templates reais |
+| Build do cadastro do primeiro dono | aprovado; 32 páginas, 6 handlers e Proxy | botão `Começar agora`, página e API estão em fonte; falta teste hospedado |
 
 ## Evidências de 23/08/2026
 
@@ -96,7 +97,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 | ---: | --- | --- |
 | 1 | Concluído para demo controlada | preservar contenção e corrigir warnings sem regressão |
 | 2 | Oito migrations validadas localmente; nove sincronizadas no hospedado | atualizar o seed e repetir todos os gates sobre a migration 9; depois integrar à CI |
-| 3 | Jornada local aprovada; redirects/SMTP configurados; primeiro dono, entrega real e Cloudflare incompletos | criar primeiro dono e validar e-mail/Cloudflare/matriz remota |
+| 3 | Jornada local aprovada; redirects/SMTP e cadastro web do primeiro dono implementados | validar cadastro/e-mail hospedados, reforçar antiabuso e concluir Cloudflare/matriz remota |
 | 4 | Não iniciado como implementação de produção | fechar política de consentimento, retenção e descarte |
 | 5 | Não iniciado | persistir um fluxo público mínimo e seguro |
 | 6 | Não iniciado | substituir mocks após o fluxo vertical |
@@ -107,7 +108,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 ## Próxima sequência segura
 
 1. Corrigir e retestar `POST /api/clientes`, incluindo URL Supabase, secret server-only e existência do tenant do slug.
-2. Implementar `/barbeiro/criar-conta` para o primeiro dono, sem abrir signup irrestrito.
+2. Validar `/barbeiro/criar-conta` no hospedado e reforçar o antiabuso antes do piloto, sem abrir signup irrestrito de funcionários.
 3. Provar SMTP/templates hospedados com convite, confirmação e recuperação.
 4. Publicar/testar o scheduler Cloudflare e executar a matriz remota controlada.
 5. Implementar privacidade e só então ampliar o fluxo persistido.

@@ -5,7 +5,8 @@ import { atualizarSessaoSupabase } from "@/lib/supabase/proxy";
 const FLAG_DEMO_INTERNA = "BARBERVISION_ENABLE_UNSAFE_INTERNAL_DEMO";
 const ROTAS_PUBLICAS_BARBEIRO = new Set([
   "/barbeiro/login",
-  "/barbeiro/esqueci-senha"
+  "/barbeiro/esqueci-senha",
+  "/barbeiro/criar-conta"
 ]);
 
 function redirecionar(request, pathname, parametros = {}, status = 307) {

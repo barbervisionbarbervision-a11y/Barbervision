@@ -175,7 +175,7 @@ Regras:
 | Rota | Estado |
 |---|---|
 | `/barbeiro/login` | Login real quando Supabase está configurado; seletor demo sem Supabase |
-| `/barbeiro/criar-conta` | **Ainda não existe**; criação segura do primeiro dono/barbearia é a próxima entrega de Auth |
+| `/barbeiro/criar-conta` | Cadastro público inicial do dono e da barbearia, com convite para confirmação e definição de senha |
 | `/barbeiro/esqueci-senha` | Solicitação de recuperação |
 | `/barbeiro/redefinir-senha` | Troca de senha após sessão de recuperação |
 | `/barbeiro/ativar-conta` | Conclusão do convite; contrato SQL e jornada E2E local aprovados |
@@ -225,7 +225,7 @@ docs/                    documentação técnica e de produto
 ## Validação conhecida
 
 - Em 22/08/2026, `npm run lint`, `npm run build`, `launcher.bat --check` e `npm run db:lint` passaram. O lint possui 0 erros e 18 warnings.
-- O build de 24/08 confirmou 31 páginas, 5 Route Handlers e Proxy. Sem rede, ele pode falhar ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
+- O build de 24/08 confirmou 32 páginas, 6 Route Handlers e Proxy. Sem rede, ele pode falhar ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
 - O Supabase necessário está saudável; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Storage foi validado com JWT e blob real.
 - As três suítes pgTAP passaram: 59/59, 112/112 e 21/21, totalizando 192/192.
 - O runner concorrente recusou conectar sem a confirmação explícita do banco descartável, conforme sua guarda de segurança.
@@ -255,7 +255,7 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 ## Próximos passos
 
 1. Corrigir e comprovar a gravação do cadastro público no Supabase; validar a URL pública configurada no Render e confirmar a existência do tenant usado pelo slug.
-2. Implementar `/barbeiro/criar-conta` para o primeiro usuário/dono, com confirmação de e-mail, criação transacional da barbearia e proteção contra abuso. O signup genérico continua bloqueado.
+2. Validar no hospedado `/barbeiro/criar-conta`, o convite Brevo, a confirmação, a definição de senha e o provisionamento transacional. O signup genérico de funcionários continua bloqueado.
 3. Validar SMTP Brevo com envio/recebimento real, aplicar os templates hospedados e testar convite, confirmação e recuperação.
 4. Publicar e validar o scheduler Cloudflare da outbox.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.

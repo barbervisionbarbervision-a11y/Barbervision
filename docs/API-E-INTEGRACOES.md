@@ -56,7 +56,7 @@ No modo real, o Proxy é apenas a primeira fronteira. Os layouts consultam perfi
 
 Inventário de 14/08/2026:
 
-- 31 páginas, cinco Route Handlers e Proxy;
+- 32 páginas, seis Route Handlers e Proxy;
 - 10 páginas públicas, 20 páginas `/barbeiro` e uma página `/admin`;
 - modelos `.task`/`.tflite` e WASM continuam same-origin;
 - simulador manual permanece congelado nesta etapa;

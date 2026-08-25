@@ -18,7 +18,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
 | 2 — Supabase, tenant e RLS | Oito migrations validadas localmente; nove aplicadas no hospedado | Atualizar o seed para a migration 9, repetir os gates e integrá-los à CI |
-| 3 — Auth real | Auth/lifecycle locais aprovados; redirects e SMTP configurados; criação do primeiro dono e prova de e-mail hospedada pendentes | Implementar primeiro cadastro e concluir a matriz remota |
+| 3 — Auth real | Auth/lifecycle locais aprovados; redirects, SMTP e cadastro web do primeiro dono implementados | Validar o novo fluxo hospedado e concluir a matriz remota |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -84,7 +84,7 @@ Execute nesta ordem:
 
 1. **P0 — concluir o cadastro público mínimo**: corrigir a conexão remota de `POST /api/clientes`, confirmar tenant por slug e provar insert/upsert sem duplicação.
 2. **P0 — atualizar e revalidar o banco local**: adicionar e-mails válidos ao seed e repetir reset, lint, pgTAP, integração e rollback/roll-forward com as nove migrations.
-3. **P0 — criar o primeiro usuário/dono**: implementar `/barbeiro/criar-conta` com confirmação de e-mail, criação transacional da barbearia e proteção contra abuso; não liberar signup genérico.
+3. **P0 — validar o primeiro usuário/dono**: testar `/barbeiro/criar-conta`, confirmação, senha, tenant e MFA no hospedado; trocar o rate limit em memória por proteção distribuída/CAPTCHA antes do piloto.
 4. **P0 — provar Auth hospedado**: validar Brevo, remetente, templates, convite, confirmação e recuperação; depois publicar Cloudflare e testar a outbox.
 5. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 6. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
@@ -262,7 +262,8 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Configurar Site URL e redirects exatos de `/auth/confirm` e `/auth/callback` no Supabase hospedado.
 - [x] Manter signup público desabilitado e confirmação de e-mail habilitada.
 - [ ] Aplicar/revisar templates hospedados e provar SMTP em entrega real.
-- [ ] Implementar a criação controlada do primeiro dono; a tela de login ainda não oferece `Criar conta`.
+- [x] Implementar `/barbeiro/criar-conta` e o botão `Começar agora`, reutilizando a RPC controlada e confirmação por convite.
+- [ ] Validar o fluxo hospedado e reforçar a proteção contra abuso com mecanismo distribuído/CAPTCHA.
 - [ ] Publicar o Worker Cloudflare e provar o cron em logs remotos com convite controlado.
 - [x] Fazer a revogação reler/retornar o estado autoritativo e exibir `expirado` quando a RPC expirar um convite vencido, em vez de sempre anunciar “Convite revogado”.
 - [x] Verificar e tratar o erro da compensação `revogar_convite_barbearia`; não afirmar que nenhum convite ficou ativo sem confirmação do banco.

@@ -18,7 +18,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - A correção do bootstrap AAL1 → TOTP do dono foi comprovada com JWT real e E2E. O formulário MFA também foi corrigido para React Strict Mode, e o QR SVG do Supabase usa `<img>` nativo sem liberar SVG globalmente no Next.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - O cadastro público agora coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`; a migration de e-mail foi aplicada no remoto. A tentativa hospedada ainda retorna erro e não constitui persistência validada.
-- `/barbeiro/criar-conta` ainda não existe. O usuário confirmou que o primeiro usuário deve conseguir criar a primeira conta de dono; isso deve usar o provisionamento controlado, confirmação de e-mail e proteção contra abuso, sem liberar signup genérico de funcionários.
+- `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo convida o primeiro dono, provisiona a barbearia pela RPC controlada, usa honeypot e limite básico por origem; ainda requer teste hospedado e proteção distribuída mais forte antes do piloto.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
 ## Intenção do produto confirmada
@@ -94,7 +94,7 @@ Após a revisão documental:
 
 - 167 arquivos versionáveis/visíveis retornados por `rg --files`, respeitando os ignores; diretórios ignorados como `tmp/` e `private-assets/` não entram nessa contagem;
 - 31 arquivos `page.js`;
-- 5 Route Handlers, incluindo `POST /api/clientes`;
+- 6 Route Handlers, incluindo `POST /api/clientes` e `POST /api/donos`;
 - 11 layouts;
 - 25 arquivos Markdown, dos quais 17 ficam em `docs/`;
 - 9 migrations, 9 rollbacks, seed, schema-aviso e 3 pgTAPs com 192 asserções históricas; a nona migration ainda não possui pgTAP próprio;
@@ -454,7 +454,7 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - `npm audit`: 0 vulnerabilidades em 14/08; não foi repetido nesta revisão;
 - `launcher.bat --check`: aprovado em 21/08; o atalho da Área de Trabalho permanece como evidência validada em 14/08;
 - documentos: UTF-8 válido, links locais e fences íntegros;
-- `npm.cmd run build`: aprovado novamente em 24/08/2026, com 31 páginas, 5 Route Handlers e Proxy;
+- `npm.cmd run build`: aprovado novamente em 24/08/2026, com 32 páginas, 6 Route Handlers e Proxy;
 - smoke HTTP: evidência histórica de 13/08/2026, com páginas públicas `200` e superfícies internas `307` para o modo seguro;
 - Git: repositório operacional, árvore limpa antes desta revisão e baseline `7c34dab` confirmado;
 - banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 192/192 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
@@ -468,7 +468,7 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 ## Próxima sequência oficial
 
 1. Encerrar o diagnóstico de `POST /api/clientes`: conferir `NEXT_PUBLIC_SUPABASE_URL`, credencial server-only e tenant do slug; comprovar insert e retry idempotente sem expor dados pessoais.
-2. Implementar criação segura do primeiro usuário/dono em `/barbeiro/criar-conta`, reutilizando o provisionamento controlado; signup genérico continua desabilitado.
+2. Validar hospedado o novo cadastro do primeiro dono, confirmação Brevo, definição de senha e RPC; substituir o limite em memória por proteção distribuída/CAPTCHA antes do piloto.
 3. Provar SMTP Brevo e templates hospedados com convite, confirmação e recuperação reais.
 4. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
 3. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento sem dados reais.

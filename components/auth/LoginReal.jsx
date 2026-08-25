@@ -43,12 +43,20 @@ export default function LoginReal({ proximo = "/barbeiro/dashboard", aviso = "" 
       titulo="Entrar no painel"
       descricao="Use a conta individual enviada pela Barber Vision ou pelo dono da barbearia."
       rodape={
-        <>
-          Esqueceu a senha?{" "}
-          <Link href="/barbeiro/esqueci-senha" className="text-brass hover:underline">
-            Recuperar acesso
+        <div className="flex flex-col items-center gap-4">
+          <p>
+            Esqueceu a senha?{" "}
+            <Link href="/barbeiro/esqueci-senha" className="text-brass hover:underline">
+              Recuperar acesso
+            </Link>
+          </p>
+          <Link
+            href="/barbeiro/criar-conta"
+            className="flex min-h-11 w-full items-center justify-center rounded-lg border border-brass px-6 py-3 font-semibold tracking-wide text-brass transition-colors hover:bg-brass hover:text-ink"
+          >
+            Começar agora
           </Link>
-        </>
+        </div>
       }
     >
       <form onSubmit={entrar} className="flex flex-col gap-4">
