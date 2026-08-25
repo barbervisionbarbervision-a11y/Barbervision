@@ -4,7 +4,7 @@
 
 ## Estado executivo
 
-O repositório possui uma fundação Supabase em oito migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono e outbox de e-mail. Há seed fictício, oito rollbacks manuais e três suítes pgTAP com 192 asserções.
+O repositório possui uma fundação Supabase em nove migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox e e-mail de clientes. Há seed fictício, nove rollbacks e três suítes pgTAP com 192 asserções históricas; a nona migration ainda requer cobertura própria.
 
 Isso ainda **não significa backend de negócio operacional**. Auth, RLS, Storage privado e lifecycle de funcionário foram validados localmente, mas as telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, nenhuma selfie é enviada ao Storage e os passos de privacidade/persistência ainda não foram implementados.
 
@@ -317,6 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-O passo 2 possui validação local completa e as oito migrations foram aplicadas no Supabase hospedado. O passo 3 possui integração/E2E local, mas ainda depende de rotação da secret key exposta, deploy Render, configuração hospedada de Auth/SMTP/templates, scheduler Cloudflare e matriz remota controlada. Também faltam reatribuição estreita, transferência de dono e seleção multi-tenant.
+O passo 2 possui validação local completa no baseline anterior e as nove migrations foram aplicadas no Supabase hospedado. A secret exposta foi rotacionada, Render/redirects/SMTP foram configurados, mas ainda faltam retestar a migration 9, corrigir a API de clientes, criar o primeiro dono, provar e-mail/templates, publicar Cloudflare e executar a matriz remota.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

@@ -89,7 +89,7 @@ Regras:
 - dado do tenant não pode ser enviado ao navegador antes do filtro seguro;
 - RLS e código server-side precisam negar acessos cruzados.
 
-As oito migrations do banco/RLS/Auth estão versionadas. Em 23/08, reset, lint e pgTAP 192/192 passaram; as demais evidências históricas estão em `ESTADO-VALIDACAO.md`. O passo 3 permanece parcial pelos gaps operacionais.
+Há nove migrations versionadas. Em 23/08, as oito existentes naquele momento passaram por reset, lint e pgTAP 192/192; a nona foi aplicada no Supabase hospedado em 24/08 e ainda requer atualização do seed e repetição dos gates locais. O passo 3 permanece parcial pelos gaps operacionais.
 
 ## Cadastro e identidade do cliente no MVP
 

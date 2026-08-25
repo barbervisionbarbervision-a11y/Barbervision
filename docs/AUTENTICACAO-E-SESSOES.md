@@ -265,7 +265,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Evidência atual
 
-- oito migrations e oito rollbacks presentes;
+- nove migrations e nove rollbacks presentes; a nona trata e-mail de clientes e ainda requer teste próprio;
 - CLI 2.115.0, `db:start`, reset, lint e pgTAP 192/192 aprovados; Auth, Storage e Studio respondem `200`;
 - rollbacks de Auth assurance e onboarding/lifecycle ensaiados, com roll-forward e repetição dos gates aprovados;
 - três pgTAPs com 192 asserções: 59 do passo 2, 112 de onboarding/lifecycle e 21 da outbox;
@@ -290,4 +290,4 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Critério de conclusão do passo 3
 
-O passo 3 só termina quando as oito migrations subirem do zero, o rollback 8–4 for ensaiado, o E2E atualizado passar e a outbox tiver scheduler/alertas hospedados. Transferência de dono e seletor multi-tenant permanecem gates explícitos.
+O passo 3 só termina quando a primeira conta de dono tiver fluxo web seguro, a entrega hospedada for comprovada e a outbox tiver scheduler/alertas. Signup genérico permanece bloqueado; transferência de dono e seletor multi-tenant continuam gates explícitos.

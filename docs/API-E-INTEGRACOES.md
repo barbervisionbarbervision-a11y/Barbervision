@@ -19,7 +19,17 @@ O placement ativo é **v7**, `manual-placement-v1`, `manual-local`, `automatico:
 
 Existem integrações server-side estreitas para Auth, incluindo callbacks, clientes Supabase SSR, Server Actions e o worker protegido da outbox. Em 23/08, reset, lint, pgTAP 192/192, rollback/roll-forward 8–4, concorrência e E2E atualizado passaram.
 
-Não há endpoints de domínio para clientes, catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas. O painel ainda lê mocks/armazenamento local, e a jornada pública não persiste no Supabase. A vitrine pode criar um link `wa.me` somente quando o dono demo informa um número comercial; não existe integração com a API oficial do WhatsApp.
+Existe um endpoint de domínio mínimo, `POST /api/clientes`, para resolver a barbearia por slug e criar/atualizar nome, e-mail e WhatsApp por telefone normalizado usando cliente admin server-only. A migration correspondente foi aplicada no remoto, mas a tentativa hospedada ainda falha e não comprova persistência. Não há endpoints de domínio para catálogo, agenda, simulações, avaliações, produtos, estoque, pedidos, pagamentos, fechamento financeiro, obrigações fiscais ou assinaturas. O painel ainda lê mocks/armazenamento local.
+
+### `POST /api/clientes`
+
+- entrada: `barbeariaSlug`, `nome`, `email` e `whatsapp`;
+- valida e normaliza no servidor;
+- resolve somente barbearia ativa;
+- faz upsert por `barbearia_id + whatsapp_normalizado`;
+- retorna apenas `clienteId` em sucesso;
+- não expõe `SUPABASE_SECRET_KEY` ao navegador;
+- estado hospedado: publicado, migration aplicada, gravação ainda em diagnóstico.
 
 ## Plataforma HTTP e modo seguro
 
@@ -46,7 +56,7 @@ No modo real, o Proxy é apenas a primeira fronteira. Os layouts consultam perfi
 
 Inventário de 14/08/2026:
 
-- 31 páginas, dois Route Handlers e Proxy;
+- 31 páginas, cinco Route Handlers e Proxy;
 - 10 páginas públicas, 20 páginas `/barbeiro` e uma página `/admin`;
 - modelos `.task`/`.tflite` e WASM continuam same-origin;
 - simulador manual permanece congelado nesta etapa;
@@ -521,7 +531,7 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 - as migrations 5–8 estão aplicadas; onboarding/lifecycle passou 112/112 e outbox 21/21; concorrência e rollback 5–4 permanecem evidências históricas;
 - `/barbeiro/equipe`, handlers e `npm run auth:provision-owner` possuem evidência funcional contra Supabase/Mailpit locais;
-- o envio usa uma outbox durável; o worker chama `inviteUserByEmail`, aplica lease/retry e reconcilia expiração, mas produção ainda depende de scheduler e SMTP hospedados;
+- o envio usa uma outbox durável; SMTP Brevo foi configurado, mas entrega real ainda não foi provada, e produção continua dependente do scheduler;
 - quando a configuração ou o envio falha, as actions executam a compensação, releem o convite por `id + barbearia_id` e só anunciam `revogado`, `expirado` ou `falhou` quando o banco confirma esse estado; falha ou divergência produz mensagem de reconciliação necessária;
 - o provisionamento do primeiro dono faz preflight de entrada/origem/slug, resolve Auth existente por RPC server-only, reutiliza a identidade por e-mail e aceita retomada explícita por UUID;
 - se a RPC falhar depois da criação Auth, o script retorna o UUID e um comando de retomada que não cria outra identidade; não existe transação distribuída, mas o replay foi comprovado sobre o mesmo tenant;
@@ -536,7 +546,7 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 ### Banco versionado
 
-`supabase/schema.sql` é somente um índice documental. A fonte de verdade são oito migrations, incluindo retomada do dono e outbox. Há oito rollbacks; o próximo ensaio integral deve cobrir 8–4. Os scripts não reconciliam automaticamente `supabase_migrations`.
+`supabase/schema.sql` é somente um índice documental. A fonte de verdade são nove migrations, incluindo retomada do dono, outbox e e-mail de clientes. Há nove rollbacks; o próximo ensaio integral deve incluir a migration 9. Os scripts não reconciliam automaticamente `supabase_migrations`.
 
 Os pgTAPs passaram 59 + 112 + 21 asserções, totalizando 192/192. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
 
@@ -544,7 +554,7 @@ Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema
 
 ### Sequência canônica de validação
 
-Os gates locais listados acima já foram executados, e as oito migrations estão no Supabase hospedado. Falta rotacionar a secret key exposta, concluir Render, configurar Auth/SMTP/templates, publicar Cloudflare e repetir a matriz de integração no ambiente remoto controlado. Depois vêm os comandos administrativos restantes e a implementação de privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais anteriores foram executados, nove migrations estão no Supabase hospedado e o Render está Live. Redirects e SMTP foram configurados; faltam corrigir a API de clientes, implementar a primeira conta de dono, provar e-mail/templates, publicar Cloudflare e repetir a matriz remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 

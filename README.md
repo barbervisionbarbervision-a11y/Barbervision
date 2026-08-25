@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **24/08/2026**. O projeto é uma demonstração funcional com fundação local validada e Supabase remoto migrado; ainda não é um produto pronto para receber dados reais de clientes. Veja a evidência atual em [Estado de validação](docs/ESTADO-VALIDACAO.md).
+> Estado reconciliado em **24/08/2026**. O Render está publicado, o Supabase remoto recebeu nove migrations e o SMTP Brevo foi configurado. O cadastro público já coleta e tenta persistir nome, e-mail e WhatsApp, mas a gravação remota ainda está em diagnóstico e não foi aprovada. O projeto ainda não está pronto para receber dados reais de clientes. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -34,7 +34,7 @@ O plano completo está em [docs/PLANO-DE-EXECUCAO.md](docs/PLANO-DE-EXECUCAO.md)
 ### Jornada pública demonstrativa
 
 - landing por slug de barbearia;
-- cadastro local do cliente;
+- cadastro de nome, e-mail e WhatsApp, com tentativa server-side de criação/atualização no Supabase;
 - captura ou upload de selfie;
 - processamento visual inteiramente no navegador;
 - preparação automática da região superior da cabeça;
@@ -70,6 +70,7 @@ As migrations criam:
 - `convites_barbearia`;
 - `convite_email_outbox`, fila privada com lease, retry e estado terminal;
 - `eventos_auditoria` append-only;
+- campos de e-mail normalizado em `clientes`, com validação e índice por tenant;
 - RLS por tenant e papel;
 - buckets privados `barbervision-hair-sources`, `barbervision-hair-cutouts` e `barbervision-selfies`;
 - exigência de e-mail confirmado e AAL2 para o dono acessar dados de negócio e Storage;
@@ -160,7 +161,7 @@ Regras:
 |---|---|
 | `/` | Entrada geral |
 | `/b/[barbearia]` | Landing demonstrativa da barbearia |
-| `/b/[barbearia]/cadastro` | Dados locais do cliente |
+| `/b/[barbearia]/cadastro` | Coleta nome, e-mail e WhatsApp; chama a API de clientes antes de avançar |
 | `/b/[barbearia]/selfie` | Captura ou upload da foto |
 | `/b/[barbearia]/processando` | Preparação do fluxo |
 | `/b/[barbearia]/simulacao` | Simulador local e ajuste manual |
@@ -174,6 +175,7 @@ Regras:
 | Rota | Estado |
 |---|---|
 | `/barbeiro/login` | Login real quando Supabase está configurado; seletor demo sem Supabase |
+| `/barbeiro/criar-conta` | **Ainda não existe**; criação segura do primeiro dono/barbearia é a próxima entrega de Auth |
 | `/barbeiro/esqueci-senha` | Solicitação de recuperação |
 | `/barbeiro/redefinir-senha` | Troca de senha após sessão de recuperação |
 | `/barbeiro/ativar-conta` | Conclusão do convite; contrato SQL e jornada E2E local aprovados |
@@ -223,7 +225,7 @@ docs/                    documentação técnica e de produto
 ## Validação conhecida
 
 - Em 22/08/2026, `npm run lint`, `npm run build`, `launcher.bat --check` e `npm run db:lint` passaram. O lint possui 0 erros e 18 warnings.
-- O build confirmou 31 páginas, 2 Route Handlers e Proxy. Sem rede, ele falha ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
+- O build de 24/08 confirmou 31 páginas, 5 Route Handlers e Proxy. Sem rede, ele pode falhar ao buscar Anton e Manrope; as fontes ainda devem ser auto-hospedadas.
 - O Supabase necessário está saudável; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Storage foi validado com JWT e blob real.
 - As três suítes pgTAP passaram: 59/59, 112/112 e 21/21, totalizando 192/192.
 - O runner concorrente recusou conectar sem a confirmação explícita do banco descartável, conforme sua guarda de segurança.
@@ -252,10 +254,11 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Concluir o deploy no Render e validar a URL final e `/api/health`; a chave exposta já foi revogada e substituída.
-2. Configurar Auth/SMTP/templates no Supabase e publicar/validar o scheduler Cloudflare.
-3. Completar comandos administrativos: reatribuição, transferência de dono e seleção multi-tenant.
-4. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
+1. Corrigir e comprovar a gravação do cadastro público no Supabase; validar a URL pública configurada no Render e confirmar a existência do tenant usado pelo slug.
+2. Implementar `/barbeiro/criar-conta` para o primeiro usuário/dono, com confirmação de e-mail, criação transacional da barbearia e proteção contra abuso. O signup genérico continua bloqueado.
+3. Validar SMTP Brevo com envio/recebimento real, aplicar os templates hospedados e testar convite, confirmação e recuperação.
+4. Publicar e validar o scheduler Cloudflare da outbox.
+5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.
 
 Depois desses gates, o passo 5 persiste o fluxo vertical; painel, catálogo, produtos, financeiro e operação vêm nas fases seguintes.
 

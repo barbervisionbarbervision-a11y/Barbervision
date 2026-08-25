@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **24/08/2026**. Esta é a sequência oficial. Uma etapa só muda para concluída após código, execução e evidência de aceite. O Supabase remoto já recebeu as oito migrations; Render e Cloudflare ainda não possuem validação operacional, e a rotação da secret key exposta é o gate imediato. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **24/08/2026**. O Supabase remoto recebeu nove migrations e o Render está Live. A secret exposta foi rotacionada; redirects e SMTP foram configurados. Os gates imediatos são corrigir a API de clientes, criar o primeiro dono, provar e-mail hospedado e publicar Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -34,7 +34,7 @@ Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operac
 6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 192/192, concorrência, rollback/roll-forward 8–4, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle/outbox passaram localmente. As oito migrations também estão aplicadas no Supabase hospedado; a operação remota completa ainda não foi validada.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 192/192, concorrência, rollback/roll-forward 8–4, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle/outbox passaram localmente sobre as oito migrations anteriores. Nove migrations estão aplicadas no Supabase hospedado; a nona ainda requer atualização do seed e nova validação local, e a operação remota completa ainda não foi comprovada.
 
 ## Passo 1 — segurança da demonstração
 

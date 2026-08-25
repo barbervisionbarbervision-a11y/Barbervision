@@ -1,6 +1,6 @@
 # Deploy gratuito: Render + Cloudflare + Supabase
 
-> Estado em **24/08/2026**: GitHub e Supabase estão vinculados; as oito migrations estão aplicadas no remoto. O Blueprint Render está no formulário inicial, sem deploy comprovado. O Cloudflare ainda não foi publicado. A secret key que apareceu em captura teve revogação/substituição confirmada pelo usuário; o novo valor não foi registrado.
+> Estado em **24/08/2026**: GitHub e Supabase estão vinculados; nove migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects e SMTP Brevo foram configurados, mas a entrega real ainda não foi comprovada. O Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
 
 ## Arquitetura
 
@@ -13,7 +13,11 @@ Essa composição serve para demonstração e piloto técnico. O Render Free pod
 ## 1. Preparar o Supabase hospedado
 
 1. Crie um projeto Supabase controlado.
-2. Aplique as oito migrations oficiais em ordem.
+2. Aplique as nove migrations oficiais em ordem.
+
+### Diagnóstico atual do cadastro público
+
+`POST /api/clientes` usa `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SECRET_KEY` apenas no servidor. Em 24/08, a rota chegou ao Render mas a operação no Supabase falhou com resposta HTML inesperada. A URL pública foi revisada para o formato `https://<project-ref>.supabase.co` e um novo deploy foi iniciado; ainda falta reteste conclusivo. Nunca use a URL do Dashboard (`supabase.com/dashboard/...`) como `NEXT_PUBLIC_SUPABASE_URL`.
 3. Publique os templates `supabase/templates/invite.html` e `recovery.html`.
 4. Mantenha signup público desabilitado.
 5. Anote URL, publishable key e secret key. Nunca coloque a secret key no navegador ou Git.
@@ -62,7 +66,7 @@ Use exatamente o mesmo valor em `BARBERVISION_CRON_SECRET` no Render e no Cloudf
 6. Adicione a origem final às URLs permitidas do Supabase Auth.
 7. Faça login real antes de configurar o scheduler.
 
-Checkpoint atual: os campos foram exibidos, porém o botão de deploy não foi comprovadamente acionado. A rotação foi confirmada em 24/08; ao retomar, preencha os cinco valores sem fazer captura de tela com valores visíveis.
+Checkpoint atual: o segundo deploy, commit `fbed47b`, ficou Live após a correção de instalação das dependências de build. A URL efetiva é `https://barbervision.onrender.com`.
 
 O primeiro build remoto falhou porque `NODE_ENV=production` fez o `npm ci` omitir o Tailwind/PostCSS em `devDependencies`. O Blueprint agora usa `npm ci --include=dev && npm run build`; preservar essa opção enquanto essas ferramentas forem necessárias à compilação.
 

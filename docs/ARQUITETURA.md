@@ -8,7 +8,7 @@ O Barber Vision é uma aplicação Next.js 16 com App Router e duas partes em es
 
 Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono só alcança dados de negócio em AAL2; em AAL1 existe um bootstrap mínimo para encaminhá-lo à matrícula/desafio de MFA sem consultar a barbearia protegida. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
 
-O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem oito migrations, oito rollbacks e três suítes pgTAP com 192/192. A outbox de convites possui enqueue atômico, lease, retry, conclusão idempotente e expiração reconciliada; falta operacionalizar o scheduler hospedado e reexecutar seu E2E. O painel de negócio continua consumindo mocks/armazenamento local.
+O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem nove migrations, nove rollbacks e três suítes pgTAP com 192/192 sobre as oito migrations anteriores; a nona ainda requer cobertura. Há uma API mínima de clientes publicada, ainda sem sucesso remoto comprovado. O painel de negócio continua consumindo mocks/armazenamento local.
 
 Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
@@ -107,7 +107,7 @@ Todo o fluxo que usa formulário, câmera, timers, roteador, sessão ou filtros 
 
 No modo real, papel e tenant vêm do contexto de servidor e das policies; `sessionStorage` não é autoridade. No modo demo, a sessão continua adulterável e serve somente a dados fictícios. Várias páginas internas ainda executam filtros sobre mocks completos no cliente, portanto Auth parcial não torna o domínio operacional pronto para dados reais.
 
-O inventário de 14/08/2026 possui **31 arquivos `page.js`** e **dois Route Handlers** (`/auth/callback` e `/auth/confirm`), além do Proxy. São 10 páginas públicas, 20 páginas em `/barbeiro` e a página `/admin`.
+O inventário de 24/08/2026 possui **31 arquivos `page.js`** e **cinco Route Handlers** (`/auth/callback`, `/auth/confirm`, `/api/health`, `/api/internal/convites/processar` e `/api/clientes`), além do Proxy.
 
 O inventário precisa ser regenerado sempre que arquivos de configuração/documentação forem adicionados; `proxy.js` e a configuração ESLint agora fazem parte da arquitetura. Perfis temporários em `tmp/`, dependências, artefatos de build e as cinco fontes privadas ignoradas continuam fora desse inventário.
 
@@ -120,7 +120,7 @@ Existem dois Route Handlers de Auth:
 - `/auth/callback`: troca o `code` PKCE por sessão e, se houver `convite`, tenta a RPC `aceitar_convite_barbearia`;
 - `/auth/confirm`: verifica `token_hash` para confirmação, convite, recovery ou alteração de e-mail e também tenta aceitar convite quando aplicável.
 
-Existem Server Actions na tela de equipe e um script de provisionamento de dono. Eles usam contexto de dono/AAL2 e cliente admin server-only. A quinta migration define as tabelas e RPCs consumidas. Esses caminhos continuam **não operacionais e não comprovados pela aplicação**: pgTAP valida o SQL coberto, não Auth, e-mail, callbacks ou orquestração real. Também não existe API de domínio para clientes, agenda, simulações, avaliações, produtos ou financeiro.
+Existem Server Actions na tela de equipe, um script de provisionamento de dono e `POST /api/clientes`. A API usa o admin server-only, resolve tenant ativo por slug e faz upsert por telefone; está publicada, mas falha no remoto e ainda não é operacional. Não existem APIs de domínio para agenda, simulações, avaliações, produtos ou financeiro.
 
 O provisionamento não possui transação distribuída entre Auth e Postgres, mas agora valida entrada/origem/slug antes da mutação e retoma com a identidade existente por e-mail ou UUID quando a RPC falha. A membership nasce ativa antes da senha para permitir bootstrap, enquanto dados de negócio exigem AAL2; o link inicial conduz à definição de senha. As compensações de convite também releem o estado autoritativo antes de afirmar a transição.
 
@@ -199,10 +199,10 @@ Existem duas chaves globais à origem:
 
 | Chave | Conteúdo | Vida útil prática |
 | --- | --- | --- |
-| `barbervision:fluxo` | versão 2, slug, etapa, contato, selfie normalizada em Data URL ou path demo, corte, barba, recibo automático v3 e placement manual v7 confirmado | Até o fim da aba, nova jornada, limpeza final ou limpeza manual |
+| `barbervision:fluxo` | versão 3, slug, etapa, `clienteId`, nome, e-mail, WhatsApp, selfie normalizada em Data URL ou path demo, corte, barba, recibo automático v3 e placement manual v7 confirmado | Até o fim da aba, nova jornada, limpeza final ou limpeza manual |
 | `barbervision_sessao_barbeiro` | objeto mock `{ id, nome, papel }`, usado somente no modo demo sem Supabase | Até o fim da aba ou logout |
 
-O fluxo público registra `barbeariaSlug` e a simulação rejeita estado de outro slug. Isso evita reaproveitar acidentalmente uma selfie antiga, mas não cria isolamento real de tenant: o catálogo continua global à origem, o slug não é validado no servidor e, no fallback demo, a sessão da equipe também é global. No modo Supabase a identidade fica em cookies SSR e não usa essa chave como autoridade. Sessões públicas anteriores à versão 2 são ignoradas, sem migração. Dentro do fluxo público v2, `neutralizacaoCabelo` é o nome histórico do recibo automático e precisa ter versão 3, algoritmo `hair-occlusion-canvas-v3` e conclusão. **Histórico:** placements v4, v5 e v6 — incluindo `ancoras-alpha-face-skin-v2`, `face-landmarks-alpha-v3`, `auto-fit-local` e sua variante refinada — são contratos legados e não liberam o avanço atual. A `revisaoEncaixe: 6` do catálogo é uma revisão dos assets/moldes e não deve ser confundida com a versão 6 rejeitada do placement.
+O fluxo público registra `barbeariaSlug` e a simulação rejeita estado de outro slug. A API valida o formato do slug e resolve um tenant ativo, mas o catálogo segue global à origem e a persistência remota ainda falha. Sessões públicas anteriores à versão 3 são ignoradas. `neutralizacaoCabelo` permanece o nome histórico do recibo automático v3; placements v4–v6 são legados.
 
 O validador ativo `ajusteCabeloManualPrimarioValido` aceita somente o placement manual primário:
 
@@ -296,7 +296,7 @@ Portanto, a identidade SSR já carrega tenant por desenho, mas “multi-tenant s
 6. dono em AAL2 pode alcançar layouts exclusivos, e a migration `auth_assurance` reforça o mesmo step-up em RLS/Storage;
 7. login com senha, recuperação, redefinição, ativação, TOTP, logout local/global e templates locais existem no código.
 
-Esse caminho principal está validado localmente com Supabase, Mailpit, JWT/Storage e Playwright, mas continua parcial para produção. Não há projeto remoto vinculado nem SMTP hospedado. Outbox/retry e expiração reconciliada estão implementados; faltam scheduler hospedado, reexecução do E2E atualizado, transferência de dono, seletor de tenant e cenários adversários adicionais.
+Esse caminho principal está validado localmente, mas continua parcial em produção. Projeto remoto, redirects e SMTP Brevo existem; faltam prova de entrega, criação web do primeiro dono, scheduler hospedado, matriz remota, transferência de dono e seletor de tenant.
 
 ### Modo demonstração sem Supabase
 
@@ -392,7 +392,7 @@ Os cinco arquivos de `private-assets/` não são recursos estáticos e não deve
 - há Server Actions de convite e dois Route Handlers de Auth; o SQL passou pgTAP, mas ainda não teste funcional pela aplicação;
 - os UUIDs de procedência são históricos, sem FK destrutiva para Auth; o `UPDATE` direto da atribuição foi revogado, mas ainda não existe RPC estreita de reatribuição;
 - auditoria exige ator em eventos de usuário e não duplica evento em replay no-op, porém a verificação de nomes de segredo em `metadados` cobre somente o nível superior;
-- oito migrations e seed foram aplicados por reset; lint e pgTAP 192/192 passam; concorrência e rollback 5–4 foram executados historicamente, restando ensaiar 8–4;
+- oito migrations anteriores passaram por reset/lint/pgTAP 192/192 e ensaio 8–4; a migration 9 foi aplicada no remoto e requer novo ciclo local e rollback;
 - as migrations 4–5 tiveram rollback/roll-forward ensaiado; lint, pgTAP e concorrência passaram após a restauração;
 - três buckets privados estão definidos nas migrations; no runtime do aplicativo, porém, não há upload/leitura de Storage e as imagens continuam somente na persistência demonstrativa do navegador;
 - no fluxo ativo existem segmentação, FaceLandmarker com 478 pontos, síntese automática aproximada para a remoção e matte alpha do cutout, mas não há reconstrução anatômica 3D, deformação de malha, oclusão semântica avançada ou adaptação automática de luz/perspectiva;
@@ -434,4 +434,4 @@ Ao substituir mocks por dados reais, evite fazer uma troca parcial que mantenha 
 
 ## Sequência canônica de validação
 
-Os gates locais de banco, concorrência, integração e E2E já possuem evidência. Em 24/08/2026, o schema remoto também está aplicado. A sequência vigente é: rotacionar a secret key exposta; concluir Render e health check; configurar Auth/SMTP/templates; publicar e testar Cloudflare; executar a matriz remota; fechar reatribuição, transferência de dono e seleção multi-tenant; então implementar privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais de banco, concorrência, integração e E2E já possuem evidência. Em 24/08/2026, o schema remoto está aplicado e o Render está Live com health check 200. A sequência vigente é: configurar Auth/SMTP/templates; publicar e testar Cloudflare; executar a matriz remota; fechar reatribuição, transferência de dono e seleção multi-tenant; então implementar privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).

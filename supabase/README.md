@@ -1,6 +1,6 @@
 # Supabase — fundação multi-tenant e Auth parcial
 
-Última atualização: **22/08/2026**. Evidência operacional atual: [Estado de validação](../docs/ESTADO-VALIDACAO.md).
+Última atualização: **24/08/2026**. Evidência operacional atual: [Estado de validação](../docs/ESTADO-VALIDACAO.md).
 
 Esta pasta é a fonte de verdade versionada do banco, Storage e configuração local de Auth do Barber Vision. O estado atual deve ser lido em três partes:
 
@@ -50,9 +50,9 @@ Para o Supabase local são necessários:
 - dependências instaladas com `npm ci`;
 - Docker Desktop ou runtime compatível em execução.
 
-O CLI está fixado como `supabase@2.115.0`. Em 23/08, `db:start` e `db:reset` encerraram com exit `0`; o reset aplicou oito migrations e `seed.sql`, e lint + pgTAP 192/192 passaram. Os rollbacks 5–4 e o roll-forward foram ensaiados historicamente; as migrations 6–8 aguardam o próximo ensaio completo 8–4. Data API/RLS por JWT e Storage com blob real passaram anteriormente. Analytics/Vector opcionais estão desativados.
+O CLI está fixado como `supabase@2.115.0`. Em 23/08, `db:start` e `db:reset` encerraram com exit `0`; o reset aplicou as oito migrations existentes naquele momento e `seed.sql`, e lint + pgTAP 192/192 passaram. Em 24/08, a nona migration (`clientes_email`) foi aplicada no projeto hospedado. Ela ainda exige atualização do seed e repetição do reset/lint/pgTAP/rollback local. Data API/RLS por JWT e Storage com blob real passaram anteriormente. Analytics/Vector opcionais estão desativados.
 
-Na auditoria de 23/08, os serviços necessários estão saudáveis; Imgproxy, Analytics, Vector e Pooler estão desativados/não usados. `db:lint` e pgTAP passaram 192/192. Projeto remoto vinculado continua ausente. Storage foi validado anteriormente por operação real com JWT e blob.
+Na auditoria de 23/08, os serviços necessários estavam saudáveis; Imgproxy, Analytics, Vector e Pooler estavam desativados/não usados. `db:lint` e pgTAP passaram 192/192. O projeto remoto `ftwdfobgwxjmeickktmy` foi vinculado em 24/08 e recebeu as nove migrations. Storage foi validado anteriormente por operação real com JWT e blob.
 
 ## Comandos locais
 
@@ -66,7 +66,7 @@ npm.cmd run db:lint
 npm.cmd run db:stop
 ```
 
-`db:reset` recria o banco local, aplica as oito migrations e executa o seed. `db:test` roda os três arquivos em `tests/database/`. `db:test:concurrency` prova locks com conexões reais. `db:test:integration` cria identidades temporárias, faz login e TOTP/AAL2, testa Data API/RLS e Storage com blob real e exige a mesma confirmação/marcação de banco descartável. O cadastro público permanece bloqueado: o provider de e-mail fica disponível para login/convites administrados, enquanto `[auth].enable_signup = false` impede signup público. Nunca use `service_role` como prova de RLS: esse papel ignora policies.
+`db:reset` recria o banco local, aplica as nove migrations e executa o seed. Antes da próxima execução, o seed precisa fornecer e-mail aos clientes inseridos pela migration 9. `db:test` roda os três arquivos em `tests/database/`. `db:test:concurrency` prova locks com conexões reais. `db:test:integration` cria identidades temporárias, faz login e TOTP/AAL2, testa Data API/RLS e Storage com blob real e exige a mesma confirmação/marcação de banco descartável. O cadastro público permanece bloqueado: o provider de e-mail fica disponível para login/convites administrados, enquanto `[auth].enable_signup = false` impede signup público. Nunca use `service_role` como prova de RLS: esse papel ignora policies.
 
 Para um projeto remoto de teste explicitamente criado e revisado:
 
