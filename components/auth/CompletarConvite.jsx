@@ -11,6 +11,13 @@ function destinoSeguro(valor) {
     : "/barbeiro/ativar-conta";
 }
 
+function conviteSeguro(valor) {
+  return typeof valor === "string"
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor)
+    ? valor
+    : "";
+}
+
 export default function CompletarConvite() {
   const router = useRouter();
   const parametros = useSearchParams();
@@ -23,9 +30,15 @@ export default function CompletarConvite() {
       const fragmento = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       const accessToken = fragmento.get("access_token");
       const refreshToken = fragmento.get("refresh_token");
+      const erroCodigo = fragmento.get("error_code") || parametros.get("error_code");
 
       if (!accessToken || !refreshToken) {
-        if (ativo) setErro("Este link é inválido ou já expirou. Solicite um novo cadastro.");
+        window.history.replaceState(null, "", window.location.pathname);
+        if (ativo) {
+          setErro(erroCodigo === "otp_expired"
+            ? "Este link expirou ou já foi utilizado. Solicite um novo e-mail e abra somente a mensagem mais recente."
+            : "Este link é inválido. Solicite um novo e-mail.");
+        }
         return;
       }
 
@@ -42,12 +55,18 @@ export default function CompletarConvite() {
         return;
       }
 
-      const conviteId = parametros.get("convite");
+      const { data: usuarioAtual, error: erroUsuario } = await supabase.auth.getUser();
+      if (erroUsuario) {
+        if (ativo) setErro("Não foi possível validar os dados desta conta. Solicite um novo e-mail.");
+        return;
+      }
+
+      const conviteId = conviteSeguro(parametros.get("convite"))
+        || conviteSeguro(usuarioAtual.user?.user_metadata?.barbervision_convite_id);
       if (conviteId) {
-        const conviteValido = /^[0-9a-f-]{36}$/i.test(conviteId);
-        const { error: erroConvite } = conviteValido
-          ? await supabase.rpc("aceitar_convite_barbearia", { p_convite_id: conviteId })
-          : { error: new Error("Convite inválido") };
+        const { error: erroConvite } = await supabase.rpc("aceitar_convite_barbearia", {
+          p_convite_id: conviteId
+        });
 
         if (erroConvite) {
           if (ativo) setErro("Não foi possível associar esta conta à barbearia. Solicite um novo convite.");
