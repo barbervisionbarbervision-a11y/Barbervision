@@ -216,11 +216,11 @@ Fluxo versionado:
 3. recuperação começa em `/barbeiro/esqueci-senha` e termina em `/barbeiro/redefinir-senha`;
 4. conta convidada conclui senha em `/barbeiro/ativar-conta`;
 5. contexto server-side valida claims, perfil ativo, membership ativa e barbearia ativa;
-6. dono em AAL1 passa por matrícula/challenge TOTP em `/barbeiro/mfa`;
+6. dono em AAL1 pode entrar no painel ou configurar TOTP em `/barbeiro/mfa`;
 7. ausência de membership/barbearia válida leva a `/barbeiro/sem-acesso`;
 8. logout local/global está disponível no painel/segurança.
 
-O e-mail é usado para confirmação e recuperação. O segundo fator aprovado do dono é TOTP, não um segundo código enviado ao mesmo e-mail.
+O e-mail é usado para confirmação e recuperação. O segundo fator opcional do dono é TOTP, não um segundo código enviado ao mesmo e-mail.
 
 O bootstrap AAL1 reconhece o papel de dono por seu próprio perfil/membership antes do MFA, sem carregar a barbearia; harness JWT e Playwright comprovaram o fluxo com Supabase real local.
 
@@ -231,7 +231,7 @@ A tela `/barbeiro/equipe`, as Server Actions e o script `auth:provision-owner` a
 - `convites_barbearia` com estados, expiração e unicidade parcial por tenant/e-mail;
 - `eventos_auditoria` append-only;
 - RPCs de criar/revogar/aceitar convite, marcar envio/falha, provisionar o primeiro dono e suspender/reativar/revogar funcionário;
-- autorização do dono AAL2, operações service-only e locks de tenant.
+- autorização do dono ativo, operações service-only e locks de tenant; step-up específico continua pendente para operações futuras de alto risco.
 
 Os UUIDs de procedência são registros históricos, sem FK destrutiva para `auth.users`: `barbearias.criado_por`, `clientes.criado_por`, `membros_barbearia.convidado_por`, `atribuicoes_cliente.atribuido_por`, os atores de criação/aceite/revogação do convite e o ator/alvo da auditoria. Convite aceito ou revogado exige timestamp e ator correspondentes. Em auditoria, origem `usuario` exige ator; origem `sistema` pode manter ator nulo. Uma transição efetiva gera evento, mas repetir um comando quando o estado final já foi alcançado é no-op e não duplica auditoria.
 

@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **24/08/2026**. O Supabase remoto recebeu nove migrations e o Render está Live. A secret exposta foi rotacionada; redirects e SMTP foram configurados. Os gates imediatos são corrigir a API de clientes, criar o primeiro dono, provar e-mail hospedado e publicar Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **24/08/2026**. O Supabase remoto recebeu dez migrations e o Render está Live. A secret exposta foi rotacionada; redirects, SMTP, criação do primeiro dono e entrega de convite foram comprovados. Os gates imediatos são corrigir e provar a API de clientes, revalidar as migrations 9–10 e publicar o Worker Cloudflare. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -34,7 +34,7 @@ Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operac
 6. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 192/192, concorrência, rollback/roll-forward 8–4, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle/outbox passaram localmente sobre as oito migrations anteriores. Nove migrations estão aplicadas no Supabase hospedado; a nona ainda requer atualização do seed e nova validação local, e a operação remota completa ainda não foi comprovada.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, `db:start`, `db:reset`, lint SQL, pgTAP 192/192, concorrência, rollback/roll-forward 8–4, JWT/RLS, Storage com blob real e a jornada Playwright de Auth/e-mail/TOTP/lifecycle/outbox passaram localmente sobre as oito migrations anteriores. Dez migrations estão aplicadas no Supabase hospedado; as migrations 9–10 ainda requerem nova validação local integral. Primeiro dono, callback e entrega hospedada de convite já foram comprovados.
 
 ## Passo 1 — segurança da demonstração
 
@@ -116,7 +116,7 @@ Entregar login, confirmação, recuperação, TOTP do dono, convite e lifecycle 
 - logout local/global;
 - UI/Actions de equipe e script de provisionamento;
 - configuração local de Auth e templates;
-- e-mail confirmado e dono AAL2 no SQL;
+- e-mail confirmado e isolamento do dono ativo no SQL; TOTP opcional desde a migration 10;
 - correção em código para construir contexto mínimo do dono AAL1 antes de ler dados de negócio;
 - quinta migration com `convites_barbearia`, `eventos_auditoria` append-only e nove RPCs de convite, aceite, marcação de envio/falha, primeiro dono, suspensão, reativação e revogação.
 - auditoria em que evento de usuário exige ator, evento de sistema pode ter ator nulo, transição efetiva gera evento e replay no-op não duplica;
@@ -144,7 +144,7 @@ Entregar login, confirmação, recuperação, TOTP do dono, convite e lifecycle 
 
 ### Gate de saída
 
-- dono: convite/onboarding → confirmação → senha → AAL1 → TOTP → AAL2 → painel;
+- dono: convite/onboarding → confirmação → senha → painel; TOTP pode ser configurado depois em Segurança;
 - funcionário: convite → confirmação → login → apenas clientes atribuídos;
 - revogação/suspensão corta acesso com JWT existente;
 - dois tenants permanecem isolados;

@@ -17,8 +17,8 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 | Passo | Estado | Gate atual |
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
-| 2 — Supabase, tenant e RLS | Oito migrations validadas localmente; nove aplicadas no hospedado | Atualizar o seed para a migration 9, repetir os gates e integrá-los à CI |
-| 3 — Auth real | Auth/lifecycle locais aprovados; redirects, SMTP e cadastro web do primeiro dono implementados | Validar o novo fluxo hospedado e concluir a matriz remota |
+| 2 — Supabase, tenant e RLS | Oito migrations validadas localmente; dez aplicadas no hospedado | Atualizar o seed para as migrations 9–10, repetir os gates e integrá-los à CI |
+| 3 — Auth real | Primeiro dono, callback e entrega Brevo comprovados; MFA opcional publicado | Provar recuperação, isolamento e operações administrativas na matriz remota |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -72,9 +72,9 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 - [x] UI e Server Actions de equipe como scaffold.
 - [x] Templates locais de convite e recuperação.
 - [x] Signup público desabilitado em `supabase/config.toml`.
-- [x] Migration de e-mail confirmado e AAL2 do dono.
+- [x] Migration histórica de e-mail confirmado/AAL2 e migration posterior que torna TOTP opcional.
 - [x] Migration de convites, provisionamento, lifecycle de funcionário, locks e auditoria de domínio.
-- [x] Contexto mínimo do dono AAL1 antes de consultar dados da barbearia, permitindo encaminhamento ao MFA em código.
+- [x] Contexto do dono AAL1 com acesso ao tenant e configuração posterior opcional de MFA.
 
 Esses itens indicam presença de implementação, não validação ponta a ponta.
 
@@ -83,9 +83,9 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 Execute nesta ordem:
 
 1. **P0 — concluir o cadastro público mínimo**: corrigir a conexão remota de `POST /api/clientes`, confirmar tenant por slug e provar insert/upsert sem duplicação.
-2. **P0 — atualizar e revalidar o banco local**: adicionar e-mails válidos ao seed e repetir reset, lint, pgTAP, integração e rollback/roll-forward com as nove migrations.
-3. **P0 — validar o primeiro usuário/dono**: testar `/barbeiro/criar-conta`, confirmação, senha, tenant e MFA no hospedado; trocar o rate limit em memória por proteção distribuída/CAPTCHA antes do piloto.
-4. **P0 — provar Auth hospedado**: validar Brevo, remetente, templates, convite, confirmação e recuperação; depois publicar Cloudflare e testar a outbox.
+2. **P0 — atualizar e revalidar o banco local**: adicionar e-mails válidos ao seed e repetir reset, lint, pgTAP, integração e rollback/roll-forward com as dez migrations.
+3. **P0 — fechar o hardening do primeiro dono**: o fluxo hospedado já chegou até ativação/MFA; agora testar a escolha **Configurar depois**, recuperação e isolamento, e trocar o rate limit em memória por proteção distribuída/CAPTCHA.
+4. **P0 — concluir Auth/outbox hospedados**: entrega Brevo e callback estão comprovados; faltam recuperação, templates finais, publicação do Worker Cloudflare e processamento agendado da outbox.
 5. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 6. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
@@ -141,7 +141,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Testar leitura/escrita de Storage com URLs assinadas.
 - [ ] Testar tenant A sem acesso ao tenant B.
 - [ ] Testar funcionário sem acesso a cliente não atribuído.
-- [ ] Testar dono AAL2 com acesso ao próprio tenant.
+- [ ] Testar dono AAL1 e AAL2 com acesso ao próprio tenant após a migration 10.
 - [ ] Testar conta, perfil, tenant ou membership inativos cortando acesso com JWT ainda válido.
 - [ ] Verificar plano de índices com volume representativo.
 - [ ] Registrar evidência, versão do PostgreSQL/CLI e procedimento de reprodução.
@@ -181,7 +181,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Criar `marcar_convite_falhou`.
 - [x] Criar `provisionar_dono_controlado` com autoridade server-only.
 - [x] Derivar ator, tenant e papel do JWT/contexto server-only nos comandos autenticados.
-- [x] Exigir AAL2 do dono nas RPCs administrativas de convite e funcionário.
+- [x] Exigir historicamente AAL2 nas RPCs; a migration 10 tornou o helper compatível com AAL1 do dono ativo.
 - [x] Exigir e-mail confirmado e exatamente igual ao convite no aceite.
 - [x] Tornar aceite idempotente e resistente a replay em fonte.
 - [ ] Tratar usuário já existente e confirmado sem duplicar conta.
@@ -201,7 +201,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Reforçar em fonte a proteção do último dono ativo e do perfil que ainda possui ownership.
 - [x] Usar lock por tenant antes de alterar membership.
 - [x] Diferenciar suspensão operacional de revogação e exclusão de dados.
-- [x] Garantir por ator/AAL2 que o dono só gerencie funcionário do próprio tenant.
+- [x] Garantir por ator e tenant que o dono só gerencie funcionário do próprio tenant.
 - [ ] Testar todos esses estados, transições e locks em PostgreSQL real e via Data API.
 
 ## P0 — auditoria
@@ -214,21 +214,21 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Bloquear no primeiro nível do JSON chaves explícitas de senha, token, OTP/TOTP, link, selfie, imagem ou e-mail bruto.
 - [ ] Adicionar verificação recursiva antes de aceitar qualquer metadado aninhado ou payload arbitrário.
 - [x] Tornar eventos imutáveis pela API comum.
-- [x] Restringir leitura da auditoria ao dono AAL2 do próprio tenant.
+- [x] Restringir leitura da auditoria ao dono ativo do próprio tenant.
 - [x] Manter a tabela restrita a eventos de domínio; logs do Supabase Auth permanecem separados.
 - [ ] Definir retenção, exportação, request/session ID e correlação operacional da auditoria.
 
-## P0 — MFA e sessão
+## P0 — MFA opcional e sessão
 
-- [ ] Testar o contexto mínimo do dono AAL1 em `lib/auth/context.js` contra RLS real.
-- [ ] Provar que dono AAL1 chega a `/barbeiro/mfa`.
-- [ ] Provar que dono AAL1 não lê barbearia, clientes, perfis alheios nem Storage.
-- [ ] Provar que dono AAL2 obtém acesso autorizado.
-- [ ] Provar que claim `aal` ausente é tratada como AAL1.
+- [ ] Provar que dono AAL1 confirmado e ativo acessa somente o próprio tenant.
+- [ ] Provar que **Configurar depois** leva ao painel sem matricular fator.
+- [ ] Provar que a área de Segurança permite iniciar a matrícula posteriormente.
+- [ ] Provar que dono AAL2 mantém o mesmo escopo autorizado.
+- [ ] Provar que claim `aal` ausente não amplia tenant ou papel.
 - [ ] Provar que funcionário AAL1 continua no escopo atribuído.
 - [x] Testar enrollment, challenge e verify TOTP com sessão real no harness JWT e no Playwright.
 - [x] Não oferecer remoção self-service do último fator; recuperação exige comando server-only, UUID, e-mail coincidente, dono ativo e confirmação operacional explícita.
-- [ ] Definir recuperação quando o dono perde o autenticador.
+- [x] Definir recuperação quando o dono perde o autenticador por comando server-only; como MFA é opcional, AAL1 continua utilizável.
 - [ ] Definir política de reautenticação para ações críticas.
 - [x] Testar refresh válido, access token expirado, logout local no Playwright e logout global invalidando refresh token de outra sessão.
 - [ ] Fazer `SairButton` funcionar também na tela de sem acesso quando o Supabase não estiver configurado, sem lançar erro no modo demo.
@@ -254,7 +254,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Criar reconciliação idempotente para materializar convites vencidos como `expirado` durante cada lote do worker.
 - [ ] Configurar um agendador no ambiente hospedado para chamar periodicamente a rota protegida do worker.
 - [x] Versionar Blueprint Render Free, health check e Cloudflare Cron Trigger a cada minuto com webhook opcional.
-- [x] Criar o projeto Supabase hospedado em São Paulo, vincular a CLI e aplicar as nove migrations atuais.
+- [x] Criar o projeto Supabase hospedado em São Paulo, vincular a CLI e aplicar as dez migrations atuais.
 - [x] Conectar o repositório privado ao Blueprint Render e chegar ao formulário das cinco variáveis.
 - [x] Revogar a `SUPABASE_SECRET_KEY` exposta em captura e criar uma substituta antes do deploy; confirmação do usuário em 24/08, sem registrar o novo valor.
 - [x] Concluir o deploy Render no commit `fbed47b`; URL `https://barbervision.onrender.com` Live e `/api/health` validado com HTTP 200.

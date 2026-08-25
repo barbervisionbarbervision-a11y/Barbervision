@@ -4,7 +4,7 @@
 
 ## Estado executivo
 
-O repositório possui uma fundação Supabase em nove migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox e e-mail de clientes. Há seed fictício, nove rollbacks e três suítes pgTAP com 192 asserções históricas; a nona migration ainda requer cobertura própria.
+O repositório possui uma fundação Supabase em dez migrations. As três primeiras formam a baseline do passo 2; as seguintes cobrem assurance, onboarding/lifecycle, leitura operacional, retomada do dono, outbox, e-mail de clientes e MFA opcional. Há seed fictício, dez rollbacks e três suítes pgTAP com 192 asserções históricas; as migrations 9–10 ainda requerem cobertura própria.
 
 Isso ainda **não significa backend de negócio operacional**. Auth, RLS, Storage privado e lifecycle de funcionário foram validados localmente, mas as telas de negócio continuam em mocks, `sessionStorage` e `localStorage`, nenhuma selfie é enviada ao Storage e os passos de privacidade/persistência ainda não foram implementados.
 
@@ -154,7 +154,7 @@ Isso impede estruturalmente que um cliente seja atribuído a um funcionário de 
 - Papel vem de `membros_barbearia`, nunca de `user_metadata` ou `app_metadata`.
 - Dono e funcionário só são considerados quando a membership está `ativa`.
 - Acesso de negócio exige e-mail confirmado em `auth.users`, `perfis.ativo = true` e barbearia `ativa`; tenant suspenso/arquivado não aparece nem pode ser alterado pelo dono.
-- Dono ativo precisa de claim `aal = aal2` para ler ou alterar dados de negócio e para acessar os buckets de fontes/cutouts. Claim ausente é tratado como AAL1.
+- Dono ativo e com e-mail confirmado pode ler ou alterar os recursos autorizados do próprio tenant em AAL1 ou AAL2. TOTP é opcional desde a migration 10.
 - Funcionário ativo permanece autorizado em AAL1 somente no seu escopo de leitura atribuído.
 - O próprio perfil e a própria membership permanecem legíveis para uma identidade Auth permanente em AAL1, permitindo identificar o papel do dono e conduzir o bootstrap de MFA sem liberar a barbearia.
 - Usuário anônimo do Supabase Auth é recusado mesmo que a conexão utilize o papel PostgreSQL `authenticated`.
@@ -169,7 +169,7 @@ Isso impede estruturalmente que um cliente seja atribuído a um funcionário de 
 
 ## Matriz de acesso entregue
 
-| Recurso | Dono ativo + AAL2 | Funcionário ativo + AAL1/AAL2 | Dono AAL1, suspenso, outsider ou anônimo |
+| Recurso | Dono ativo + AAL1/AAL2 | Funcionário ativo + AAL1/AAL2 | Suspenso, outsider ou anônimo |
 | --- | --- | --- | --- |
 | Barbearia | Lê a própria; altera nome, slug e logo | Lê a própria | Sem acesso de negócio |
 | Perfil | Lê/altera o próprio; lê perfis ativos da equipe | Lê/altera o próprio | Identidade permanente pode ler/alterar o próprio perfil; sem dados da equipe |
@@ -203,7 +203,7 @@ Funções de autorização:
 
 RPCs públicas estreitas da quinta migration:
 
-- dono AAL2: `criar_convite_funcionario`, `revogar_convite_barbearia`, `suspender_funcionario`, `reativar_funcionario` e `revogar_funcionario`;
+- dono ativo: `criar_convite_funcionario`, `revogar_convite_barbearia`, `suspender_funcionario`, `reativar_funcionario` e `revogar_funcionario`;
 - conta autenticada/confirmada correspondente: `aceitar_convite_barbearia`;
 - somente servidor privilegiado: `marcar_convite_enviado`, `marcar_convite_falhou` e `provisionar_dono_controlado`.
 
@@ -213,7 +213,7 @@ Os gatilhos `validar_responsavel_atribuicao` e `proteger_ultimo_dono` reforçam 
 
 Os gatilhos registram `criado_por`, `atribuido_por`, atualizam `updated_at`, travam a identidade da membership e protegem o perfil de dono ativo. Os UUIDs de autoria são históricos e não autorizam acesso. A quinta migration também cria `eventos_auditoria` append-only para transições efetivas cobertas pelas nove RPCs; replays/no-ops idempotentes não duplicam evento. Isso ainda não abrange logs nativos de Auth, ações futuras nem auditoria operacional de toda a aplicação.
 
-`usuario_email_confirmado()` consulta o estado autoritativo em `auth.users`; metadata fornecida pelo cliente não confirma conta. `usuario_tem_aal2()` lê a claim `aal` do JWT e considera claim ausente como `aal1`. A migration 4 substitui os helpers de membro, dono, visibilidade de perfil/cliente e Storage para aplicar essas regras sem alterar as policies existentes.
+`usuario_email_confirmado()` consulta o estado autoritativo em `auth.users`; metadata fornecida pelo cliente não confirma conta. Historicamente, `usuario_tem_aal2()` lia a claim `aal`; a migration 10 redefine esse helper de compatibilidade para aceitar usuário Auth permanente, tornando MFA opcional sem reescrever todas as policies. Operações futuras de alto risco devem ganhar um helper de step-up explícito separado.
 
 As RPCs fazem suas mutações locais em transação, mas não tornam atômica a orquestração entre Supabase Auth, e-mail, Server Actions e banco. A aplicação agora confere as compensações por releitura autoritativa, mas o provisionamento ainda pode deixar identidade Auth órfã ou membership de dono ativa antes de a conta estar operacional, e o aceite de convite ocorre antes da definição de senha. Esses riscos P1 restantes não são garantias fornecidas pelo schema.
 
@@ -317,6 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-O passo 2 possui validação local completa no baseline anterior e as nove migrations foram aplicadas no Supabase hospedado. A secret exposta foi rotacionada, Render/redirects/SMTP foram configurados, mas ainda faltam retestar a migration 9, corrigir a API de clientes, criar o primeiro dono, provar e-mail/templates, publicar Cloudflare e executar a matriz remota.
+O passo 2 possui validação local completa no baseline anterior e as dez migrations foram aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono e entrega de convite foram comprovados. Ainda faltam retestar as migrations 9–10, corrigir/provar a API de clientes, publicar Cloudflare e executar a matriz remota.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

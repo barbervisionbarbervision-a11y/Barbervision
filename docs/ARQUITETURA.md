@@ -6,9 +6,9 @@
 
 O Barber Vision é uma aplicação Next.js 16 com App Router e duas partes em estágios diferentes. A jornada pública, o simulador e quase todo o domínio operacional ainda são locais: mocks, `sessionStorage`, `localStorage`, MediaPipe e Canvas no navegador. A simulação combina normalização da selfie, `FaceLandmarker` com 478 pontos, `ImageSegmenter` com SelfieMulticlass, síntese aproximada para ocultar o cabelo original, análise alpha, matte de oclusão e overlay 2D. Essas análises protegem o preparo, mas **não posicionam o novo corte**. O placement primário continua manual v7: base fixa do catálogo, ajuste separado de posição, largura, altura e rotação, seguido da confirmação em **Pronto**.
 
-Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono só alcança dados de negócio em AAL2; em AAL1 existe um bootstrap mínimo para encaminhá-lo à matrícula/desafio de MFA sem consultar a barbearia protegida. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
+Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.js` renova cookies e valida claims com `getClaims()`, os layouts de servidor resolvem perfil, membership e barbearia e o navegador usa o cliente SSR para login, recuperação e MFA TOTP. O dono com e-mail confirmado, perfil e membership ativos alcança o próprio tenant em AAL1 ou AAL2; TOTP é opcional e pode ser configurado depois. Funcionários operam em AAL1. A jornada principal foi comprovada de ponta a ponta contra Supabase e Mailpit locais.
 
-O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem nove migrations, nove rollbacks e três suítes pgTAP com 192/192 sobre as oito migrations anteriores; a nona ainda requer cobertura. Há uma API mínima de clientes publicada, ainda sem sucesso remoto comprovado. O painel de negócio continua consumindo mocks/armazenamento local.
+O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem dez migrations, dez rollbacks e três suítes pgTAP com 192/192 sobre as oito migrations anteriores; as migrations 9–10 ainda requerem cobertura. Há uma API mínima de clientes publicada, ainda sem sucesso remoto comprovado. O painel de negócio continua consumindo mocks/armazenamento local.
 
 Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
@@ -40,8 +40,8 @@ flowchart LR
     Q -->|sem env, desenvolvimento| DM[Sessão demo local]
     Q -->|com env| SA[Supabase Auth SSR<br/>cookies + getClaims]
     SA --> AC[Perfil + membership + tenant]
-    AC -->|dono AAL1| MFA[MFA TOTP]
-    AC -->|dono AAL2 ou funcionário AAL1| BP[Painel /barbeiro/*]
+    AC -->|dono: escolha opcional| MFA[MFA TOTP]
+    AC -->|dono ou funcionário ativo| BP[Painel /barbeiro/*]
     DM --> BP
     Q -->|sempre bloqueado em produção/Auth real| A[/admin mock]
     BP <--> ES[(Contexto real ou<br/>sessionStorage somente demo)]
@@ -122,7 +122,7 @@ Existem dois Route Handlers de Auth:
 
 Existem Server Actions na tela de equipe, um script de provisionamento de dono e `POST /api/clientes`. A API usa o admin server-only, resolve tenant ativo por slug e faz upsert por telefone; está publicada, mas falha no remoto e ainda não é operacional. Não existem APIs de domínio para agenda, simulações, avaliações, produtos ou financeiro.
 
-O provisionamento não possui transação distribuída entre Auth e Postgres, mas agora valida entrada/origem/slug antes da mutação e retoma com a identidade existente por e-mail ou UUID quando a RPC falha. A membership nasce ativa antes da senha para permitir bootstrap, enquanto dados de negócio exigem AAL2; o link inicial conduz à definição de senha. As compensações de convite também releem o estado autoritativo antes de afirmar a transição.
+O provisionamento não possui transação distribuída entre Auth e Postgres, mas agora valida entrada/origem/slug antes da mutação e retoma com a identidade existente por e-mail ou UUID quando a RPC falha. A membership nasce ativa antes da senha para permitir bootstrap; o link inicial conduz à definição de senha e TOTP pode ser configurado depois. As compensações de convite também releem o estado autoritativo antes de afirmar a transição.
 
 Selfie, catálogo demonstrativo e placement continuam tratados no navegador. Não há persistência pública no Supabase.
 
@@ -293,10 +293,10 @@ Portanto, a identidade SSR já carrega tenant por desenho, mas “multi-tenant s
 3. até existir seletor de unidade, a membership ativa mais antiga é escolhida;
 4. o papel vem de `membros_barbearia`, nunca de metadata do JWT;
 5. funcionário ativo pode operar em AAL1; dono em AAL1 recebe apenas a sessão mínima necessária para ser redirecionado a `/barbeiro/mfa`;
-6. dono em AAL2 pode alcançar layouts exclusivos, e a migration `auth_assurance` reforça o mesmo step-up em RLS/Storage;
+6. dono confirmado e ativo pode alcançar layouts exclusivos; a migration `owner_mfa_optional` torna o step-up TOTP opcional sem remover RLS por tenant;
 7. login com senha, recuperação, redefinição, ativação, TOTP, logout local/global e templates locais existem no código.
 
-Esse caminho principal está validado localmente, mas continua parcial em produção. Projeto remoto, redirects, SMTP Brevo e criação web do primeiro dono existem; faltam prova hospedada do novo cadastro/entrega, proteção distribuída contra abuso, scheduler, matriz remota, transferência de dono e seletor de tenant.
+Esse caminho principal está validado localmente e o primeiro dono, callback e entrega hospedada de convite foram comprovados. Ainda faltam proteção distribuída contra abuso, scheduler, matriz remota completa, transferência de dono e seletor de tenant.
 
 ### Modo demonstração sem Supabase
 

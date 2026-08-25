@@ -91,13 +91,13 @@ Este modo é selecionado quando URL e publishable key estão presentes juntas.
 - as demais rotas `/barbeiro/*` exigem sessão;
 - o layout do painel obtém perfil, memberships ativas e tenant no servidor;
 - até existir seletor de unidade, a membership ativa mais antiga é escolhida;
-- donos em AAL1 são enviados para `/barbeiro/mfa` e só acessam dados de negócio em AAL2;
+- donos em AAL1 acessam o painel e podem configurar TOTP opcionalmente em `/barbeiro/mfa` ou pela tela de Segurança;
 - funcionários podem operar em AAL1 conforme a política versionada;
 - oito áreas do painel possuem layout server-side exclusivo do dono: Catálogo, Comissões, Equipe, Fidelidade, Financeiro, Funil, Produtos e Promoções;
 - `/admin` permanece bloqueado, pois o painel master não faz parte deste Auth;
 - a flag de demonstração insegura não ignora Auth quando Supabase está configurado.
 
-O bootstrap do dono em AAL1 lê apenas o próprio perfil e a própria membership antes do TOTP, sem consultar dados do tenant; o harness JWT e o Playwright comprovaram esse caminho.
+O contexto do dono valida perfil, membership e tenant no servidor. O harness JWT e o Playwright preservam evidência histórica de AAL1/AAL2; desde a migration 10, TOTP não bloqueia o painel.
 
 Mesmo nesse modo, as páginas de negócio ainda consomem mocks e `localStorage`. Auth real sobre dados fictícios não equivale a um painel operacional conectado.
 
@@ -193,7 +193,8 @@ Oito migrations estão versionadas:
 1. `20260808010000_tenant_core.sql`: `barbearias`, `perfis`, `membros_barbearia`, `clientes` e `atribuicoes_cliente`;
 2. `20260808011000_tenant_rls.sql`: grants, policies e funções de escopo por tenant/papel;
 3. `20260808012000_private_storage.sql`: buckets privados para fontes, cutouts e selfies;
-4. `20260808013000_auth_assurance.sql`: e-mail confirmado e AAL2 obrigatório para o dono acessar dados de negócio e Storage.
+4. `20260808013000_auth_assurance.sql`: e-mail confirmado e requisito histórico de AAL2.
+10. `20260824020000_owner_mfa_optional.sql`: mantém e-mail/perfil/membership ativos e torna TOTP opcional.
 5. `20260813010000_onboarding_invites_lifecycle_audit.sql`: convites, auditoria append-only e nove RPCs de onboarding/lifecycle.
 6. `20260822010000_owner_reads_inactive_member_profiles.sql`: leitura operacional de perfis inativos vinculados.
 7. `20260822020000_owner_provisioning_resume.sql`: retomada segura do provisionamento do primeiro dono.
@@ -374,7 +375,7 @@ Verifique confirmação de e-mail, membership ativa, claim `aal`, factors TOTP e
 
 ### A tela Equipe falha
 
-Confirme que a quinta migration foi aplicada e que a sessão é de dono AAL2. Depois revise a Admin API, SMTP, callbacks e o status do convite. O contrato SQL existe em fonte, mas ainda não há ambiente validado nem outbox/retry.
+Confirme que as dez migrations foram aplicadas e que a sessão pertence a um dono ativo do tenant correto. Depois revise a Admin API, SMTP, callbacks e o status do convite. TOTP não é mais obrigatório para esse fluxo.
 
 ### `auth:provision-owner` convida, mas não cria a barbearia
 

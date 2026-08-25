@@ -52,7 +52,7 @@ Para o Supabase local são necessários:
 
 O CLI está fixado como `supabase@2.115.0`. Em 23/08, `db:start` e `db:reset` encerraram com exit `0`; o reset aplicou as oito migrations existentes naquele momento e `seed.sql`, e lint + pgTAP 192/192 passaram. Em 24/08, a nona migration (`clientes_email`) foi aplicada no projeto hospedado. Ela ainda exige atualização do seed e repetição do reset/lint/pgTAP/rollback local. Data API/RLS por JWT e Storage com blob real passaram anteriormente. Analytics/Vector opcionais estão desativados.
 
-Na auditoria de 23/08, os serviços necessários estavam saudáveis; Imgproxy, Analytics, Vector e Pooler estavam desativados/não usados. `db:lint` e pgTAP passaram 192/192. O projeto remoto `ftwdfobgwxjmeickktmy` foi vinculado em 24/08 e recebeu as nove migrations. Storage foi validado anteriormente por operação real com JWT e blob.
+Na auditoria de 23/08, os serviços necessários estavam saudáveis; Imgproxy, Analytics, Vector e Pooler estavam desativados/não usados. `db:lint` e pgTAP passaram 192/192. O projeto remoto `ftwdfobgwxjmeickktmy` foi vinculado em 24/08 e recebeu as dez migrations. Storage foi validado anteriormente por operação real com JWT e blob.
 
 ## Comandos locais
 
@@ -66,7 +66,7 @@ npm.cmd run db:lint
 npm.cmd run db:stop
 ```
 
-`db:reset` recria o banco local, aplica as nove migrations e executa o seed. Antes da próxima execução, o seed precisa fornecer e-mail aos clientes inseridos pela migration 9. `db:test` roda os três arquivos em `tests/database/`. `db:test:concurrency` prova locks com conexões reais. `db:test:integration` cria identidades temporárias, faz login e TOTP/AAL2, testa Data API/RLS e Storage com blob real e exige a mesma confirmação/marcação de banco descartável. O cadastro público permanece bloqueado: o provider de e-mail fica disponível para login/convites administrados, enquanto `[auth].enable_signup = false` impede signup público. Nunca use `service_role` como prova de RLS: esse papel ignora policies.
+`db:reset` recria o banco local, aplica as dez migrations e executa o seed. Antes da próxima execução, o seed precisa fornecer e-mail aos clientes inseridos pela migration 9. `db:test` roda os três arquivos em `tests/database/`. `db:test:concurrency` prova locks com conexões reais. `db:test:integration` cria identidades temporárias, faz login e TOTP/AAL2, testa Data API/RLS e Storage com blob real e exige a mesma confirmação/marcação de banco descartável. O signup direto do Supabase permanece bloqueado; a primeira conta de dono é criada pela API controlada `/api/donos`. Nunca use `service_role` como prova de RLS: esse papel ignora policies.
 
 Para um projeto remoto de teste explicitamente criado e revisado:
 
@@ -83,10 +83,12 @@ Antes de retirar `--dry-run`, confira o project ref, tenha backup, revise o diff
 1. `tenant_core`: tipos, cinco tabelas, constraints, FKs compostas, índices e timestamps.
 2. `tenant_rls`: helpers privados, grants mínimos, gatilhos e policies de dono/funcionário.
 3. `private_storage`: três buckets privados, formato de path e policies owner-only para fontes/cutouts.
-4. `auth_assurance`: confirmação de e-mail para conta ativa e AAL2 obrigatório para o dono em dados de negócio e Storage.
+4. `auth_assurance`: confirmação de e-mail para conta ativa e requisito histórico de AAL2 do dono.
 5. `onboarding_invites_lifecycle_audit`: convites, auditoria append-only, provisionamento controlado do primeiro dono, lifecycle de funcionário, locks ordenados e proveniência histórica.
 
-Todas usam transação. A quarta migration substitui helpers usados pelas policies. A quinta depende dessa garantia de e-mail/AAL2 e cria comandos de domínio; ela não envia e-mail, não matricula fator TOTP e não implementa transferência de dono.
+10. `owner_mfa_optional`: preserva e-mail/perfil/membership ativos e torna o TOTP opcional para o dono. O helper de compatibilidade `usuario_tem_aal2()` deixa de exigir a claim AAL2.
+
+Todas usam transação. A quarta migration substitui helpers usados pelas policies; a décima relaxa especificamente o step-up global. A quinta cria comandos de domínio; ela não envia e-mail, não matricula fator TOTP e não implementa transferência de dono.
 
 ## Modelo de identidade e autorização
 
@@ -96,7 +98,7 @@ Todas usam transação. A quarta migration substitui helpers usados pelas polici
 - `user_metadata` e `app_metadata` não autorizam acesso;
 - uma identidade Auth anônima é rejeitada mesmo usando o papel PostgreSQL `authenticated`;
 - acesso de negócio exige e-mail confirmado, perfil ativo, membership ativa e barbearia ativa;
-- dono exige claim `aal2`; claim ausente é tratada como `aal1`;
+- dono exige e-mail confirmado, perfil e membership ativos; claim `aal2` é opcional;
 - funcionário pode ler seu escopo atribuído em AAL1;
 - o próprio perfil e a própria membership permanecem legíveis em AAL1 para permitir o bootstrap do MFA sem expor dados da barbearia;
 - membership não possui mutation direta pelo cliente web;
@@ -127,7 +129,7 @@ Funções `SECURITY DEFINER` usam nomes qualificados e `search_path = ''`; execu
 
 ## Matriz RLS pretendida pelo SQL atual
 
-| Recurso | Dono ativo + AAL2 | Funcionário ativo + AAL1/AAL2 | Dono AAL1, suspenso, outsider ou anônimo |
+| Recurso | Dono ativo + AAL1/AAL2 | Funcionário ativo + AAL1/AAL2 | Suspenso, outsider ou anônimo |
 | --- | --- | --- | --- |
 | Barbearia | Lê a própria; altera nome/slug/logo | Lê a própria | Sem acesso de negócio |
 | Perfil | Próprio + equipe ativa | Somente o próprio | Identidade permanente: somente o próprio |
@@ -153,7 +155,7 @@ Todas as tabelas de negócio têm `barbearia_id NOT NULL`. As FKs compostas impe
 - matrícula e verificação TOTP habilitadas;
 - templates locais de convite e recovery.
 
-O aplicativo possui clientes separados para browser, Server Components, Proxy e administração. O Proxy usa cookies SSR e `getClaims()`; os layouts resolvem perfil/membership/tenant. No modo real, dono AAL1 é encaminhado ao TOTP sem ler a barbearia protegida.
+O aplicativo possui clientes separados para browser, Server Components, Proxy e administração. O Proxy usa cookies SSR e `getClaims()`; os layouts resolvem perfil/membership/tenant. No modo real, o dono AAL1 pode acessar o painel e configurar TOTP depois pela área de Segurança.
 
 Variáveis esperadas estão em `.env.example`:
 
@@ -190,10 +192,10 @@ revogar_funcionario
 
 O contrato separa autoridade:
 
-- dono autenticado em AAL2 cria/revoga convites e suspende, reativa ou revoga somente funcionários do próprio tenant;
+- dono autenticado e ativo cria/revoga convites e suspende, reativa ou revoga somente funcionários do próprio tenant;
 - identidade autenticada, permanente, com e-mail confirmado e igual ao convite pode aceitá-lo;
 - `service_role` pode apenas marcar envio/falha e provisionar o primeiro dono pelas RPCs próprias;
-- leitura de convites e auditoria usa RLS de dono AAL2; não há DML direto dessas tabelas para `authenticated`;
+- leitura de convites e auditoria usa RLS de dono ativo do próprio tenant; não há DML direto dessas tabelas para `authenticated`;
 - cada transição efetiva coberta grava o evento na mesma transação; replay/no-op idempotente não duplica evento;
 - evento de origem `usuario` exige ator histórico; evento de `sistema` pode ter ator nulo;
 - metadados recusam chaves explícitas de senha, token, OTP/TOTP, link, selfie, imagem ou e-mail bruto no primeiro nível do JSON; validação recursiva continua pendente antes de aceitar payload arbitrário;
@@ -219,7 +221,7 @@ Formato obrigatório:
 
 O path tem exatamente dois diretórios UUID, rejeita `..` e usa o primeiro segmento como tenant. O segundo UUID evita colisões, mas ainda não é validado contra uma entidade de template/selfie. `owner_id` do objeto não autoriza tenant.
 
-Somente fontes e cutouts têm policies, exclusivas do dono AAL2. Selfies permanecem sem policy até o passo 4 definir base legal/consentimento, finalidade, retenção, expiração, exclusão e resposta a direitos. Limite de bucket não substitui validação de magic bytes, dimensões, EXIF/GPS, conteúdo, licença ou quarentena.
+Somente fontes e cutouts têm policies, exclusivas do dono ativo do próprio tenant. Selfies permanecem sem policy até o passo 4 definir base legal/consentimento, finalidade, retenção, expiração, exclusão e resposta a direitos. Limite de bucket não substitui validação de magic bytes, dimensões, EXIF/GPS, conteúdo, licença ou quarentena.
 
 O HTTP 502 observado em 14/08 foi um incidente histórico de inicialização. Em 22/08, Auth, Storage e Studio responderam HTTP 200, e upload/download/remove com JWT AAL2 e cenários negados foram comprovados pelo harness de integração.
 

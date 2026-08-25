@@ -37,7 +37,7 @@ Referência institucional: [Tipos de pessoas jurídicas e enquadramentos](https:
 
 ## Situação do protótipo local
 
-A tela está em `/barbeiro/financeiro`, aparece no menu como **Fechamento** e continua usando `useSessaoDono` como guarda de UX do fallback demonstrativo. No modo Supabase configurado, a rota também está sob layouts de servidor que validam sessão/membership e exigem dono com AAL2. O Auth SSR foi validado localmente, mas não substitui autorização nas futuras operações financeiras nem cria trilha persistente.
+A tela está em `/barbeiro/financeiro`, aparece no menu como **Fechamento** e continua usando `useSessaoDono` como guarda de UX do fallback demonstrativo. No modo Supabase configurado, a rota também está sob layouts de servidor que validam sessão e membership ativa de dono; TOTP é opcional. O Auth SSR foi validado localmente, mas não substitui autorização nem step-up específico nas futuras operações financeiras.
 
 Sem variáveis do Supabase, o desenvolvimento usa a sessão demo; em produção, `/barbeiro/*` é bloqueado por padrão. Toda a operação financeira descrita aqui continua no navegador. A baseline de banco e o rollback/roll-forward 8–4 passam; a auditoria existente não cria trilha financeira persistente.
 

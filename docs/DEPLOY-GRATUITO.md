@@ -1,6 +1,6 @@
 # Deploy gratuito: Render + Cloudflare + Supabase
 
-> Estado em **24/08/2026**: GitHub e Supabase estão vinculados; nove migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects e SMTP Brevo foram configurados, mas a entrega real ainda não foi comprovada. O Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
+> Estado em **24/08/2026**: GitHub e Supabase estão vinculados; dez migrations estão aplicadas no remoto. O Render está Live em `https://barbervision.onrender.com`. Site URL, redirects e SMTP Brevo foram configurados, e a entrega real de convite foi comprovada. O Cloudflare não foi publicado. A secret key exposta anteriormente foi revogada/substituída e nenhum valor foi registrado.
 
 ## Arquitetura
 
@@ -13,7 +13,7 @@ Essa composição serve para demonstração e piloto técnico. O Render Free pod
 ## 1. Preparar o Supabase hospedado
 
 1. Crie um projeto Supabase controlado.
-2. Aplique as nove migrations oficiais em ordem.
+2. Aplique as dez migrations oficiais em ordem.
 
 ### Diagnóstico atual do cadastro público
 
@@ -97,7 +97,7 @@ O cron `* * * * *` é UTC e executa a cada minuto. O Worker público responde `4
 
 1. Confira o Cron Trigger no painel Cloudflare.
 2. Abra os logs em tempo real com `npx.cmd wrangler tail`.
-3. Crie um convite usando uma conta de dono AAL2 controlada.
+3. Crie um convite usando uma conta de dono ativa e controlada; TOTP é opcional.
 4. Confirme `Outbox processada` nos logs e a entrega do e-mail.
 5. Teste segredo inválido: a rota deve responder `401`.
 6. Pare temporariamente a aplicação e confirme que o Worker registra erro e aciona o webhook, se configurado.

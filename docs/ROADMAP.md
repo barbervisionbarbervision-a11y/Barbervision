@@ -76,7 +76,7 @@ Estado: **validado localmente, inclusive concorrência, rollback, JWT/RLS e Stor
 - formato de path iniciado por UUID do tenant;
 - seed/fixtures e 59 asserções pgTAP do passo 2;
 - 112 asserções de onboarding/lifecycle, 21 da outbox, rollbacks 4–5 e runner concorrente;
-- migration de assurance que exige e-mail confirmado e AAL2 do dono.
+- migration de assurance que exige e-mail confirmado; a migration 10 torna AAL2 opcional para o dono.
 - UUIDs históricos de procedência sem FK destrutiva para Auth em barbearias, clientes, memberships, atribuições, convites e auditoria;
 - revogação do `UPDATE` direto de `atribuicoes_cliente.usuario_id` para `authenticated` e do `UPDATE` da tabela para `service_role`.
 
@@ -145,7 +145,7 @@ Estado: **parcial e não validado**.
 2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
 3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
 4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-5. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento.
+5. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento.
 6. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
@@ -348,12 +348,12 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Revogar e substituir a `SUPABASE_SECRET_KEY` exposta na captura do formulário Render.
-2. Concluir o Blueprint Render, confirmar a URL efetiva e validar `/api/health`.
-3. Configurar redirects, signup, confirmação dupla, templates e SMTP no Supabase hospedado.
-4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-5. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento.
-6. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
+1. Corrigir e comprovar a persistência de `POST /api/clientes` no Supabase hospedado.
+2. Reexecutar os gates locais e rollbacks com as dez migrations, incluindo cobertura das migrations 9–10.
+3. Provar **Configurar depois**, ativação posterior de TOTP e recuperação de senha no ambiente hospedado.
+4. Substituir o rate limit em memória por proteção distribuída/CAPTCHA.
+5. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+6. Executar a matriz remota de Auth, TOTP opcional, convite/outbox, RLS e isolamento.
 7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Referência oficial detalhada: [Plano de execução](PLANO-DE-EXECUCAO.md). Pendências rastreáveis: [pendências.md](../pend%C3%AAncias.md).

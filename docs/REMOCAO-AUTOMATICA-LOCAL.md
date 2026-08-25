@@ -29,7 +29,7 @@ Decisão atual: congelar temporariamente esta implementação porque o conjunto 
 
 ## Reconciliação transversal em 21/08/2026
 
-A remoção local e o placement manual v7 permanecem congelados e tecnicamente inalterados; nenhum código visual mudou nesta revisão. Ao redor deles, Auth/lifecycle com Supabase SSR, cookies, membership e AAL2 foram validados localmente. Os dados do painel, catálogos e financeiro continuam demonstrativos em `localStorage` ou mocks.
+A remoção local e o placement manual v7 permanecem congelados e tecnicamente inalterados; nenhum código visual mudou nesta revisão. Ao redor deles, Auth/lifecycle com Supabase SSR, cookies e membership foram validados localmente; TOTP é opcional. Os dados do painel, catálogos e financeiro continuam demonstrativos em `localStorage` ou mocks.
 
 Sem configuração do Supabase, o desenvolvimento usa o fallback demo; em produção, `/admin` e `/barbeiro/*` ficam bloqueados por padrão. A baseline atual de banco passa 192/192; demais evidências estão em `ESTADO-VALIDACAO.md`. Privacidade/persistência ainda não existem.
 
@@ -374,7 +374,7 @@ O histórico `bald-cap-canvas-v2` também não é regra ativa. O recibo de remo�
 
 Headers defensivos globais protegem tipo de conteúdo, framing, referrer, permissões e isolamento de opener. Sem configuração do Supabase, o Proxy de produção bloqueia as superfícies internas por padrão; a flag insegura só libera a demo da barbearia e não abre `/admin` em produção. Essa camada não modifica a remoção local e não envia a selfie para fora.
 
-Quando o Supabase está configurado, sessão SSR, membership e guards de dono com AAL2 substituem o fallback demonstrativo nas rotas cobertas. Auth/e-mail/TOTP e lifecycle de funcionário foram testados de ponta a ponta; a fundação de tenant/membership, RLS/grants e Storage privado com JWT passou localmente. Gaps operacionais de convite/provisionamento e CSP compatível com Next/MediaPipe/WASM permanecem pendentes.
+Quando o Supabase está configurado, sessão SSR e membership ativa substituem o fallback demonstrativo nas rotas cobertas; TOTP é opcional. Auth/e-mail/TOTP e lifecycle de funcionário foram testados historicamente de ponta a ponta; a fundação de tenant/membership, RLS/grants e Storage privado com JWT passou localmente. CSP compatível com Next/MediaPipe/WASM e a matriz remota completa permanecem pendentes.
 
 ## Limitações bloqueadoras
 

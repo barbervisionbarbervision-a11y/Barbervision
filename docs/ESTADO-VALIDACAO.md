@@ -22,8 +22,8 @@
 - O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu dez migrations.
 - A entrega hospedada de convite pelo Brevo foi comprovada. O callback de convite foi corrigido para a origem canônica do Render.
 - Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
-- O Render publicou até o commit `9ec8bd6` em `https://barbervision.onrender.com`; o serviço ficou `Live`, e o health check público respondeu HTTP 200.
-- Site URL e redirects de produção foram configurados no Supabase; signup público permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real ainda não foi comprovada.
+- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. O conteúdo público do commit `ab97b14` foi conferido na tela de login, que já informa que o autenticador é opcional.
+- Site URL e redirects de produção foram configurados no Supabase; signup direto permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real de convite foi comprovada.
 - O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. A migration remota passou, mas a tentativa hospedada de gravação retornou erro; o log indicou resposta HTML inesperada e a URL pública do Supabase no Render foi corrigida/reimplantada, sem reteste conclusivo registrado.
 - Uma secret key Supabase apareceu em captura durante esse formulário. O usuário confirmou sua revogação e substituição em 24/08; nenhum valor foi reproduzido neste repositório.
 
@@ -45,11 +45,13 @@
 | `GET https://barbervision.onrender.com/api/health` | HTTP 200; `ok: true` | processo Next remoto saudável |
 | Build dos commits `3125aef`, `681c2a7` e `9ec8bd6` | aprovado; 31 páginas, 5 handlers e Proxy | rota dinâmica corrigida, API de clientes publicada e diagnóstico ampliado |
 | `npx.cmd supabase db push` da migration `20260824010000_clientes_email.sql` | aplicada sem erro | remoto passou a aceitar e-mail normalizado em clientes |
-| `npx.cmd supabase db push --dry-run` após a revisão documental | `Remote database is up to date`; nenhuma migration pendente | as nove migrations locais e remotas estão sincronizadas |
+| `npx.cmd supabase db push --dry-run` após a migration 10 | `Remote database is up to date`; nenhuma migration pendente | as dez migrations locais e remotas estão sincronizadas |
 | Cadastro público hospedado | endpoint alcançado, mas resposta final `500` | persistência ainda não validada; não marcar passo 5 como iniciado/concluído |
-| Supabase Auth hospedado | Site URL, dois redirects, signup bloqueado, confirmação e SMTP Brevo configurados | falta provar entrega e templates reais |
-| Build do cadastro do primeiro dono | aprovado; 32 páginas, 6 handlers e Proxy | botão `Começar agora`, página e API estão em fonte; falta teste hospedado |
-| Primeiro convite público hospedado | e-mail Brevo entregue; aceite caiu em `0.0.0.0:10000` com sessão no fragmento | entrega SMTP comprovada; callback corrigido em fonte para `/auth/complete`, aguardando novo teste |
+| Supabase Auth hospedado | Site URL, redirects, signup direto bloqueado, confirmação e SMTP Brevo configurados | entrega de convite comprovada; recuperação e templates finais ainda pendentes |
+| Cadastro do primeiro dono | botão `Começar agora`, página/API, criação de tenant e convite exercitados no hospedado | fluxo chegou à ativação e à escolha de MFA |
+| Callback público | falha inicial em `0.0.0.0:10000`; depois corrigido para `/auth/complete` e allowlist atualizada | origem interna eliminada do fluxo versionado |
+| `npm.cmd run lint` e `npm.cmd run build` após MFA opcional | exit `0`; lint com 18 warnings e build com 31 páginas | alteração compila; warnings preexistentes permanecem |
+| `GET /barbeiro/login` após deploy `ab97b14` | conteúdo público contém a regra de autenticador opcional | deploy da alteração confirmado no Render |
 
 ## Evidências de 23/08/2026
 

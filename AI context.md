@@ -12,14 +12,14 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O simulador atual usa preparação automática da foto e **placement manual** do cabelo.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
-- O passo 2 foi validado localmente sobre as oito migrations anteriores: reset, lint, pgTAP 192/192, concorrência, rollback/roll-forward, JWT/RLS e Storage passaram. A nona migration de e-mail foi aplicada no remoto e ainda requer repetição desses gates.
+- O passo 2 foi validado localmente sobre as oito migrations anteriores: reset, lint, pgTAP 192/192, concorrência, rollback/roll-forward, JWT/RLS e Storage passaram. As migrations 9 (e-mail de cliente) e 10 (MFA opcional) foram aplicadas no remoto e ainda requerem repetição integral desses gates.
 - O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu dez migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
-- A correção do bootstrap AAL1 → TOTP do dono foi comprovada com JWT real e E2E. O formulário MFA também foi corrigido para React Strict Mode, e o QR SVG do Supabase usa `<img>` nativo sem liberar SVG globalmente no Next.
+- O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - O cadastro público agora coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`; a migration de e-mail foi aplicada no remoto. A tentativa hospedada ainda retorna erro e não constitui persistência validada.
-- `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo convida o primeiro dono, provisiona a barbearia pela RPC controlada, usa honeypot e limite básico por origem; ainda requer teste hospedado e proteção distribuída mais forte antes do piloto.
-- O primeiro e-mail Brevo chegou, mas revelou que o convite hospedado retorna tokens no fragmento e o callback usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, que consome a sessão no browser, remove os tokens da URL e segue para ativação; a URL precisa constar na allowlist do Supabase e um novo convite deve ser testado.
+- `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo hospedado criou o primeiro dono, enviou o convite e chegou à ativação/MFA. Usa honeypot e limite básico por origem; ainda requer proteção distribuída mais forte antes do piloto.
+- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
 ## Intenção do produto confirmada
@@ -146,7 +146,7 @@ O bloco Supabase está versionado e foi recriado de forma limpa em 23/08 com CLI
 - `lib/auth/context.js` carrega perfil e memberships ativas sob RLS.
 - Até existir seletor de unidade, a membership ativa mais antiga é escolhida.
 - Dono em AAL1 recebe contexto mínimo de perfil/membership e deve ir a `/barbeiro/mfa` sem ler dados da barbearia.
-- Dono AAL2 pode acessar as áreas autorizadas.
+- Dono confirmado e ativo pode acessar as áreas autorizadas em AAL1 ou AAL2.
 - Layouts server-side exclusivos do dono protegem equipe, funil, promoções, financeiro, comissões, fidelidade, catálogo e produtos.
 - Server Actions repetem a autorização sensível; esconder item no menu nunca é autorização.
 - `/admin` permanece bloqueado.
@@ -313,7 +313,7 @@ O bucket de selfies não possui policy de usuário público; o fluxo atual não 
 - tabela append-only `public.eventos_auditoria`;
 - RPCs autenticadas `criar_convite_funcionario`, `revogar_convite_barbearia` e `aceitar_convite_barbearia`;
 - RPCs server-only `marcar_convite_enviado`, `marcar_convite_falhou` e `provisionar_dono_controlado`;
-- RPCs de dono AAL2 `suspender_funcionario`, `reativar_funcionario` e `revogar_funcionario`;
+- RPCs administrativas do dono ativo `suspender_funcionario`, `reativar_funcionario` e `revogar_funcionario`;
 - locks ordenados, bloqueio de mutation direta de membership via `service_role`, bloqueio de `UPDATE(usuario_id)` direto em atribuições, grants explícitos e auditoria transacional das transições efetivas.
 
 Os UUIDs de proveniência em `barbearias.criado_por`, `clientes.criado_por`, `membros_barbearia.convidado_por`, `atribuicoes_cliente.atribuido_por`, convites e auditoria são históricos e não possuem FK destrutiva para `auth.users`. Identidades autoritativas de perfil/membership continuam com FK. Eventos de origem `usuario` exigem ator; eventos de `sistema` podem ter ator nulo. Replay/no-op idempotente não cria um segundo evento.
@@ -410,10 +410,10 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 
 ### P0 — antes de chamar Auth de funcional
 
-1. Preservar o Supabase descartável e executar as nove migrations do zero, seed, lint e 192 testes existentes; acrescentar cobertura própria para a migration 9.
+1. Preservar o Supabase descartável e executar as dez migrations do zero, seed, lint e 192 testes existentes; acrescentar cobertura própria para as migrations 9–10.
 2. Executar o runner de concorrência em banco marcado e guardar a evidência das duas corridas.
 3. Ensaiar os dois novos rollbacks/roll-forward e definir o tratamento do histórico `supabase_migrations`.
-4. Provar o bootstrap AAL1 → TOTP do dono com JWT real.
+4. Provar que o dono AAL1 acessa o painel, pode pular o TOTP e pode ativá-lo depois.
 5. Executar Data API e Storage em dois tenants e todos os papéis/AALs relevantes.
 6. Configurar redirects, templates, SMTP e segredos em ambiente descartável.
 7. Operacionalizar a outbox com scheduler/alertas e fechar transferência de dono, reatribuição e seleção multi-tenant.
@@ -444,11 +444,11 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - GitHub privado: `barbervisionbarbervision-a11y/Barbervision`, branch `main`, commit remoto inicial `6cea627`.
 - Supabase hospedado: projeto `barbervision`, ref pública `ftwdfobgwxjmeickktmy`, região `sa-east-1`, estado `ACTIVE_HEALTHY` no momento da vinculação.
 - `supabase link` terminou com sucesso.
-- Historicamente, o primeiro `db push` aplicou oito migrations; em 24/08, `20260824010000_clientes_email.sql` também foi aplicada, totalizando nove no remoto.
-- Render: commit `fbed47b` publicado com estado `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200` com `ok: true`.
+- Historicamente, o primeiro `db push` aplicou oito migrations; em 24/08, as migrations de e-mail de clientes e MFA opcional também foram aplicadas, totalizando dez no remoto.
+- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. O commit mais recente enviado é `ab97b14`.
 - Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
 - Cloudflare: nenhum login, secret, deploy, Cron Trigger ou log remoto foi comprovado.
-- Ainda faltam configuração hospedada de Auth redirects, templates, SMTP, signup público e confirmação dupla.
+- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono e entrega de convite estão configurados/comprovados. Recuperação hospedada e templates finais ainda precisam de prova.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
@@ -468,13 +468,13 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Encerrar o diagnóstico de `POST /api/clientes`: conferir `NEXT_PUBLIC_SUPABASE_URL`, credencial server-only e tenant do slug; comprovar insert e retry idempotente sem expor dados pessoais.
-2. Validar hospedado o novo cadastro do primeiro dono, confirmação Brevo, definição de senha e RPC; substituir o limite em memória por proteção distribuída/CAPTCHA antes do piloto.
-3. Provar SMTP Brevo e templates hospedados com convite, confirmação e recuperação reais.
+1. Encerrar o diagnóstico de `POST /api/clientes`: conferir credencial server-only e tenant do slug; comprovar insert/upsert e retry idempotente sem expor dados pessoais.
+2. Atualizar o seed e repetir reset, lint SQL, pgTAP, integração e rollback/roll-forward com as dez migrations.
+3. Provar hospedado **Configurar depois**, ativação posterior de TOTP e recuperação de senha; substituir o limite em memória por proteção distribuída/CAPTCHA.
 4. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
-3. Executar a matriz remota controlada de Auth, TOTP, convite/outbox e isolamento sem dados reais.
-4. Completar reatribuição, transferência de dono e seleção multi-tenant.
-5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
+5. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento sem dados reais.
+6. Completar reatribuição, transferência de dono e seleção multi-tenant.
+7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
 Depois desses gates, persistir o fluxo vertical do passo 5 e só então migrar painel, catálogo/produtos, financeiro e operação.
 

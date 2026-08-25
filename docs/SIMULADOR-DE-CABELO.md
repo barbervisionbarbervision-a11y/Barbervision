@@ -28,7 +28,7 @@ Decisão de foco: o cabelo fica **congelado temporariamente** nesse estado porqu
 
 ## Reconciliação transversal em 21/08/2026
 
-O pipeline descrito neste documento permanece congelado e sem mudança: preparo automático local, placement manual v7 e confirmação em **Pronto**. Nenhum código visual mudou nesta revisão. Auth/lifecycle com sessão Supabase SSR, cookies, membership e AAL2 foram validados localmente, mas isso não torna simulador, catálogo ou jornada persistentes.
+O pipeline descrito neste documento permanece congelado e sem mudança: preparo automático local, placement manual v7 e confirmação em **Pronto**. Nenhum código visual mudou nesta revisão. Auth/lifecycle com sessão Supabase SSR, cookies e membership foram validados localmente; TOTP é opcional, mas isso não torna simulador, catálogo ou jornada persistentes.
 
 Sem variáveis do Supabase, o desenvolvimento continua no fallback demonstrativo. Em produção, `/admin` e `/barbeiro/*` permanecem bloqueados. Os dados do painel, catálogo e jornada continuam em armazenamento local ou mocks. A baseline atual de banco passa 192/192; privacidade e fluxo persistido ainda não foram implementados.
 
@@ -397,7 +397,7 @@ O recibo v3 é pequeno e o placement v7 contém somente identidade do molde, geo
 
 A revisão de segurança não alterou o pipeline do cabelo. Headers defensivos globais incluem `nosniff`, proteção contra framing, Referrer Policy, Permissions Policy e COOP. Sem configuração do Supabase, o Proxy mantém a jornada pública disponível e bloqueia as superfícies internas de produção conforme a regra descrita na reconciliação acima.
 
-Com o Supabase configurado, o Proxy atualiza/valida a sessão por cookies e os layouts de servidor exigem membership ativa; áreas exclusivas do dono exigem AAL2. A jornada principal de Auth/MFA TOTP foi comprovada pelo Playwright. A quinta migration de convites/lifecycle/auditoria passou reset, pgTAP e validação funcional de convite/aceite. Ela não migra os dados de negócio locais, não resolve recuperação de MFA nem isola a jornada pública. RLS/grants e Storage com JWT passaram localmente; CSP compatível com MediaPipe/WASM permanece pendente.
+Com o Supabase configurado, o Proxy atualiza/valida a sessão por cookies e os layouts de servidor exigem membership ativa; TOTP é opcional. A jornada de Auth/MFA foi comprovada historicamente pelo Playwright. A quinta migration de convites/lifecycle/auditoria passou reset, pgTAP e validação funcional de convite/aceite. Ela não migra os dados de negócio locais nem isola a jornada pública. RLS/grants e Storage com JWT passaram localmente; CSP compatível com MediaPipe/WASM permanece pendente.
 
 ## Evidência histórica da camada congelada
 

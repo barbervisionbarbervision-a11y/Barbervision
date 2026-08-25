@@ -21,7 +21,7 @@ O projeto possui uma **demonstração local de dados de negócio**, sem backend 
 
 Não existem estoque transacional, interesse/reserva persistido, pedido, checkout, pagamento, entrega, baixa de quantidade, nota fiscal ou integração com a API oficial do WhatsApp.
 
-A autenticação e o lifecycle foram validados localmente: quando o Supabase está configurado, sessão SSR, membership e layout de servidor do dono AAL2 protegem `/barbeiro/produtos`. Sem configuração, o desenvolvimento usa o fallback demonstrativo e, em produção, o painel fica bloqueado por padrão. Em ambos os modos, catálogo, recomendações, avaliação e contato comercial permanecem locais e não passam por operações server-side de negócio.
+A autenticação e o lifecycle foram validados localmente: quando o Supabase está configurado, sessão SSR, e-mail confirmado, membership e layout de servidor do dono protegem `/barbeiro/produtos`; TOTP é opcional. Sem configuração, o desenvolvimento usa o fallback demonstrativo e, em produção, o painel fica bloqueado por padrão. Em ambos os modos, catálogo, recomendações, avaliação e contato comercial permanecem locais e não passam por operações server-side de negócio.
 
 Nove migrations estão versionadas; a baseline de oito passou 192/192 e a migration 9 ainda requer repetição local dos gates. As demais evidências estão centralizadas em `ESTADO-VALIDACAO.md`. Os passos 4 e 5 ainda não foram implementados.
 
@@ -154,7 +154,7 @@ Regra aprovada nesta fase:
 | Configurar WhatsApp e vínculos de cuidado | Sim | Não |
 | Ver solicitações registradas | Não existe | Não existe |
 
-`somenteDono` no menu e `useSessaoDono` continuam sendo guardas de UX, especialmente no fallback local. No modo Supabase configurado, o layout de servidor da rota também exige membership de dono e AAL2 antes de renderizar, mas essa proteção ainda não foi validada contra um ambiente real e não autoriza qualquer operação persistente de catálogo porque essas operações ainda não existem. Em produção, API/RPC e RLS deverão negar funcionário, outro tenant e anônimo em cada leitura e escrita, independentemente da UI.
+`somenteDono` no menu e `useSessaoDono` continuam sendo guardas de UX, especialmente no fallback local. No modo Supabase configurado, o layout de servidor da rota exige membership ativa de dono antes de renderizar; TOTP é opcional. Essa proteção não autoriza operações persistentes de catálogo porque elas ainda não existem. Em produção, API/RPC e RLS deverão negar funcionário, outro tenant e anônimo em cada leitura e escrita, independentemente da UI.
 
 ## Modelo de produção necessário
 

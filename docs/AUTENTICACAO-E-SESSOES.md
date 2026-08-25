@@ -4,7 +4,7 @@
 
 ## Objetivo
 
-Autenticar donos e funcionários por e-mail/senha, confirmar a identidade por e-mail, exigir TOTP do dono e derivar tenant/papel exclusivamente do banco sob RLS.
+Autenticar donos e funcionários por e-mail/senha, confirmar a identidade por e-mail, oferecer TOTP opcional ao dono e derivar tenant/papel exclusivamente do banco sob RLS.
 
 ## Princípios
 
@@ -12,7 +12,7 @@ Autenticar donos e funcionários por e-mail/senha, confirmar a identidade por e-
 - Cookie de sessão não é autorização de negócio por si só.
 - Papel e tenant vêm de `membros_barbearia` e estado atual no banco.
 - Metadata de usuário, `sessionStorage`, query string e payload do cliente não autorizam papel.
-- Dono acessa dados de negócio somente em AAL2.
+- Dono confirmado e ativo acessa o próprio tenant em AAL1 ou AAL2; TOTP é opcional e recomendado.
 - Funcionário ativo pode trabalhar em AAL1, limitado às atribuições.
 - A conta precisa ter e-mail confirmado e perfil ativo.
 - `/admin` não compartilha a autoridade do dono da barbearia.
@@ -37,7 +37,7 @@ Quando URL e publishable key válidas estão presentes:
 5. Perfil e memberships ativas são lidos sob RLS.
 6. A membership ativa mais antiga é escolhida provisoriamente.
 7. Dono em AAL1 recebe somente contexto mínimo e vai para `/barbeiro/mfa`.
-8. Dono AAL2 ou funcionário autorizado entra no painel.
+8. Dono ou funcionário autorizado entra no painel; o dono pode configurar TOTP depois.
 9. Layouts de área e Server Actions repetem autorização de dono quando necessário.
 
 ## Arquivos
@@ -89,15 +89,14 @@ O código atual segue esta sequência:
 
 ```text
 claims → próprio perfil → próprias memberships
-  ├─ dono AAL1: montar sessão mínima, motivo=mfa_pendente
-  └─ funcionário ou dono AAL2: consultar tenant ativo e montar sessão completa
+  └─ funcionário ou dono AAL1/AAL2: consultar tenant ativo e montar sessão completa
 ```
 
 Essa correção está versionada, porém ainda precisa ser provada contra policies reais. O teste deve demonstrar simultaneamente:
 
 - dono AAL1 consegue abrir a tela MFA;
 - dono AAL1 não lê barbearia/clientes/perfis alheios/Storage;
-- depois do challenge TOTP, novo JWT AAL2 libera o próprio tenant;
+- depois do challenge TOTP, novo JWT AAL2 reforça a sessão, mas não é pré-requisito global do painel;
 - claim `aal` ausente permanece negada como AAL1.
 
 ## Confirmação e recuperação por e-mail
@@ -120,7 +119,7 @@ Isso não configura automaticamente o projeto hospedado. Antes do uso real:
 
 O TOTP é gerenciado pelas APIs do Supabase Auth. O segredo não deve ser salvo em tabela de aplicação nem lido diretamente de `auth.mfa_factors`.
 
-Quando o dono perde o autenticador, não existe remoção self-service do último fator. Um operador privilegiado deve verificar a identidade fora do sistema e executar `npm run auth:recover-owner-totp -- --usuario-id UUID --confirmar-email EMAIL --confirmar-remocao-totp`. O comando confirma que UUID/e-mail correspondem, exige membership ativa de dono e remove fatores pela Admin API; `--enviar-acesso` também envia recuperação de senha. Access tokens já emitidos podem sobreviver até o TTL, por isso incidentes exigem também logout global/monitoramento. No próximo login, o dono volta a AAL1 e precisa matricular novo TOTP.
+Quando o dono perde o autenticador, não existe remoção self-service do último fator. Um operador privilegiado pode verificar a identidade fora do sistema e executar `npm run auth:recover-owner-totp -- --usuario-id UUID --confirmar-email EMAIL --confirmar-remocao-totp`. O comando confirma UUID/e-mail e membership ativa antes de remover fatores pela Admin API. Como TOTP é opcional, após a remoção o dono continua em AAL1 e pode configurar outro fator depois.
 
 Fluxo esperado:
 
@@ -141,7 +140,7 @@ A migration `20260813010000_onboarding_invites_lifecycle_audit.sql` adiciona:
 
 - `convites_barbearia`, separada da membership, com tenant, e-mail normalizado, expiração, versão e estados `pendente_envio`, `enviado`, `aceito`, `revogado`, `expirado` e `falhou`;
 - `eventos_auditoria`, append-only, com ações allowlisted e metadados pequenos; o constraint atual recusa chaves óbvias de senha, token, OTP, TOTP, link, selfie, imagem e e-mail **somente no primeiro nível do JSON**;
-- RLS de leitura para o dono AAL2 do tenant e DML direto revogado;
+- RLS de leitura para o dono ativo do tenant e DML direto revogado;
 - nove RPCs públicas estreitas: `criar_convite_funcionario`, `revogar_convite_barbearia`, `aceitar_convite_barbearia`, `marcar_convite_enviado`, `marcar_convite_falhou`, `provisionar_dono_controlado`, `suspender_funcionario`, `reativar_funcionario` e `revogar_funcionario`;
 - grants separados: dono autenticado executa os comandos do próprio tenant; marcação de envio/falha e provisionamento do primeiro dono ficam restritos a `service_role` no servidor;
 - locks de tenant, proteção adicional das memberships e do perfil de dono ativo, além da remoção transacional das atribuições quando um funcionário é revogado;
@@ -160,7 +159,7 @@ O fluxo versionado usa onboarding controlado/invite-only:
 
 - `scripts/provision-owner.mjs` normaliza o e-mail e envia o convite pela Admin API no servidor;
 - em seguida, o script chama `provisionar_dono_controlado` com `service_role`; a RPC cria perfil, tenant e membership de dono na mesma transação;
-- o usuário ainda precisa confirmar o e-mail, definir a senha e matricular o TOTP antes de acessar os dados de negócio;
+- o usuário precisa confirmar o e-mail e definir a senha; a matrícula TOTP pode ser feita depois;
 - se o convite Auth for criado e a RPC falhar, o script informa o UUID e aceita retomada segura com `--usuario-id`; todo input, origem HTTPS/loopback e conflito de slug são verificados antes da criação da identidade;
 - o script constrói `new URL(BARBERVISION_APP_URL).origin` fora do contrato central de URL segura; uma URL inválida pode interromper o processo e uma origem HTTP não loopback ainda precisa ser recusada;
 - falta uma decisão explícita, com threat model e teste de recuperação, sobre criar a membership do primeiro dono antes de ele confirmar o e-mail e definir a senha;
@@ -228,7 +227,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 |---|---:|---:|---:|---:|---:|
 | Anônimo | — | não | não | não | não |
 | Dono ativo | AAL1 | mínimo para MFA | não | não | não |
-| Dono ativo | AAL2 | sim | todos do tenant | sim | sim |
+| Dono ativo | AAL1/AAL2 | sim | todos do tenant | sim | sim |
 | Funcionário ativo | AAL1 | sim | clientes atribuídos | não | não |
 | Perfil/membership inativo | qualquer | somente o estritamente necessário à tela de bloqueio | não | não | não |
 | Admin da plataforma | — | fora deste domínio | fora deste domínio | fora deste domínio | fora deste domínio |
@@ -239,7 +238,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 - e-mail não confirmado negado;
 - dono AAL1 negado em todas as tabelas de negócio e Storage;
-- dono AAL2 autorizado apenas no próprio tenant;
+- dono ativo autorizado apenas no próprio tenant, em AAL1 ou AAL2;
 - funcionário AAL1 limitado às atribuições;
 - metadata forjada irrelevante;
 - convite cross-tenant/duplicado/expirado/revogado/replay/e-mail divergente;
@@ -255,7 +254,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 - convite real e e-mail;
 - confirmação e criação de senha;
-- AAL1 → cadastro/challenge TOTP → AAL2;
+- AAL1 → painel; opcionalmente cadastro/challenge TOTP → AAL2;
 - recuperação de senha;
 - logout local/global;
 - refresh válido, expiração e revogação global estão cobertos no harness de integração;
@@ -265,7 +264,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Evidência atual
 
-- nove migrations e nove rollbacks presentes; a nona trata e-mail de clientes e ainda requer teste próprio;
+- dez migrations e dez rollbacks presentes; a nona trata e-mail de clientes e a décima torna MFA opcional; ambas ainda requerem teste próprio;
 - CLI 2.115.0, `db:start`, reset, lint e pgTAP 192/192 aprovados; Auth, Storage e Studio respondem `200`;
 - rollbacks de Auth assurance e onboarding/lifecycle ensaiados, com roll-forward e repetição dos gates aprovados;
 - três pgTAPs com 192 asserções: 59 do passo 2, 112 de onboarding/lifecycle e 21 da outbox;

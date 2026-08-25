@@ -249,7 +249,7 @@ Os números antigos de rotas, warnings e auditoria de dependências não descrev
 
 ## Contenção de segurança relacionada
 
-Sem Supabase configurado, o Proxy bloqueia `/admin` e `/barbeiro/*` por padrão em produção. Com Supabase configurado, existem sessão SSR e guards por membership/AAL2, ainda sem validação ponta a ponta. Reset/lint/pgTAP passam, mas RLS e Storage continuam sem validação por JWT; essas medidas não licenciam assets nem criam governança de mídia.
+Sem Supabase configurado, o Proxy bloqueia `/admin` e `/barbeiro/*` por padrão em produção. Com Supabase configurado, existem sessão SSR e guardas por e-mail confirmado/membership; TOTP é opcional. Essas medidas não licenciam assets nem criam governança de mídia.
 
 ## Lote privado de 21/07/2026
 

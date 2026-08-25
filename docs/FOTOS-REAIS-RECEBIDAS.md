@@ -32,7 +32,7 @@ Os outputs ativos são:
 
 ## Reconciliação transversal em 21/08/2026
 
-O inventário, a separação privada/pública e o uso apenas como referência ampla permanecem inalterados. Paths, bytes e SHA-256 foram revalidados em **14/08/2026**; esses hashes não foram recalculados em 21/08. O simulador e o placement manual v7 seguem congelados, sem mudança de código visual. A implementação parcial de Auth com Supabase SSR, cookies, membership e AAL2 para dono não publica, licencia, protege por tenant nem migra estas fotos. Sem configuração do Supabase, o desenvolvimento continua no fallback demo e as áreas internas ficam bloqueadas por padrão em produção.
+O inventário, a separação privada/pública e o uso apenas como referência ampla permanecem inalterados. Paths, bytes e SHA-256 foram revalidados em **14/08/2026**; esses hashes não foram recalculados em 21/08. O simulador e o placement manual v7 seguem congelados, sem mudança de código visual. Auth com Supabase SSR, cookies e membership — com TOTP opcional — não publica, licencia nem migra estas fotos. Sem configuração do Supabase, as áreas internas ficam bloqueadas por padrão em produção.
 
 Em 22/08, start, reset, lint SQL, pgTAP 170/170, concorrência, rollback/roll-forward 5–4, JWT de Data API/Storage e o Auth E2E com lifecycle passaram. Os passos 4 e 5 ainda não existem. As fontes permanecem no diretório privado ignorado pelo Git, sem governança de produção comprovada.
 

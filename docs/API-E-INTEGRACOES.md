@@ -52,7 +52,7 @@ O redirect substitui a query anterior, usa `Cache-Control: private, no-store, ma
 
 CSP e HSTS continuam pendentes. A CSP precisa ser testada contra scripts/estilos do Next e MediaPipe/WASM; HSTS deve ser configurado somente no host HTTPS definitivo.
 
-No modo real, o Proxy é apenas a primeira fronteira. Os layouts consultam perfil/membership/tenant no servidor, os módulos exclusivos do dono exigem AAL2 e a migration `auth_assurance` pretende repetir esse requisito em RLS/Storage. No modo demo, o `sessionStorage` continua adulterável e não constitui autorização. Em ambos os modos, chunks mock não são confidenciais e não podem conter dados reais.
+No modo real, o Proxy é apenas a primeira fronteira. Os layouts consultam perfil/membership/tenant no servidor; módulos exclusivos do dono exigem dono confirmado e ativo no próprio tenant. TOTP é opcional desde a migration 10. No modo demo, o `sessionStorage` continua adulterável e não constitui autorização. Em ambos os modos, chunks mock não são confidenciais e não podem conter dados reais.
 
 Inventário de 14/08/2026:
 
@@ -496,7 +496,7 @@ As duas públicas precisam existir juntas; configuração parcial falha delibera
 - matrícula e desafio TOTP;
 - resolução server-side de perfil, membership, tenant, papel e AAL;
 - e-mail confirmado como pré-requisito SQL de conta ativa;
-- AAL2 para todo acesso do dono a dados de negócio/Storage; funcionário permanece AAL1;
+- e-mail confirmado, perfil/membership ativos e tenant correto para acesso do dono; TOTP opcional;
 - templates locais de convite e recovery em `supabase/templates/`.
 
 O bootstrap do dono em AAL1 retorna uma sessão mínima, sem ler nome/slug da barbearia, apenas para encaminhar a `/barbeiro/mfa`. Essa correção está versionada, mas ainda não foi exercitada contra as policies reais.
@@ -519,7 +519,7 @@ reativar_funcionario
 revogar_funcionario
 ```
 
-Ela também cria `eventos_auditoria` append-only, RLS de leitura para o dono AAL2, estados/expiração de convite, locks de tenant e grants distintos para `authenticated` e `service_role`.
+Ela também cria `eventos_auditoria` append-only, RLS de leitura para o dono ativo do tenant, estados/expiração de convite, locks de tenant e grants distintos para `authenticated` e `service_role`.
 
 Os UUIDs de procedência são históricos e deliberadamente não têm FK destrutiva para `auth.users`: `barbearias.criado_por`, `clientes.criado_por`, `membros_barbearia.convidado_por`, `atribuicoes_cliente.atribuido_por`, os atores `criado_por`/`aceito_por`/`revogado_por` de `convites_barbearia` e `ator_usuario_id`/`alvo_usuario_id` de `eventos_auditoria`. Isso preserva a trilha quando uma conta Auth é removida; esses campos não devem ser usados como prova de que a conta ainda existe.
 
@@ -531,7 +531,7 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 - as migrations 5–8 estão aplicadas; onboarding/lifecycle passou 112/112 e outbox 21/21; concorrência e rollback 5–4 permanecem evidências históricas;
 - `/barbeiro/equipe`, handlers e `npm run auth:provision-owner` possuem evidência funcional contra Supabase/Mailpit locais;
-- o envio usa uma outbox durável; SMTP Brevo foi configurado, mas entrega real ainda não foi provada, e produção continua dependente do scheduler;
+- o envio usa uma outbox durável; a entrega Brevo foi comprovada, mas produção continua dependente da publicação do Worker/scheduler;
 - quando a configuração ou o envio falha, as actions executam a compensação, releem o convite por `id + barbearia_id` e só anunciam `revogado`, `expirado` ou `falhou` quando o banco confirma esse estado; falha ou divergência produz mensagem de reconciliação necessária;
 - o provisionamento do primeiro dono faz preflight de entrada/origem/slug, resolve Auth existente por RPC server-only, reutiliza a identidade por e-mail e aceita retomada explícita por UUID;
 - se a RPC falhar depois da criação Auth, o script retorna o UUID e um comando de retomada que não cria outra identidade; não existe transação distribuída, mas o replay foi comprovado sobre o mesmo tenant;
@@ -546,7 +546,7 @@ A atribuição de cliente continua disponível por criação/remoção controlad
 
 ### Banco versionado
 
-`supabase/schema.sql` é somente um índice documental. A fonte de verdade são nove migrations, incluindo retomada do dono, outbox e e-mail de clientes. Há nove rollbacks; o próximo ensaio integral deve incluir a migration 9. Os scripts não reconciliam automaticamente `supabase_migrations`.
+`supabase/schema.sql` é somente um índice documental. A fonte de verdade são dez migrations, incluindo retomada do dono, outbox, e-mail de clientes e MFA opcional. Há dez rollbacks; o próximo ensaio integral deve incluir as migrations 9–10. Os scripts não reconciliam automaticamente `supabase_migrations`.
 
 Os pgTAPs passaram 59 + 112 + 21 asserções, totalizando 192/192. O harness `db:test:integration` usa identidades Auth, TOTP/AAL2, JWTs reais e blob real para provar Data API/RLS e Storage. O Playwright anterior comprova callback, e-mail/Mailpit, TOTP, convite, ativação, recuperação, logout e lifecycle; a versão atualizada para outbox aguarda reexecução. Consulte [Estado de validação](ESTADO-VALIDACAO.md), [Banco de dados](BANCO-DE-DADOS.md) e [Outbox de convites](OUTBOX-DE-CONVITES.md).
 
@@ -554,7 +554,7 @@ Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema
 
 ### Sequência canônica de validação
 
-Os gates locais anteriores foram executados, nove migrations estão no Supabase hospedado e o Render está Live. Redirects e SMTP foram configurados; faltam corrigir a API de clientes, implementar a primeira conta de dono, provar e-mail/templates, publicar Cloudflare e repetir a matriz remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais anteriores foram executados, dez migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback e entrega de convite foram comprovados; faltam corrigir/provar a API de clientes, publicar Cloudflare e repetir a matriz remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 
