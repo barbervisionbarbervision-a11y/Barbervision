@@ -13,13 +13,13 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2 foi revalidado localmente em 25/08 sobre as doze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. A migration 12 é uma limpeza operacional, limitada por UUID, tenant e e-mail `.invalid`, sem alteração de schema. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, login e acesso ao painel foram comprovados no hospedado. O transporte de convite funciona, mas um convite novo de funcionário ainda precisa validar a correção de callback `def60d3`. O Worker Cloudflare não foi publicado.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados no hospedado. Em `6a0ef4d`, a seleção da membership do convite foi corrigida; o usuário confirmou nome, e-mail, papel e contexto separados do dono. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - O cadastro público coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`. Em 24/08, o tenant real `barbervision` respondeu `201`; repetir o mesmo WhatsApp preservou o mesmo UUID. Em 25/08, a migration 11, aceite versionado, rate limit atômico distribuído e Turnstile server-side foram publicados no Render pelo commit `52c9cf2`. O smoke hospedado confirmou `400` sem consentimento, `403` com token inválido e o fluxo real retornou `201`, avançando para selfie.
 - `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo hospedado criou o primeiro dono, enviou o convite e chegou à ativação/MFA. Usa honeypot e limite básico por origem; ainda requer proteção distribuída mais forte antes do piloto.
-- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação. A recuperação hospedada foi corrigida em `1110236` e aprovada; o convite de funcionário passou a apontar para o callback de navegador e aceitar a membership em `def60d3`, ainda pendente de reteste com um convite recém-gerado.
+- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação. A recuperação hospedada foi corrigida em `1110236` e aprovada; o convite de funcionário passou a aceitar a membership em `def60d3`, a identidade visual foi exposta em `e608d15` e a escolha correta do acesso convidado foi concluída em `6a0ef4d`.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
 ## Intenção do produto confirmada
@@ -144,7 +144,8 @@ O bloco Supabase está versionado e foi recriado de forma limpa em 25/08 com CLI
 - Login e recuperação são públicos; o restante de `/barbeiro` exige sessão.
 - Login/callback aceitam `next` somente como path local `/barbeiro/*` e rejeitam `//`; a recuperação exibe mensagem neutra sobre existência da conta. Esses controles ainda não têm E2E/casos adversários.
 - `lib/auth/context.js` carrega perfil e memberships ativas sob RLS.
-- Até existir seletor de unidade, a membership ativa mais antiga é escolhida.
+- Convites novos gravam identificadores de convite e barbearia em metadata apenas como seletor de contexto; autorização, papel e status continuam vindo das memberships ativas lidas no banco sob RLS.
+- Quando o login veio de convite, o contexto prefere a membership real de funcionário da barbearia convidada; convites antigos têm compatibilidade pela membership ativa de funcionário mais recente. Fora desse caso, e até existir seletor de unidade, permanece o fallback para a membership ativa mais antiga.
 - Dono em AAL1 recebe contexto mínimo de perfil/membership e deve ir a `/barbeiro/mfa` sem ler dados da barbearia.
 - Dono confirmado e ativo pode acessar as áreas autorizadas em AAL1 ou AAL2.
 - Layouts server-side exclusivos do dono protegem equipe, funil, promoções, financeiro, comissões, fidelidade, catálogo e produtos.
@@ -307,7 +308,7 @@ No contrato atual do MVP, cliente exige nome, e-mail, telefone/WhatsApp, aceite 
 
 O bucket de selfies não possui policy de usuário público; o fluxo atual não envia selfies ao Storage.
 
-### Contratos do passo 3 aplicados e validados em pgTAP, ainda sem integração ponta a ponta
+### Contratos do passo 3 aplicados e validados
 
 - tabela `public.convites_barbearia`, com estados `pendente_envio`, `enviado`, `aceito`, `revogado`, `expirado` e `falhou`;
 - tabela append-only `public.eventos_auditoria`;
@@ -443,17 +444,17 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - Supabase hospedado: projeto `barbervision`, ref pública `ftwdfobgwxjmeickktmy`, região `sa-east-1`, estado `ACTIVE_HEALTHY` no momento da vinculação.
 - `supabase link` terminou com sucesso.
 - Historicamente, o primeiro `db push` aplicou oito migrations; o remoto agora possui as doze migrations oficiais, incluindo consentimento/rate limit e limpeza exata do cliente sintético.
-- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A correção de convite mais recente enviada é `def60d3`.
+- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A correção de seleção do acesso de funcionário mais recente é `6a0ef4d`.
 - Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
 - Cloudflare: nenhum login, secret, deploy, Cron Trigger ou log remoto foi comprovado.
-- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, login e painel estão configurados/comprovados. A entrega de e-mail de convite funciona; falta gerar um convite novo e comprovar a ativação de funcionário após `def60d3`. Templates finais e casos adversários de links ainda precisam de prova.
+- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. O usuário confirmou que a sessão de funcionário mostra o nome/e-mail corretos, papel `Funcionário` e contexto separado do dono após `6a0ef4d`. Templates finais, lifecycle remoto e casos adversários de links ainda precisam de prova.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
 - `npm audit`: 0 vulnerabilidades em 14/08; não foi repetido nesta revisão;
 - `launcher.bat --check`: aprovado em 21/08; o atalho da Área de Trabalho permanece como evidência validada em 14/08;
 - documentos: UTF-8 válido, links locais e fences íntegros;
-- `npm.cmd run build`: aprovado novamente em 25/08/2026 após `def60d3`, com as rotas Auth `/auth/confirm`, `/auth/callback` e `/auth/complete` incluídas;
+- `npm.cmd run lint -- --quiet`, `npm.cmd run test:unit` (6/6) e `npm.cmd run build`: aprovados em 25/08/2026 após `6a0ef4d`;
 - smoke HTTP: evidência histórica de 13/08/2026, com páginas públicas `200` e superfícies internas `307` para o modo seguro;
 - Git: repositório operacional, árvore limpa antes desta revisão e baseline `7c34dab` confirmado;
 - banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 205/205 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
@@ -466,12 +467,11 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Revogar o convite antigo, gerar um convite novo de funcionário e comprovar aceite, definição de senha, login e membership após `def60d3`.
-2. Provar isolamento por tenant/papel e os dois caminhos de MFA opcional: **Configurar depois** e ativação posterior de TOTP.
-3. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
-4. Testar links expirados, reutilizados e inválidos, além dos templates finais de confirmação, convite e recuperação.
-5. Completar reatribuição, transferência de dono e seleção multi-tenant.
-6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou operar com clientes reais.
+1. Exercitar no hospedado suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
+2. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
+3. Testar links expirados, reutilizados e inválidos, além dos templates finais de confirmação, convite e recuperação.
+4. Completar reatribuição, transferência de dono e seleção multi-tenant.
+5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou operar com clientes reais.
 
 Depois desses gates, persistir o fluxo vertical do passo 5 e só então migrar painel, catálogo/produtos, financeiro e operação.
 

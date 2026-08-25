@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. Cadastro público protegido, primeiro dono, recuperação e login foram comprovados no hospedado; o cliente sintético foi removido. O callback de convite foi corrigido em `def60d3` e aguarda reteste com um convite novo. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. Cadastro público protegido, primeiro dono, recuperação, convite, ativação e login de funcionário foram comprovados no hospedado; o cliente sintético foi removido. Em `6a0ef4d`, o usuário confirmou a seleção correta da membership, identidade e papel do funcionário. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -26,12 +26,11 @@ O simulador de cabelo fica congelado durante os passos 2–5, salvo correção c
 
 Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operacional é única:
 
-1. Retestar um convite novo de funcionário após `def60d3` e comprovar senha, login, papel e membership.
-2. Provar isolamento do segundo usuário, **Configurar depois** e ativação posterior de TOTP.
-3. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
-4. Executar os casos adversários restantes de Auth/outbox, RLS e Storage no ambiente remoto controlado.
-5. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
+1. Validar no hospedado suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
+2. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
+3. Executar os casos adversários restantes de Auth/outbox, incluindo links inválidos, reutilizados e expirados.
+4. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
+5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
 Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das doze migrations e pgTAP 205/205 passaram localmente, incluindo rollback/roll-forward da migration 11. As evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/RLS, Storage real e Playwright permanecem válidas no escopo testado. Doze migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite, cadastro idempotente, proteção antiabuso e limpeza do dado sintético foram comprovados remotamente.
 
@@ -73,7 +72,7 @@ Criar a fronteira autoritativa entre barbearias, donos, funcionários e clientes
 - três buckets privados;
 - seed de dois tenants;
 - teste pgTAP com 59 asserções;
-- teste pgTAP do passo 3 com 109 asserções;
+- teste pgTAP do passo 3 com 112 asserções;
 - rollbacks defensivos das migrations 4–5;
 - runner de duas sessões concorrentes mais uma conexão observadora para último dono e atribuição/revogação;
 - migration adicional de e-mail confirmado/AAL2, pertencente à preparação do passo 3.
@@ -82,7 +81,7 @@ Criar a fronteira autoritativa entre barbearias, donos, funcionários e clientes
 
 ### Falta para concluir
 
-- preservar a recriação limpa já aprovada com `db:reset`, lint e pgTAP 170/170;
+- preservar a recriação limpa já aprovada com `db:reset`, lint e pgTAP 205/205;
 - testar Data API/Storage com JWT real;
 - provar dois tenants e dois papéis;
 - executar e comprovar concorrência do último dono e da atribuição/revogação;
@@ -96,7 +95,7 @@ Todas as migrations sobem do zero, testes passam e tentativas cross-tenant falha
 
 ### Estado
 
-**Validado localmente.** Em 22/08, CLI 2.115.0, start/reset/lint, pgTAP 170/170, concorrência, rollback/roll-forward 5–4, Data API/RLS por JWT e Storage com blob real passaram. O rollback 6–4 é o próximo ensaio de banco.
+**Validado localmente.** Em 25/08, CLI 2.115.0, start/reset/lint e pgTAP 205/205 passaram sobre doze migrations. Concorrência, rollback/roll-forward 11 e 10–9, Data API/RLS por JWT e Storage com blob real também permanecem aprovados no escopo registrado.
 
 ## Passo 3 — autenticação real
 

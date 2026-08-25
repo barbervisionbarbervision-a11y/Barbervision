@@ -1,6 +1,6 @@
 # Autenticação e sessões
 
-> Estado reconciliado em **25/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, login e painel foram comprovados. O convite de funcionário passou a usar `/auth/complete` no commit `def60d3` e aguarda reteste com um convite novo. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
+> Estado reconciliado em **25/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados. O commit `6a0ef4d` corrigiu a seleção do acesso convidado e o usuário confirmou identidade, papel e contexto de funcionário separados do dono. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Compatibilidade dos links hospedados
 
@@ -8,7 +8,7 @@
 - `/auth/complete` consome no navegador sessões entregues no fragmento `#access_token`, remove os tokens da URL e aceita a membership quando existe `convite`;
 - recuperação aprovada no hospedado direciona para `/barbeiro/redefinir-senha`;
 - convites antigos emitidos antes de `def60d3` apontam para o callback anterior e devem ser revogados, não reutilizados;
-- um convite novo ainda precisa comprovar ativação, definição de senha e acesso limitado de funcionário no ambiente hospedado.
+- um convite novo comprovou ativação, definição de senha e seleção correta da membership de funcionário no ambiente hospedado; lifecycle remoto e casos adversários ainda são gates.
 
 ## Objetivo
 
@@ -43,7 +43,7 @@ Quando URL e publishable key válidas estão presentes:
 3. Rotas privadas sem identidade vão para `/barbeiro/login`.
 4. O layout do painel chama `exigirSessaoBarbearia()`.
 5. Perfil e memberships ativas são lidos sob RLS.
-6. A membership ativa mais antiga é escolhida provisoriamente.
+6. Se a sessão veio de convite, metadata seleciona a barbearia convidada entre memberships reais ativas; papel e status continuam vindo do banco. Sem seletor de convite, usa-se provisoriamente a membership ativa mais antiga.
 7. Dono em AAL1 recebe somente contexto mínimo e vai para `/barbeiro/mfa`.
 8. Dono ou funcionário autorizado entra no painel; o dono pode configurar TOTP depois.
 9. Layouts de área e Server Actions repetem autorização de dono quando necessário.
@@ -287,13 +287,12 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Próxima sequência canônica
 
-1. Executar o runner concorrente no banco local explicitamente marcado como descartável e guardar evidência.
-2. Usar o runbook existente para ensaiar rollback/roll-forward quando houver nova migration e repetir `db:lint`, as 205 asserções pgTAP e `db:test:concurrency`.
-3. Criar um `.env.local` controlado e fixtures/identidades reais no Supabase Auth para dono AAL1/AAL2, funcionário e cenário cross-tenant.
-4. Criar harness/scripts de integração e validar Data API e Storage com JWTs reais e cenários adversários.
-5. Preservar no harness as provas de refresh/expiração/logout global/recuperação TOTP e ampliar casos adversários de callback.
-6. Fechar gaps operacionais: provisionamento retomável com URL validada, decisão explícita sobre a membership do primeiro dono antes da senha, outbox/retry, usuário Auth existente, expiração reconciliada, reatribuição estreita, recuperação de TOTP, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Exercitar no hospedado suspensão, corte de acesso/sessão, reativação e revogação de funcionário.
+2. Publicar e validar o scheduler hospedado da outbox, incluindo autenticação `401`, retry e logs redigidos.
+3. Ampliar os casos adversários de callback para links inválidos, reutilizados e expirados e finalizar os templates hospedados.
+4. Fechar gaps operacionais: reatribuição estreita, transferência de dono, seleção multi-tenant e decisão explícita sobre a membership do primeiro dono antes da senha.
+5. Preservar os gates locais já aprovados em toda nova migration: reset, `db:lint`, pgTAP 205/205, concorrência, JWT/RLS e Storage.
+6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 ## Critério de conclusão do passo 3
 

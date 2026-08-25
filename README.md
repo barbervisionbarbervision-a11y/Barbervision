@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **25/08/2026**. O Render está publicado, o Supabase remoto recebeu doze migrations e o SMTP Brevo está operacional. Cadastro público protegido, primeiro dono, recuperação de senha e login foram comprovados no hospedado. O novo callback de convite de funcionário está publicado e aguarda reteste com um convite novo. E-mail confirmado continua obrigatório; TOTP é opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
+> Estado reconciliado em **25/08/2026**. O Render está publicado, o Supabase remoto recebeu doze migrations e o SMTP Brevo está operacional. Cadastro público protegido, primeiro dono, recuperação de senha, convite, ativação e login de funcionário foram comprovados no hospedado. A correção `6a0ef4d` também confirmou identidade, papel e contexto separados entre dono e funcionário. E-mail confirmado continua obrigatório; TOTP é opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -19,7 +19,7 @@ O simulador de cabelo está **congelado por decisão de produto**: a preparaçã
 |---|---|---|
 | 1. Segurança da demonstração | Concluído para a demo controlada | Em produção sem Auth, `/admin` permanece sempre bloqueado; uma flag explicitamente insegura pode liberar somente a demo de `/barbeiro/*`. |
 | 2. Supabase, tenant e RLS | Validado localmente e migrado no hospedado | Doze migrations; reset e pgTAP 205/205 passam, com evidências de concorrência, RLS via JWT e Storage com blob real. |
-| 3. Autenticação real | Dono e recuperação aprovados no hospedado; convite em reteste | Login e recuperação hospedados funcionam. O fluxo de convite por fragmento foi corrigido no commit `def60d3`, mas a ativação de um segundo usuário ainda precisa ser comprovada em produção. |
+| 3. Autenticação real | Jornada principal de dono e funcionário aprovada no hospedado | Confirmação, recuperação, convite, senha e login funcionam; `6a0ef4d` corrigiu a seleção da membership e o usuário confirmou nome, e-mail, papel e contexto de funcionário. Scheduler e lifecycle remoto ainda são gates. |
 | 4. Privacidade e consentimento | Não iniciado | Ainda faltam consentimento afirmativo, retenção, exclusão, termos e governança LGPD. |
 | 5. Fluxo vertical persistido | Não iniciado | A jornada pública continua em `sessionStorage`/`localStorage`; não cria simulação, agenda ou avaliação no banco. |
 | 6. Painel operacional real | Não iniciado | As telas de negócio ainda usam mocks e armazenamento do navegador. |
@@ -254,10 +254,10 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Criar um convite novo após o deploy `def60d3` e comprovar ativação, definição de senha, login e permissões do funcionário.
-2. Com o segundo usuário, provar isolamento por papel e tenant; validar também **Configurar depois** e ativação posterior de TOTP para o dono.
-3. Publicar e validar o scheduler Cloudflare da outbox, incluindo `401`, retry e logs redigidos.
-4. Finalizar os modelos hospedados de convite e recuperação e testar links inválidos, reutilizados e expirados.
+1. Exercitar no hospedado o lifecycle do funcionário: suspender, confirmar corte de acesso/sessão, reativar e revogar.
+2. Publicar e validar o scheduler Cloudflare da outbox, incluindo `401`, retry e logs redigidos.
+3. Finalizar os modelos hospedados de convite e recuperação e testar links inválidos, reutilizados e expirados.
+4. Completar os comandos administrativos ainda ausentes: reatribuição transacional, transferência de dono e seletor multi-tenant.
 5. Implementar privacidade, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.
 
 Depois desses gates, o passo 5 persiste o fluxo vertical; painel, catálogo, produtos, financeiro e operação vêm nas fases seguintes.

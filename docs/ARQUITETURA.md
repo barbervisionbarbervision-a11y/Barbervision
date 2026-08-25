@@ -10,7 +10,7 @@ Autenticação usa Supabase SSR. Quando as variáveis públicas existem, `proxy.
 
 O backend de Auth/fundação está validado localmente, mas o backend de negócio não está pronto. Existem doze migrations, onze rollbacks e quatro suítes pgTAP com 205/205 sobre o conjunto completo. A migration 12 é uma limpeza operacional exata e não altera o schema. A API mínima de clientes e sua proteção com rate limit distribuído, Turnstile e aceite versionado foram comprovadas remotamente. O painel de negócio continua consumindo mocks/armazenamento local.
 
-Evidências temporais devem permanecer separadas do estado do código. Em 22/08, build, lint JS/SQL, pgTAP 170/170, JWT/Storage e E2E passaram. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Evidências temporais devem permanecer separadas do estado do código. Em 25/08, build, lint, unitários 6/6 e pgTAP 205/205 passaram; JWT/Storage e E2E permanecem aprovados pelas rodadas registradas. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 Há dois modos explícitos de execução:
 
@@ -270,13 +270,13 @@ Inventário e triagem: [Fotos reais recebidas](FOTOS-REAIS-RECEBIDAS.md).
 
 A arquitetura agora possui duas realidades distintas.
 
-Na fundação SQL, `barbearias` é o tenant; `membros_barbearia` define papel/status; FKs compostas impedem atribuição cruzada; grants/RLS negam outro tenant e anônimo. As migrations 4–6 cobrem assurance, comandos/auditoria e leitura operacional de perfis. A fundação passou reset, lint, pgTAP 170/170, JWT e Storage real.
+Na fundação SQL, `barbearias` é o tenant; `membros_barbearia` define papel/status; FKs compostas impedem atribuição cruzada; grants/RLS negam outro tenant e anônimo. As migrations 4–6 cobrem assurance, comandos/auditoria e leitura operacional de perfis. O conjunto atual de doze migrations passou reset, lint e pgTAP 205/205; JWT e Storage real permanecem aprovados.
 
 Eventos de origem `usuario` exigem ator; eventos de origem `sistema` podem manter o ator nulo. Transições efetivas de lifecycle auditam, enquanto replay idempotente que já encontra o estado final é no-op e não duplica evento. O `CHECK` contra segredos óbvios olha apenas as chaves de primeiro nível de `metadados`, então payloads aninhados ainda precisam de sanitização. A troca direta de `atribuicoes_cliente.usuario_id` foi revogada para `authenticated`, e `service_role` perdeu `UPDATE` na tabela; falta uma RPC estreita e auditada para reatribuição.
 
 No runtime existem dois níveis:
 
-1. **Auth configurado:** o layout resolve `perfis`, memberships ativas e a barbearia no servidor; a sessão contém `barbeariaId`, papel e AAL. Até existir seletor, escolhe a membership ativa mais antiga. Isso autentica o contêiner, mas as telas de negócio ainda usam mocks e chaves locais;
+1. **Auth configurado:** o layout resolve `perfis`, memberships ativas e a barbearia no servidor; a sessão contém `barbeariaId`, papel e AAL. Sessões originadas por convite preferem a membership real de funcionário da barbearia indicada; fora desse caso, até existir seletor de unidade, escolhe a membership ativa mais antiga. Isso autentica o contêiner, mas as telas de negócio ainda usam mocks e chaves locais;
 2. **demo sem Auth:** a sessão local é adulterável e não possui isolamento confiável;
 3. **jornada pública:** `/b/[barbearia]` ainda aceita qualquer slug e reutiliza `barbeariaExemplo`; não há resolução de tenant no banco;
 4. catálogos e módulos locais têm graus diferentes de separação por slug, mas não oferecem isolamento server-side;
@@ -290,7 +290,7 @@ Portanto, a identidade SSR já carrega tenant por desenho, mas “multi-tenant s
 
 1. o Proxy usa o cliente SSR e `getClaims()` para validar/renovar a sessão em cookies;
 2. o layout chama `obterContextoAuth()` e consulta o próprio perfil e memberships ativas;
-3. até existir seletor de unidade, a membership ativa mais antiga é escolhida;
+3. metadata de convite pode selecionar a barbearia entre memberships reais ativas, mas nunca autoriza papel/status; sem esse seletor, a membership ativa mais antiga é escolhida;
 4. o papel vem de `membros_barbearia`, nunca de metadata do JWT;
 5. funcionário ativo pode operar em AAL1; dono em AAL1 recebe apenas a sessão mínima necessária para ser redirecionado a `/barbeiro/mfa`;
 6. dono confirmado e ativo pode alcançar layouts exclusivos; a migration `owner_mfa_optional` torna o step-up TOTP opcional sem remover RLS por tenant;

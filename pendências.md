@@ -18,7 +18,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
 | 2 — Supabase, tenant e RLS | Doze migrations validadas localmente e aplicadas no hospedado | Isolar warnings internos do pgTAP no lint e integrar os gates à CI |
-| 3 — Auth real | Dono, recuperação e login comprovados; convite corrigido e em reteste | Provar ativação do funcionário, isolamento e MFA opcional na matriz remota |
+| 3 — Auth real | Jornada principal de dono e funcionário comprovada no hospedado | Provar lifecycle remoto, scheduler da outbox e casos adversários restantes |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -83,9 +83,9 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — retestar o convite de funcionário**: após o commit `def60d3`, revogar o convite antigo, emitir um novo e comprovar ativação, senha, login e membership correta.
-2. **P0 — fechar a matriz Auth hospedada**: recuperação já foi aprovada; faltam isolamento, **Configurar depois**, ativação posterior de TOTP e casos adversários de links.
-3. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente hospedado.
+1. **P0 — validar lifecycle remoto do funcionário**: suspender, confirmar corte de acesso/sessão, reativar e revogar no hospedado.
+2. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente, `401`, retry e logs redigidos.
+3. **P0 — fechar casos adversários de Auth**: finalizar templates e provar links inválidos, reutilizados e expirados.
 4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
@@ -245,7 +245,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Configurar allowlist exata de redirects hospedados, incluindo `/auth/confirm`, `/auth/callback` e `/auth/complete`.
 - [x] Configurar SMTP Brevo no Supabase e desativar bloqueio de IP incompatível com IP dinâmico do Render.
 - [x] Provar entrega real pelo SMTP Brevo e recuperação completa de senha no hospedado.
-- [ ] Provar novamente o convite de funcionário após a correção do callback por fragmento no commit `def60d3`.
+- [x] Provar novamente o convite de funcionário após a correção do callback por fragmento: e-mail, aceite, senha e login foram confirmados no hospedado; `6a0ef4d` corrigiu e comprovou a membership/identidade de funcionário.
 - [ ] Publicar templates de convite e recuperação.
 - [x] Testar convite real pelo Admin API, entrega no Mailpit, confirmação e ativação pela aplicação.
 - [ ] Testar confirmação de e-mail.
@@ -617,7 +617,7 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Ensaiar o conjunto atual 8–4, reconciliar cinco versões e repetir lint, pgTAP 192/192 e concorrência em 23/08.
 - [x] Runner concorrente executado em 22/08 no banco local marcado: duas corridas aprovadas e limpeza dos fixtures concluída.
 - [x] Data API autorizada por JWT e Storage funcional com upload/download real no ambiente local descartável.
-- [x] Login, recuperação TOTP opcional e isolamento local reais; recuperação de senha, login e painel do primeiro dono também aprovados no hospedado. Convite novo de funcionário e isolamento remoto continuam pendentes.
+- [x] Login, recuperação TOTP opcional e isolamento local reais; recuperação de senha, login e painel do primeiro dono também aprovados no hospedado. Convite novo, ativação, login e identidade/papel de funcionário foram confirmados remotamente após `6a0ef4d`.
 - [ ] Smoke visual atualizado de todas as rotas; o smoke HTTP de contenção já passou.
 
 ## Regra de atualização

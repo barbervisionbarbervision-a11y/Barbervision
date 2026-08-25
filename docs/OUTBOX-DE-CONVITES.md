@@ -4,7 +4,7 @@
 
 A fila durável de e-mail está implementada na migration `20260822030000_invite_email_outbox.sql`. A criação de `convites_barbearia` dispara o enqueue na mesma transação PostgreSQL, eliminando a janela em que um convite poderia existir sem trabalho de entrega registrado.
 
-Desde o commit `def60d3`, novos convites usam `/auth/complete?next=/barbeiro/ativar-conta&convite=...`. Essa página consome a sessão enviada pelo Supabase no fragmento da URL, executa `aceitar_convite_barbearia` e só então segue para a definição de senha. Convites emitidos antes dessa correção não servem como evidência e devem ser revogados antes do reteste hospedado.
+Desde o commit `def60d3`, novos convites usam `/auth/complete?next=/barbeiro/ativar-conta&convite=...`. Essa página consome a sessão enviada pelo Supabase no fragmento da URL, executa `aceitar_convite_barbearia` e só então segue para a definição de senha. Em `6a0ef4d`, o convite também passou a registrar seletores de convite/barbearia para que a sessão escolha a membership real recém-aceita; papel e autorização continuam derivados do banco. O fluxo foi comprovado no hospedado em 25/08/2026.
 
 O worker está em `lib/auth/invite-outbox.js`. Ele reivindica lotes por RPC com `FOR UPDATE SKIP LOCKED`, lease de cinco minutos e contador de tentativas. Falhas transitórias (timeout, HTTP 408/429 e 5xx) recebem backoff exponencial de 15 a 900 segundos; falha permanente ou quinta tentativa encerra o convite como `falhou`. A conclusão pode ser repetida sem duplicar a transição.
 

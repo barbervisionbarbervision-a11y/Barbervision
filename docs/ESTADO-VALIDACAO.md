@@ -22,7 +22,7 @@
 - O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu doze migrations.
 - A entrega hospedada de convite pelo Brevo foi comprovada. O callback de convite foi corrigido para a origem canônica do Render.
 - Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
-- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. Primeiro dono, confirmação, recuperação, redefinição, login e painel foram aprovados pelo usuário no hospedado. A correção mais recente do callback de convite de funcionário é `def60d3` e ainda exige um convite novo para reteste.
+- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação, login e painel foram aprovados pelo usuário no hospedado. Em `6a0ef4d`, a sessão passou a selecionar a membership convidada correta; o usuário confirmou nome, e-mail, papel e contexto de funcionário separados do dono.
 - Site URL e redirects de produção foram configurados no Supabase; signup direto permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real de convite foi comprovada.
 - O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. O reteste no tenant real `barbervision` retornou `201`; uma segunda chamada com o mesmo WhatsApp retornou o mesmo UUID, comprovando o upsert. O slug mock `barbearia-joao` retorna corretamente `404` porque não existe no remoto.
 - Em 25/08, o cadastro público ganhou consentimento versionado, Turnstile validado no servidor e limites distribuídos por rede e contato. A migration 11 e o commit `52c9cf2` estão hospedados; o smoke remoto confirmou `400` sem consentimento, `403` com token inválido e `201` no envio real, que avançou para selfie. O `429` permanece comprovado localmente, sem carga artificial no serviço gratuito.
@@ -59,11 +59,12 @@
 | `npx.cmd supabase db push` da migration `20260824010000_clientes_email.sql` | aplicada sem erro | remoto passou a aceitar e-mail normalizado em clientes |
 | `npx.cmd supabase db push --dry-run` após a migration 10 | `Remote database is up to date`; nenhuma migration pendente | as dez migrations locais e remotas estão sincronizadas |
 | Cadastro público hospedado no slug `barbervision` | duas respostas `201`; UUID idêntico na criação e atualização | persistência e deduplicação por tenant/WhatsApp comprovadas com dado sintético |
-| Supabase Auth hospedado | Site URL, redirects, signup direto bloqueado, confirmação e SMTP Brevo configurados | primeiro dono, recuperação, redefinição, login e painel comprovados; convite novo de funcionário e templates finais ainda pendentes |
+| Supabase Auth hospedado | Site URL, redirects, signup direto bloqueado, confirmação e SMTP Brevo configurados | dono, recuperação, convite, ativação, login e identidade de funcionário comprovados; templates finais e lifecycle remoto ainda pendentes |
 | Cadastro do primeiro dono | botão `Começar agora`, página/API, criação de tenant e convite exercitados no hospedado | fluxo chegou à ativação e à escolha de MFA |
 | Callback público | falha inicial em `0.0.0.0:10000`; depois corrigido para `/auth/complete` e allowlist atualizada | origem interna eliminada do fluxo versionado |
 | Recuperação hospedada, commit `1110236` | novo e-mail aceito; redefinição, login e painel aprovados pelo usuário | callback aceita `token_hash` ou `code` sem depender de origem local |
-| Convite de funcionário, commit `def60d3` | unitários 6/6 e build aprovados | convite aponta a `/auth/complete`, consome fragmento no navegador e aceita membership; reteste hospedado com convite novo pendente |
+| Convite e contexto de funcionário, commits `def60d3`, `e608d15` e `6a0ef4d` | e-mail, aceite, senha e login exercitados; identidade visual e membership correta confirmadas pelo usuário | jornada principal remota aprovada; papel/status continuam derivados do banco |
+| Validação após `6a0ef4d` | lint quiet aprovado, unitários 6/6, build aprovado e `git diff --check` limpo | correção compila e preserva os gates automatizados disponíveis |
 | `npm.cmd run lint` e `npm.cmd run build` após MFA opcional | exit `0`; lint com 18 warnings e build com 31 páginas | alteração compila; warnings preexistentes permanecem |
 | `GET /barbeiro/login` após deploy `ab97b14` | conteúdo público contém a regra de autenticador opcional | deploy da alteração confirmado no Render |
 
@@ -126,8 +127,8 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Executar a matriz Auth hospedada de recuperação, convite, isolamento e MFA opcional.
-2. Provar no hospedado TOTP opcional, recuperação e isolamento; manter signup irrestrito de funcionários bloqueado.
-3. Recuperação hospedada está aprovada; finalizar templates e retestar um convite novo de funcionário após `def60d3`.
-4. Publicar/testar o scheduler Cloudflare e executar a matriz remota controlada.
+1. Exercitar no hospedado suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
+2. Publicar/testar o scheduler Cloudflare, incluindo segredo inválido (`401`), retry e logs redigidos.
+3. Finalizar templates e provar links inválidos, reutilizados e expirados.
+4. Completar reatribuição estreita, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade e só então ampliar o fluxo persistido.

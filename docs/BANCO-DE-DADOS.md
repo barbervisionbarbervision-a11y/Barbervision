@@ -281,7 +281,7 @@ npm.cmd run db:stop
 
 O CLI está fixado em `supabase@2.115.0`. `db:reset` recria o banco local, aplica migrations e seed. As 170 asserções devem passar antes da corrida concorrente. O marcador exigido pelo runner só deve ser aplicado após o reset, porque a recriação pode removê-lo.
 
-Em 22/08/2026, `db:reset`, `db:lint` e `db:test` passaram; este último com 170/170. A integração Storage foi validada separadamente com JWT e blob real.
+Em 25/08/2026, `db:reset`, `db:lint` e `db:test` passaram sobre as doze migrations; este último com 205/205. A integração Storage permanece validada separadamente com JWT e blob real.
 
 Para um projeto remoto explicitamente criado e vinculado:
 
