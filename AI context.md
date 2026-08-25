@@ -19,6 +19,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - O cadastro público agora coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`; a migration de e-mail foi aplicada no remoto. A tentativa hospedada ainda retorna erro e não constitui persistência validada.
 - `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo convida o primeiro dono, provisiona a barbearia pela RPC controlada, usa honeypot e limite básico por origem; ainda requer teste hospedado e proteção distribuída mais forte antes do piloto.
+- O primeiro e-mail Brevo chegou, mas revelou que o convite hospedado retorna tokens no fragmento e o callback usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, que consome a sessão no browser, remove os tokens da URL e segue para ativação; a URL precisa constar na allowlist do Supabase e um novo convite deve ser testado.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
 ## Intenção do produto confirmada

@@ -47,6 +47,7 @@
 | Cadastro público hospedado | endpoint alcançado, mas resposta final `500` | persistência ainda não validada; não marcar passo 5 como iniciado/concluído |
 | Supabase Auth hospedado | Site URL, dois redirects, signup bloqueado, confirmação e SMTP Brevo configurados | falta provar entrega e templates reais |
 | Build do cadastro do primeiro dono | aprovado; 32 páginas, 6 handlers e Proxy | botão `Começar agora`, página e API estão em fonte; falta teste hospedado |
+| Primeiro convite público hospedado | e-mail Brevo entregue; aceite caiu em `0.0.0.0:10000` com sessão no fragmento | entrega SMTP comprovada; callback corrigido em fonte para `/auth/complete`, aguardando novo teste |
 
 ## Evidências de 23/08/2026
 

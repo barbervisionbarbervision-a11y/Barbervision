@@ -52,7 +52,7 @@ export async function POST(request) {
 
   const origem = obterUrlBaseAplicacao();
   const convite = await admin.auth.admin.inviteUserByEmail(entrada.email, {
-    redirectTo: `${origem}/auth/callback?next=/barbeiro/ativar-conta`,
+    redirectTo: `${origem}/auth/complete?next=/barbeiro/ativar-conta`,
     data: { nome: entrada.nome, barbervision_onboarding: "dono_publico", barbervision_convite_id: "" }
   });
 
