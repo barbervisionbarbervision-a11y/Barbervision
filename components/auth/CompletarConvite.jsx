@@ -42,6 +42,19 @@ export default function CompletarConvite() {
         return;
       }
 
+      const conviteId = parametros.get("convite");
+      if (conviteId) {
+        const conviteValido = /^[0-9a-f-]{36}$/i.test(conviteId);
+        const { error: erroConvite } = conviteValido
+          ? await supabase.rpc("aceitar_convite_barbearia", { p_convite_id: conviteId })
+          : { error: new Error("Convite inválido") };
+
+        if (erroConvite) {
+          if (ativo) setErro("Não foi possível associar esta conta à barbearia. Solicite um novo convite.");
+          return;
+        }
+      }
+
       router.replace(destinoSeguro(parametros.get("next")));
       router.refresh();
     }
