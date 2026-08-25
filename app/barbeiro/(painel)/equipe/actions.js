@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { after } from "next/server";
 import { exigirDono } from "@/lib/auth/context";
 import { processarConvitesEmail } from "@/lib/auth/invite-outbox";
 import { obterUrlBaseAplicacao } from "@/lib/auth/site-url";
@@ -65,20 +64,27 @@ export async function convidarFuncionarioAction(entrada) {
     return { ok: false, mensagem: "Não foi possível abrir o convite. Confira se já existe um convite ou membro com esse e-mail." };
   }
 
-  after(async () => {
-    try {
-      await processarConvitesEmail({ limite: 10 });
-    } catch (error) {
-      console.error("[invite-outbox] tentativa imediata falhou", {
-        mensagem: error instanceof Error ? error.message : "erro"
-      });
-    }
-  });
+  let resultados;
+  try {
+    resultados = await processarConvitesEmail({ limite: 10 });
+  } catch (error) {
+    console.error("[invite-outbox] tentativa imediata falhou", {
+      mensagem: error instanceof Error ? error.message : "erro"
+    });
+  }
   revalidatePath("/barbeiro/equipe");
+  const entrega = resultados?.find((item) => item.status === "enviado");
+  if (!entrega) {
+    return {
+      ok: false,
+      statusConvite: "falhou",
+      mensagem: "O convite foi registrado, mas o e-mail não pôde ser enviado agora. Aguarde um minuto e tente novamente."
+    };
+  }
   return {
     ok: true,
-    statusConvite: "pendente_envio",
-    mensagem: "Convite registrado para envio. A entrega será processada em segundo plano."
+    statusConvite: "enviado",
+    mensagem: "Convite enviado. Peça para a pessoa abrir somente o e-mail mais recente."
   };
 }
 
