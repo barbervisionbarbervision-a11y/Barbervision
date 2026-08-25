@@ -54,8 +54,13 @@ export default function Sidebar({ sessao }) {
         {sessao && (
           <div className="mt-3">
             <p className="text-parchment text-sm font-medium">{sessao.nome}</p>
+            {sessao.email && (
+              <p className="mt-0.5 break-all text-[11px] text-steel" title={sessao.email}>
+                {sessao.email}
+              </p>
+            )}
             <p className="text-xs text-steel uppercase tracking-widest2">
-              {ehDono ? "Dono da barbearia" : "Barbeiro"}
+              {ehDono ? "Dono da barbearia" : "Funcionário"}
             </p>
           </div>
         )}
