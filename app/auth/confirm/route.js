@@ -14,15 +14,18 @@ export async function GET(request) {
   const url = new URL(request.url);
   const origemAplicacao = obterUrlBaseAplicacao();
   const tokenHash = url.searchParams.get("token_hash");
+  const codigo = url.searchParams.get("code");
   const tipo = url.searchParams.get("type");
   const conviteId = url.searchParams.get("convite");
 
-  if (!tokenHash || !TIPOS_VALIDOS.has(tipo)) {
+  if ((!tokenHash && !codigo) || !TIPOS_VALIDOS.has(tipo)) {
     return NextResponse.redirect(new URL("/barbeiro/login?erro=confirmacao", origemAplicacao), 303);
   }
 
   const supabase = await criarClienteSupabaseServer();
-  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo });
+  const { error } = tokenHash
+    ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type: tipo })
+    : await supabase.auth.exchangeCodeForSession(codigo);
 
   if (error) {
     return NextResponse.redirect(new URL("/barbeiro/login?erro=confirmacao", origemAplicacao), 303);
