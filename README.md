@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **24/08/2026**. O Render está publicado, o Supabase remoto recebeu nove migrations e o SMTP Brevo foi configurado. O cadastro público já coleta e tenta persistir nome, e-mail e WhatsApp, mas a gravação remota ainda está em diagnóstico e não foi aprovada. O projeto ainda não está pronto para receber dados reais de clientes. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
+> Estado reconciliado em **24/08/2026**. O Render está publicado, o Supabase remoto recebeu dez migrations e o SMTP Brevo foi configurado. O cadastro público e o primeiro acesso do dono estão publicados. E-mail confirmado continua obrigatório; o autenticador TOTP passou a ser opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -73,7 +73,7 @@ As migrations criam:
 - campos de e-mail normalizado em `clientes`, com validação e índice por tenant;
 - RLS por tenant e papel;
 - buckets privados `barbervision-hair-sources`, `barbervision-hair-cutouts` e `barbervision-selfies`;
-- exigência de e-mail confirmado e AAL2 para o dono acessar dados de negócio e Storage;
+- exigência de e-mail confirmado, perfil e membership ativos; TOTP opcional para reforçar a conta do dono;
 - nove RPCs estreitas para criar, aceitar, revogar e registrar envio/falha de convite, provisionar o primeiro dono e suspender, reativar ou revogar funcionário.
 
 As migrations de onboarding, leitura operacional, retomada do primeiro dono e outbox entregam os contratos de Auth. Reset, lint e pgTAP 192/192 passam localmente. A criação do convite e o enqueue são atômicos; um worker server-only reivindica itens com lease, aplica backoff exponencial, conclui de forma idempotente e materializa convites vencidos. O disparo imediato usa `after()`, mas produção ainda exige um agendador externo chamando a rota interna protegida. Transferência de dono continua pendente.
@@ -123,7 +123,7 @@ Com Supabase configurado:
 
 - `proxy.js` atualiza cookies e valida claims;
 - o painel exige sessão real;
-- o dono é direcionado ao TOTP quando está em AAL1;
+- o dono pode configurar TOTP no primeiro acesso ou escolher **Configurar depois**;
 - papel e tenant são lidos de `membros_barbearia`, não de `sessionStorage` ou metadata editável;
 - `/admin` continua bloqueado, pois a administração da plataforma exige um domínio de autorização próprio;
 - a flag de demo não contorna o Auth.

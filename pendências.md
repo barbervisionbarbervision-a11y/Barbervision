@@ -587,7 +587,9 @@ Não altera a prioridade atual de Auth/privacidade.
 - [x] Inventário de 24/08: 195 arquivos visíveis a `rg --files`, 31 páginas e 5 Route Handlers.
 - [x] Integridade documental: UTF-8, links locais e fences sem falhas.
 - [x] 31 páginas e 5 Route Handlers identificados em fonte.
-- [x] Inventário atual: 9 migrations, 9 rollbacks e 3 pgTAPs com 192 asserções históricas.
+- [x] Inventário atual: 10 migrations, 10 rollbacks e 3 pgTAPs com 192 asserções históricas.
+- [x] Tornar o autenticador TOTP opcional, com ação **Configurar depois** e acesso posterior pela tela de Segurança.
+- [ ] Criar step-up explícito para futuras operações de alto risco, sem voltar a bloquear todo o painel em AAL1.
 - [ ] Adicionar testes de banco para a migration 9 e repetir reset/lint/pgTAP.
 - [x] Git operacional e baseline `7c34dab` confirmados; árvore limpa antes desta revisão.
 - [x] `npm run build` aprovado em 22/08 com 31 páginas, 2 Route Handlers e Proxy.

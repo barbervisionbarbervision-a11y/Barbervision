@@ -67,7 +67,7 @@ export default function LoginReal({ proximo = "/barbeiro/dashboard", aviso = "" 
         )}
         <div className="flex items-start gap-3 rounded-xl border border-steel/25 bg-black/30 p-4 text-xs leading-relaxed text-steel">
           <LockKeyhole size={17} className="mt-0.5 shrink-0 text-brass" aria-hidden="true" />
-          <p>O endereço precisa estar confirmado. Donos também concluem o código do aplicativo autenticador.</p>
+          <p>O e-mail precisa estar confirmado. O aplicativo autenticador é opcional e pode ser configurado depois.</p>
         </div>
 
         <label className="text-sm text-steel">

@@ -89,7 +89,7 @@ Regras:
 - dado do tenant não pode ser enviado ao navegador antes do filtro seguro;
 - RLS e código server-side precisam negar acessos cruzados.
 
-Há nove migrations versionadas. Em 23/08, as oito existentes naquele momento passaram por reset, lint e pgTAP 192/192; a nona foi aplicada no Supabase hospedado em 24/08 e ainda requer atualização do seed e repetição dos gates locais. O passo 3 permanece parcial pelos gaps operacionais.
+Há dez migrations versionadas. Em 23/08, as oito existentes naquele momento passaram por reset, lint e pgTAP 192/192; as migrations 9 e 10 foram aplicadas no Supabase hospedado em 24/08 e ainda requerem repetição integral dos gates locais.
 
 ## Cadastro e identidade do cliente no MVP
 
@@ -111,12 +111,12 @@ Decisão técnica:
 - e-mail e senha como primeiro fator;
 - e-mail confirmado antes de habilitar a conta;
 - e-mail para recuperação e links de ativação;
-- TOTP em aplicativo autenticador como segundo fator obrigatório do dono;
-- AAL2 exigido para dados de negócio do dono;
+- TOTP em aplicativo autenticador como segundo fator opcional e recomendado do dono;
+- e-mail confirmado, perfil ativo, membership ativa e RLS por tenant como requisitos obrigatórios;
 - logout local e global;
 - eventos privilegiados auditados sem senha, token ou código.
 
-O requisito inicial de “Gmail com código” foi traduzido em e-mail para confirmação/recuperação e TOTP para MFA. O domínio não precisa ser Gmail. Um segundo código enviado ao mesmo e-mail não é o segundo fator nativo escolhido.
+O requisito inicial de “Gmail com código” foi traduzido em e-mail para confirmação/recuperação e TOTP opcional para MFA. O domínio não precisa ser Gmail. O usuário pode escolher **Configurar depois** e ativar o autenticador posteriormente em Segurança.
 
 ### Estado da implementação
 

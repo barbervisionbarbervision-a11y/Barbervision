@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import Button from "@/components/Button";
 import { criarClienteSupabaseBrowser } from "@/lib/supabase/client";
@@ -39,12 +40,17 @@ export default function SegurancaConta({ sessao }) {
             <h2 className="font-semibold text-parchment">Segundo fator</h2>
             <p className="mt-1 text-sm text-steel">
               {sessao.papel === "dono"
-                ? "O painel do dono exige uma sessão TOTP no nível AAL2."
+                ? "O aplicativo autenticador é opcional, mas recomendado para proteger a conta do dono."
                 : "O segundo fator do funcionário ainda não é obrigatório nesta etapa."}
             </p>
             <p className="mt-2 inline-flex items-center gap-2 rounded-full border border-brass/30 px-3 py-1 text-xs text-brass">
               <KeyRound size={13} /> Sessão {sessao.aal.toUpperCase()}
             </p>
+            {sessao.papel === "dono" && sessao.aal !== "aal2" && (
+              <Link href="/barbeiro/mfa" className="mt-3 inline-block text-sm font-semibold text-brass hover:underline">
+                Configurar aplicativo autenticador
+              </Link>
+            )}
           </div>
         </div>
       </section>

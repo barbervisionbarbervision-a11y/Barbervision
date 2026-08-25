@@ -13,7 +13,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2 foi validado localmente sobre as oito migrations anteriores: reset, lint, pgTAP 192/192, concorrência, rollback/roll-forward, JWT/RLS e Storage passaram. A nona migration de e-mail foi aplicada no remoto e ainda requer repetição desses gates.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu nove migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados, mas o envio hospedado ainda não foi comprovado. O Worker Cloudflare não foi publicado.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu dez migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados e a entrega hospedada de convite foi comprovada. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - A correção do bootstrap AAL1 → TOTP do dono foi comprovada com JWT real e E2E. O formulário MFA também foi corrigido para React Strict Mode, e o QR SVG do Supabase usa `<img>` nativo sem liberar SVG globalmente no Next.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
@@ -46,9 +46,9 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 
 - A conta usa e-mail e senha.
 - Confirmação/recuperação usam e-mail.
-- O segundo fator do dono é TOTP, compatível com Google Authenticator e outros autenticadores.
+- O segundo fator do dono é TOTP, compatível com Google Authenticator e outros autenticadores, porém desde a migration 10 ele é opcional e recomendado.
 - Código enviado por e-mail não deve ser descrito como segundo fator AAL2 nativo.
-- Dono só acessa dados de negócio e Storage em AAL2.
+- Dono com e-mail confirmado, perfil e membership ativos acessa o próprio tenant; TOTP não bloqueia mais o painel.
 - Funcionário ativo pode trabalhar em AAL1, respeitando atribuições e RLS.
 
 ### Pós-venda e financeiro
@@ -98,7 +98,7 @@ Após a revisão documental:
 - 6 Route Handlers, incluindo `POST /api/clientes` e `POST /api/donos`;
 - 11 layouts;
 - 25 arquivos Markdown, dos quais 17 ficam em `docs/`;
-- 9 migrations, 9 rollbacks, seed, schema-aviso e 3 pgTAPs com 192 asserções históricas; a nona migration ainda não possui pgTAP próprio;
+- 10 migrations, 10 rollbacks, seed, schema-aviso e 3 pgTAPs com 192 asserções históricas; as migrations 9 e 10 ainda não possuem pgTAP próprio;
 - código JS/JSX e SQL distribuído entre `app`, `components`, `lib` e Supabase; a contagem de linhas é deliberadamente omitida porque muda a cada migration e não representa avanço funcional.
 
 Os documentos especializados de Auth e dos passos 4–5 são `docs/AUTENTICACAO-E-SESSOES.md` e `docs/PRIVACIDADE-E-FLUXO-PERSISTIDO.md`. Contagens são inventário, não critério de qualidade.

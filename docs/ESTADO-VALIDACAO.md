@@ -5,7 +5,7 @@
 ## Resumo executivo
 
 - O repositório Git está operacional e possui o commit baseline `7c34dab` (`chore: cria baseline inicial do Barber Vision`). A árvore estava limpa antes desta revisão documental.
-- O projeto possui nove migrations, nove rollbacks e três suítes pgTAP com 192 asserções históricas. A nona migration foi aplicada no remoto, mas ainda não possui pgTAP próprio.
+- O projeto possui dez migrations, dez rollbacks e três suítes pgTAP com 192 asserções históricas. As migrations 9 e 10 foram aplicadas no remoto, mas ainda não possuem pgTAP próprio.
 - O build de produção e o launcher passam.
 - O lint JavaScript passa com zero erros e 18 warnings.
 - O Supabase local necessário responde: PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos. Imgproxy, Analytics, Vector e Pooler estão desativados/não usados.
@@ -19,7 +19,9 @@
 - A suíte Playwright criou fixtures efêmeras e comprovou login do dono, bootstrap AAL1, enrollment/verify TOTP, AAL2, convite por Admin API, entrega no Mailpit, ativação do funcionário, recuperação de senha, revogação de convite e logout. A suíte passou em 29,9 s e removeu os fixtures ao final.
 - Durante o E2E foram corrigidos o efeito MFA incompatível com o replay do React Strict Mode, o QR `data:image/svg+xml` bloqueado pelo `next/image` e o redirecionamento do callback para usar a origem canônica validada da aplicação.
 - Em 23/08, a outbox de convites foi validada por reset, lint SQL e 21 asserções próprias. O E2E foi atualizado, mas não reexecutado porque a instância `next dev` aberta pelo usuário mantém o lock de `.next` e impede o webServer isolado do Playwright.
-- O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu nove migrations.
+- O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu dez migrations.
+- A entrega hospedada de convite pelo Brevo foi comprovada. O callback de convite foi corrigido para a origem canônica do Render.
+- Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
 - O Render publicou até o commit `9ec8bd6` em `https://barbervision.onrender.com`; o serviço ficou `Live`, e o health check público respondeu HTTP 200.
 - Site URL e redirects de produção foram configurados no Supabase; signup público permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real ainda não foi comprovada.
 - O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. A migration remota passou, mas a tentativa hospedada de gravação retornou erro; o log indicou resposta HTML inesperada e a URL pública do Supabase no Render foi corrigida/reimplantada, sem reteste conclusivo registrado.

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import AuthShell from "./AuthShell";
 import Button from "@/components/Button";
-import SairButton from "./SairButton";
 import { criarClienteSupabaseBrowser } from "@/lib/supabase/client";
 
 export default function MfaTotpForm() {
@@ -166,7 +165,11 @@ export default function MfaTotpForm() {
               <ShieldCheck size={18} /> {verificando ? "Validando..." : "Confirmar código"}
             </span>
           </Button>
-          <SairButton />
+          {modo === "enrollment" && (
+            <Button type="button" variant="ghost" onClick={() => { router.replace("/barbeiro/dashboard"); router.refresh(); }}>
+              Configurar depois
+            </Button>
+          )}
         </form>
       )}
     </AuthShell>
