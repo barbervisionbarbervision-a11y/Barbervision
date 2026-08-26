@@ -123,6 +123,7 @@ export default function EquipeClient({ membros, convites, modoDemo = false }) {
             <div key={membro.usuarioId} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-semibold text-parchment">{membro.nome}</p>
+                {membro.email && <p className="text-xs text-steel">{membro.email}</p>}
                 <p className="text-xs uppercase tracking-widest2 text-steel">{membro.papel === "dono" ? "Dono" : "Funcionário"}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">

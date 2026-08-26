@@ -41,18 +41,45 @@ export default async function Equipe() {
   }
 
   const ids = (resultadoMembros.data ?? []).map((membro) => membro.usuario_id);
-  const resultadoPerfis = ids.length
-    ? await supabase.from("perfis").select("usuario_id,nome").in("usuario_id", ids)
-    : { data: [], error: null };
+  const [resultadoPerfis, resultadoConvitesAceitos] = ids.length
+    ? await Promise.all([
+        supabase.from("perfis").select("usuario_id,nome").in("usuario_id", ids),
+        supabase
+          .from("convites_barbearia")
+          .select("aceito_por,nome,email_normalizado,aceito_em")
+          .eq("barbearia_id", sessao.barbeariaId)
+          .eq("status", "aceito")
+          .in("aceito_por", ids)
+          .order("aceito_em", { ascending: false })
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null }
+      ];
 
   if (resultadoPerfis.error) throw new Error("Não foi possível carregar os perfis da equipe.");
+  if (resultadoConvitesAceitos.error) throw new Error("Não foi possível carregar os nomes aceitos da equipe.");
   const nomes = new Map((resultadoPerfis.data ?? []).map((perfil) => [perfil.usuario_id, perfil.nome]));
+  const identidadesDosConvites = new Map();
+  for (const convite of resultadoConvitesAceitos.data ?? []) {
+    if (convite.aceito_por && !identidadesDosConvites.has(convite.aceito_por)) {
+      identidadesDosConvites.set(convite.aceito_por, {
+        nome: convite.nome,
+        email: convite.email_normalizado
+      });
+    }
+  }
 
   return (
     <EquipeClient
       membros={(resultadoMembros.data ?? []).map((membro) => ({
         usuarioId: membro.usuario_id,
-        nome: nomes.get(membro.usuario_id) ?? "Membro",
+        nome: membro.papel === "funcionario"
+          ? identidadesDosConvites.get(membro.usuario_id)?.nome ?? nomes.get(membro.usuario_id) ?? "Funcionário"
+          : nomes.get(membro.usuario_id) ?? "Dono",
+        email: membro.papel === "funcionario"
+          ? identidadesDosConvites.get(membro.usuario_id)?.email ?? ""
+          : sessao.email,
         papel: membro.papel,
         status: membro.status
       }))}
