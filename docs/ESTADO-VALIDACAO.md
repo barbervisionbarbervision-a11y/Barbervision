@@ -38,6 +38,10 @@
 | recriação limpa de dono e funcionário | cadastro, convite, ativação, senha e login aprovados | onboarding real não dependeu dos usuários antigos |
 | lifecycle remoto do funcionário | suspensão bloqueou; reativação restaurou; revogação concluiu | ciclo operacional completo aprovado no Render |
 | confirmação do usuário após `c67f9c4` | “perfeito, agora foi” | nome do funcionário corrigido e confirmado visualmente na equipe hospedada |
+| Worker Cloudflare `barbervision-outbox-scheduler` | versão `21444c96-4f72-4786-be7d-f4d8fafb71cc`; Cron `* * * * *` | scheduler hospedado publicado e ativo |
+| `wrangler tail` do scheduler | ciclos `Ok`, HTTP `200`, `processados: 0` | execução recorrente comprovada sem expor PII |
+| rota interna com bearer inválido | `STATUS=401`; `{"ok":false}` | autenticação adversária do processador comprovada |
+| convite real e segundo clique no mesmo link | primeiro aceite concluiu; reutilização exibiu link inválido | entrega/aceite real e proteção contra reutilização comprovados |
 | `npm.cmd run lint -- --quiet` | exit `0` | nenhuma infração ESLint bloqueante |
 | `npm.cmd run test:unit` | exit `0`; 6/6 | segurança do cadastro e validação Turnstile preservadas; permanece warning não bloqueante de tipo de módulo |
 | `npm.cmd run build` | exit `0`; 31 páginas, 6 handlers API e Proxy | build Next.js 16.3.0 aprovado na baseline documental |
@@ -132,7 +136,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 | ---: | --- | --- |
 | 1 | Concluído para demo controlada | preservar contenção e corrigir warnings sem regressão |
 | 2 | Doze migrations validadas localmente e sincronizadas no hospedado | restringir o lint às schemas do app e integrar os gates à CI |
-| 3 | Jornada principal e lifecycle de funcionário aprovados localmente e no hospedado | concluir Cloudflare, templates e matriz remota adversária |
+| 3 | Jornada principal, lifecycle e scheduler Cloudflare aprovados localmente e no hospedado | concluir retry/alerta remoto, templates e matriz remota adversária |
 | 4 | Não iniciado como implementação de produção | fechar política de consentimento, retenção e descarte |
 | 5 | Não iniciado | persistir um fluxo público mínimo e seguro |
 | 6 | Não iniciado | substituir mocks após o fluxo vertical |
@@ -142,8 +146,8 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Publicar/testar o scheduler Cloudflare, incluindo segredo inválido (`401`), retry e logs redigidos.
-2. Finalizar templates e provar links inválidos, reutilizados e expirados.
+1. Induzir retry/falha da outbox no hospedado e validar o alerta opcional; cron, `401` e logs redigidos já passaram.
+2. Finalizar templates e concluir a prova controlada de expiração; convite real e reutilização inválida já passaram.
 3. Executar a matriz remota controlada entre dois tenants, papéis e AALs.
 4. Completar reatribuição estreita, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade e só então ampliar o fluxo persistido.

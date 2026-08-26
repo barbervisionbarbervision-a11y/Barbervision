@@ -348,7 +348,7 @@ Antes de qualquer uso com clientes reais, são necessários:
 
 ## Deploy e release
 
-Render e Supabase hospedados estão operacionais, o deploy automático pelo GitHub funciona e `/api/health` responde. Ainda faltam CI independente, monitoramento e alertas, backup/restore testado e runbook de incidente; o scheduler Cloudflare da outbox também não foi publicado.
+Render e Supabase hospedados estão operacionais, o deploy automático pelo GitHub funciona, `/api/health` responde e o scheduler Cloudflare da outbox executa a cada minuto. Ainda faltam CI independente, monitoramento e alertas, prova remota induzida de retry, backup/restore testado e runbook de incidente.
 
 Gates mínimos de release:
 

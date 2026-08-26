@@ -13,7 +13,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2 foi revalidado localmente em 25/08 sobre as doze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. A migration 12 é uma limpeza operacional, limitada por UUID, tenant e e-mail `.invalid`, sem alteração de schema. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Após reset remoto integral, dono e funcionário foram recriados do zero. O usuário confirmou no Render identidade/papel corretos e o lifecycle ativo → suspenso → reativado → revogado, com corte e retorno de acesso. O Worker Cloudflare não foi publicado.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Após reset remoto integral, dono e funcionário foram recriados do zero. O usuário confirmou no Render identidade/papel corretos e o lifecycle ativo → suspenso → reativado → revogado, com corte e retorno de acesso. O Worker Cloudflare está publicado e executa a cada minuto.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
@@ -321,7 +321,7 @@ Os UUIDs de proveniência em `barbearias.criado_por`, `clientes.criado_por`, `me
 
 O check de metadados rejeita chaves sensíveis conhecidas somente no primeiro nível do JSON. Hoje as RPCs constroem objetos pequenos internamente, mas uma validação recursiva deve preceder qualquer aceitação de payload arbitrário.
 
-As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As suítes do passo 3 somam 133/133 (112 + 21); o E2E comprova entrega, falha definitiva e expiração, e dois workers reais reivindicam itens distintos sem duplicação. Continuam pendentes scheduler hospedado, transferência de dono, reatribuição transacional e seleção multi-tenant.
+As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As suítes do passo 3 somam 133/133 (112 + 21); o E2E comprova entrega, falha definitiva e expiração, e dois workers reais reivindicam itens distintos sem duplicação. O scheduler hospedado está ativo; continuam pendentes a prova remota induzida de retry/alerta, transferência de dono, reatribuição transacional e seleção multi-tenant.
 
 ### Evidência disponível
 
@@ -414,7 +414,7 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 1. Acrescentar cobertura específica para as constraints de e-mail da migration 9; os gates gerais das doze migrations e o rollback/roll-forward da migration 11 passaram, e as evidências anteriores de concorrência e 10–9 permanecem válidas.
 2. Provar no hospedado que o dono AAL1 pode escolher **Configurar depois**, ativar TOTP posteriormente e recuperar o acesso.
 3. Executar a matriz remota de isolamento entre dois tenants, papéis e AALs relevantes; Data API e Storage já passaram localmente com JWT real.
-4. Finalizar templates e operacionalizar a outbox com Worker Cloudflare, scheduler, alertas, retry e logs sem PII.
+4. Finalizar templates e concluir a validação remota de retry/alerta da outbox; Worker, scheduler, autenticação adversária e logs sem PII já foram comprovados.
 5. Fechar transferência de dono, reatribuição transacional e seleção multi-tenant.
 
 ### P0 — antes de usar clientes reais
@@ -446,8 +446,8 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - Historicamente, o primeiro `db push` aplicou oito migrations; o remoto agora possui as doze migrations oficiais. Em 26/08, `db reset --linked` reconstruiu o banco hospedado do zero; a migration de Storage foi tornada idempotente em `a12a756`, e o lint remoto terminou sem erros de schema.
 - Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A seleção do acesso do funcionário (`6a0ef4d`) e a identidade da linha de membro (`c67f9c4`) foram confirmadas pelo usuário no hospedado.
 - Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
-- Cloudflare: Turnstile foi configurado e validado no cadastro público; Worker, Cron Trigger e logs remotos da outbox ainda não foram comprovados.
-- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. Após o reset, dono e funcionário foram recriados e o usuário confirmou identidade/papel corretos, suspensão com bloqueio, reativação com retorno e revogação com sucesso. Templates finais e casos adversários de links ainda precisam de prova.
+- Cloudflare: Turnstile foi configurado e validado no cadastro público. O Worker `barbervision-outbox-scheduler` foi publicado em `https://barbervision-outbox-scheduler.barbervision-outbox-scheduler.workers.dev`, com Cron Trigger `* * * * *`; o tail remoto comprovou ciclos `200`, `processados: 0` e ausência de PII. A rota recusou segredo inválido com `401`.
+- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. Após o reset, dono e funcionário foram recriados e o usuário confirmou identidade/papel corretos, suspensão com bloqueio, reativação com retorno e revogação com sucesso. O segundo uso do convite foi rejeitado; templates finais, expiração controlada, link inválido independente e e-mail divergente ainda precisam de prova.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
@@ -468,8 +468,8 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
-2. Testar links expirados, reutilizados e inválidos, além dos templates finais de confirmação, convite e recuperação.
+1. Induzir uma falha controlada no hospedado para comprovar retry e alerta da outbox; cron recorrente, segredo inválido (`401`) e logs redigidos já passaram.
+2. Concluir o caso controlado de link expirado e revisar os templates finais; convite real e segundo uso inválido já passaram.
 3. Executar a matriz remota controlada entre dois tenants, papéis e AALs.
 4. Completar reatribuição, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou operar com clientes reais.

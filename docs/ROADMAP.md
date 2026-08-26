@@ -1,6 +1,6 @@
 # Roadmap técnico e de produto
 
-Estado reconciliado em **26/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha, jornada principal, identidade e lifecycle completo do funcionário foram comprovados no hospedado após reset remoto integral. O scheduler Cloudflare ainda não foi validado. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **26/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha, jornada principal, identidade e lifecycle completo do funcionário foram comprovados no hospedado após reset remoto integral. O scheduler Cloudflare também foi publicado e validado. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -142,8 +142,8 @@ Estado: **validado localmente; primeiro dono e recuperação aprovados no hosped
 
 ### Sequência canônica para concluir a fundação
 
-1. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-2. Provar **Configurar depois** e ativação posterior de TOTP; revisar templates e links adversários.
+1. Induzir retry/falha remota e validar o alerta opcional; Worker, cron, segredo inválido e logs sem PII já passaram.
+2. Provar **Configurar depois** e ativação posterior de TOTP; revisar templates e concluir o caso controlado de expiração.
 3. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento.
 4. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
@@ -347,9 +347,9 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+1. Induzir retry/falha remota e validar o alerta opcional; Worker, cron, segredo inválido e logs sem PII já passaram.
 2. Integrar à CI os gates locais já aprovados e executar a matriz adversária remota de Auth/outbox e isolamento.
-3. Finalizar templates e provar links inválidos, reutilizados e expirados.
+3. Finalizar templates e concluir a prova controlada de expiração; convite real e reutilização inválida já passaram.
 4. Fechar reatribuição, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 

@@ -239,7 +239,7 @@ O filtro SQL de nomes de segredo examina somente chaves no nível superior de `e
 
 O estado atual aplica doze migrations e passa 205/205 no pgTAP. Rollbacks/roll-forwards 8–4, 10–9 e da migration 11, concorrência, JWT/Data API, Storage e E2E atualizado da outbox permanecem evidências aprovadas.
 
-As compensações da Equipe conferem o estado por releitura autoritativa. O provisionamento inicial possui preflight, reutilização de Auth existente e retomada segura por UUID. Convites de funcionário usam outbox atômica, worker com lease/retry e reconciliação de vencidos; produção ainda precisa configurar seu agendador protegido. Transferência de dono e seletor multi-tenant permanecem lacunas.
+As compensações da Equipe conferem o estado por releitura autoritativa. O provisionamento inicial possui preflight, reutilização de Auth existente e retomada segura por UUID. Convites de funcionário usam outbox atômica, worker com lease/retry e reconciliação de vencidos; o agendador protegido está publicado e executa a cada minuto. Transferência de dono e seletor multi-tenant permanecem lacunas.
 
 ## Papéis e telas
 

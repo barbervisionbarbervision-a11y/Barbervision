@@ -28,7 +28,7 @@ Authorization: Bearer <BARBERVISION_CRON_SECRET>
 
 A rota processa até 25 itens, usa runtime Node.js e devolve apenas IDs e estados, sem e-mail ou outro PII. Nunca exponha o segredo ao navegador nem use prefixo `NEXT_PUBLIC_`.
 
-Cadência inicial recomendada: uma chamada por minuto. A configuração escolhida está versionada em `infra/cloudflare-outbox-scheduler`, com observabilidade Cloudflare e webhook opcional. O deploy das contas e a validação remota continuam sendo gates externos; consulte `DEPLOY-GRATUITO.md`.
+Cadência inicial recomendada: uma chamada por minuto. A configuração escolhida está versionada em `infra/cloudflare-outbox-scheduler`, com observabilidade Cloudflare e webhook opcional. Em 26/08/2026, o Worker `barbervision-outbox-scheduler` foi publicado com Cron Trigger `* * * * *`; o tail comprovou chamadas recorrentes `200`, `processados: 0` e logs sem PII. A rota retornou `401` com segredo inválido. Falta apenas induzir uma falha hospedada para registrar retry/backoff e validar o alerta opcional.
 
 ## Operação e diagnóstico
 

@@ -317,6 +317,6 @@ Essas entidades serão adicionadas por migrations nos passos 5–9, quando seus 
 
 ### Sequência canônica para concluir os passos 2 e 3
 
-O passo 2 possui validação local sobre as doze migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite, API de clientes, proteção antiabuso e limpeza do cliente sintético foram comprovados remotamente. Faltam integrar gates à CI, publicar o scheduler Cloudflare e executar a matriz Auth remota.
+O passo 2 possui validação local sobre as doze migrations, que também estão aplicadas no Supabase hospedado. A secret exposta foi rotacionada; Render, redirects, SMTP, primeiro dono, entrega de convite, API de clientes, proteção antiabuso, limpeza do cliente sintético e scheduler Cloudflare foram comprovados remotamente. Faltam integrar gates à CI, induzir retry/alerta remoto e executar a matriz Auth remota.
 
 Até esses critérios serem atendidos, não conecte dados reais aos mocks nem anuncie os passos 2 ou 3 como concluídos.

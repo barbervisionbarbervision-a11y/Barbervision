@@ -185,7 +185,7 @@ Separar convite de membership:
 - aceite exige identidade autenticada, e-mail confirmado e correspondência exata;
 - constraints, locks e transições da RPC controlam duplicidade, replay e expiração e passaram no PostgreSQL local, inclusive nas corridas concorrentes previstas;
 - usuário já existente segue login e aceite pelo mesmo e-mail; convite, ativação e identidade de funcionário foram comprovados ponta a ponta no hospedado;
-- envio de e-mail usa outbox/retry server-only com enqueue transacional, lease, backoff, conclusão idempotente e reconciliação automática; o E2E atualizado passou e ainda faltam scheduler/alertas hospedados;
+- envio de e-mail usa outbox/retry server-only com enqueue transacional, lease, backoff, conclusão idempotente e reconciliação automática; o E2E e o scheduler hospedado passaram, restando induzir retry e validar o alerta remoto opcional;
 - usuário Auth já existente é resolvido por e-mail via RPC exclusiva de `service_role`, provisionado idempotentemente e pode receber acesso com `--enviar-acesso` sem novo convite Auth.
 - a revogação relê o estado final: ao tocar um convite vencido, a interface apresenta `expirado` em vez de anunciar incorretamente “Convite revogado”.
 - se a criação do cliente admin/URL ou o envio falha, a action executa a compensação e relê o estado por `id + barbearia_id`; ela só anuncia revogação, expiração ou falha persistida quando esse estado é confirmado. Erro/divergência é registrado sem PII e apresentado como estado não confirmado.
@@ -295,8 +295,8 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Próxima sequência canônica
 
-1. Publicar e validar o scheduler hospedado da outbox, incluindo autenticação `401`, retry e logs redigidos.
-2. Ampliar os casos adversários de callback para links inválidos, reutilizados e expirados e finalizar os templates hospedados.
+1. Induzir retry/falha no hospedado e validar o alerta opcional; scheduler, autenticação `401` e logs redigidos já passaram.
+2. Concluir o caso controlado de link expirado e finalizar os templates hospedados; convite real e reutilização inválida já passaram.
 3. Executar a matriz remota controlada entre dois tenants, papéis e AALs.
 4. Fechar gaps operacionais: reatribuição estreita, transferência de dono, seleção multi-tenant e decisão explícita sobre a membership do primeiro dono antes da senha.
 5. Preservar os gates locais já aprovados em toda nova migration: reset, `db:lint`, pgTAP 205/205, concorrência, JWT/RLS e Storage.

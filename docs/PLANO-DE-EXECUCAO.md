@@ -26,8 +26,8 @@ O simulador de cabelo fica congelado durante os passos 2–5, salvo correção c
 
 Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operacional é única:
 
-1. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
-2. Executar os casos adversários restantes de Auth/outbox, incluindo links inválidos, reutilizados e expirados.
+1. Induzir retry/falha remota e validar o alerta opcional da outbox; scheduler, cron, `401` e logs redigidos já passaram.
+2. Executar os casos adversários restantes de Auth/outbox; convite real e reutilização inválida passaram, faltando a expiração controlada e revisão final dos templates.
 3. Executar a matriz remota de isolamento entre dois tenants, papéis e AALs.
 4. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
@@ -134,7 +134,7 @@ Entregar login, confirmação, recuperação, TOTP do dono, convite e lifecycle 
 - a corrida do último dono e a corrida atribuição/revogação passaram no banco local descartável em 22/08;
 - migrations `13000` e `20260813010000` tiveram rollback/roll-forward ensaiado com sucesso no banco local descartável;
 - os fluxos principais de dono, funcionário e lifecycle foram executados com Supabase real;
-- redirects, SMTP, projeto hospedado e secrets estão configurados; scheduler Cloudflare ainda não foi publicado;
+- redirects, SMTP, projeto hospedado e secrets estão configurados; scheduler Cloudflare foi publicado e validado com cron recorrente, `200`, `401` adversário e logs sem PII;
 - proteção contra abuso e seletor multi-membership faltam; recuperação operacional de TOTP foi validada.
 - a tela Equipe lista memberships ativas, suspensas e revogadas e possui UX/E2E para todas as transições válidas de funcionário;
 - sanitização/allowlist de conteúdo aninhado de auditoria e testes contra segredos ainda faltam;

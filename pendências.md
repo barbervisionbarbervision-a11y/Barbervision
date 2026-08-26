@@ -18,7 +18,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
 | 2 — Supabase, tenant e RLS | Doze migrations validadas localmente e aplicadas no hospedado | Isolar warnings internos do pgTAP no lint e integrar os gates à CI |
-| 3 — Auth real | Jornada principal, identidade e lifecycle de funcionário comprovados no hospedado | Publicar scheduler da outbox e fechar casos adversários restantes |
+| 3 — Auth real | Jornada principal, identidade, lifecycle e scheduler comprovados no hospedado | Provar retry/alerta remoto e fechar casos adversários restantes |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -83,8 +83,8 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente, `401`, retry e logs redigidos.
-2. **P0 — fechar casos adversários de Auth**: finalizar templates e provar links inválidos, reutilizados e expirados.
+1. **P0 — concluir a prova remota da outbox**: induzir retry/falha e validar o alerta operacional; Worker, cron recorrente, `401` e logs redigidos já passaram.
+2. **P0 — fechar casos adversários de Auth**: finalizar templates e concluir a prova controlada de expiração; convite real e reutilização inválida já passaram.
 3. **P0 — executar a matriz remota de isolamento**: dois tenants, papéis e AALs relevantes.
 4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
@@ -253,10 +253,11 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Publicar templates de convite e recuperação.
 - [x] Testar convite real pelo Admin API, entrega no Mailpit, confirmação e ativação pela aplicação.
 - [ ] Testar confirmação de e-mail.
-- [ ] Testar link expirado, reutilizado, inválido e e-mail divergente.
+- [x] Comprovar convite real e rejeição do segundo uso do mesmo link no hospedado.
+- [ ] Testar de forma controlada link expirado, link inválido independente e e-mail divergente.
 - [ ] Decidir se o link confirmado basta para ativar a membership antes de definir a senha; se não, criar e testar um estado de onboarding incompleto até a senha ser gravada.
 - [x] Criar reconciliação idempotente para materializar convites vencidos como `expirado` durante cada lote do worker.
-- [ ] Configurar um agendador no ambiente hospedado para chamar periodicamente a rota protegida do worker.
+- [x] Configurar um agendador no ambiente hospedado para chamar periodicamente a rota protegida do worker; Cron Cloudflare `* * * * *` comprovado em 26/08.
 - [x] Versionar Blueprint Render Free, health check e Cloudflare Cron Trigger a cada minuto com webhook opcional.
 - [x] Criar o projeto Supabase hospedado em São Paulo, vincular a CLI e aplicar as doze migrations atuais.
 - [x] Conectar o repositório privado ao Blueprint Render e chegar ao formulário das cinco variáveis.
@@ -268,7 +269,8 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [ ] Finalizar/revisar os textos dos templates hospedados; transporte SMTP e recuperação já foram comprovados.
 - [x] Implementar `/barbeiro/criar-conta` e o botão `Começar agora`, reutilizando a RPC controlada e confirmação por convite.
 - [x] Validar cadastro público hospedado com consentimento, Turnstile server-side e rate limit distribuído; smoke comprovou `400`, `403` e `201`.
-- [ ] Publicar o Worker Cloudflare e provar o cron em logs remotos com convite controlado.
+- [x] Publicar o Worker Cloudflare e provar cron remoto recorrente, resposta `200`, segredo inválido `401`, logs sem PII e convite real aceito.
+- [ ] Induzir falha remota controlada para registrar retry/backoff e validar o webhook de alerta, caso seja habilitado.
 - [x] Fazer a revogação reler/retornar o estado autoritativo e exibir `expirado` quando a RPC expirar um convite vencido, em vez de sempre anunciar “Convite revogado”.
 - [x] Verificar e tratar o erro da compensação `revogar_convite_barbearia`; não afirmar que nenhum convite ficou ativo sem confirmação do banco.
 - [x] Verificar e tratar o erro de `marcar_convite_falhou`; deixar um estado explícito de reconciliação quando a compensação também falhar.

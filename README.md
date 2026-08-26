@@ -76,7 +76,7 @@ As migrations criam:
 - exigência de e-mail confirmado, perfil e membership ativos; TOTP opcional para reforçar a conta do dono;
 - nove RPCs estreitas para criar, aceitar, revogar e registrar envio/falha de convite, provisionar o primeiro dono e suspender, reativar ou revogar funcionário.
 
-As migrations de onboarding, leitura operacional, retomada do primeiro dono, outbox, consentimento e proteção de cadastro entregam os contratos atuais. Reset e pgTAP 205/205 passam localmente sobre as doze migrations. A criação do convite e o enqueue são atômicos; um worker server-only reivindica itens com lease, aplica backoff exponencial, conclui de forma idempotente e materializa convites vencidos. O disparo imediato usa `after()`, mas produção ainda exige um agendador externo chamando a rota interna protegida. Transferência de dono continua pendente.
+As migrations de onboarding, leitura operacional, retomada do primeiro dono, outbox, consentimento e proteção de cadastro entregam os contratos atuais. Reset e pgTAP 205/205 passam localmente sobre as doze migrations. A criação do convite e o enqueue são atômicos; um worker server-only reivindica itens com lease, aplica backoff exponencial, conclui de forma idempotente e materializa convites vencidos. O disparo imediato usa `after()` e o agendador Cloudflare publicado chama a rota interna protegida a cada minuto. Transferência de dono continua pendente.
 
 ## Stack
 
@@ -255,8 +255,8 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Publicar e validar o scheduler Cloudflare da outbox, incluindo processamento recorrente, `401`, retry e logs redigidos.
-2. Finalizar os modelos hospedados de convite e recuperação e testar links inválidos, reutilizados e expirados.
+1. Induzir e registrar no hospedado um retry/falha da outbox e, se configurado, o alerta operacional; cron recorrente, `401` e logs sem PII já foram comprovados.
+2. Finalizar os modelos hospedados de convite e recuperação e concluir a prova controlada de expiração; convite real e reutilização inválida já foram comprovados.
 3. Executar a matriz remota controlada de isolamento entre dois tenants, papéis e AALs.
 4. Completar os comandos administrativos ainda ausentes: reatribuição transacional, transferência de dono e seletor multi-tenant.
 5. Implementar privacidade, retenção e exclusão antes de persistir selfies ou iniciar piloto com pessoas reais.

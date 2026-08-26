@@ -556,7 +556,7 @@ Configurar somente as variáveis ativa a tentativa de Auth, mas não cria schema
 
 ### Sequência canônica de validação
 
-Os gates locais anteriores foram executados, doze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite, persistência, proteção antiabuso e limpeza do cliente sintético foram comprovados. Faltam publicar o scheduler Cloudflare e repetir a matriz Auth remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais anteriores foram executados, doze migrations estão no Supabase hospedado e o Render está Live. Redirects, SMTP, primeiro dono, callback, entrega de convite, persistência, proteção antiabuso, limpeza do cliente sintético e scheduler Cloudflare foram comprovados. Faltam induzir retry/alerta remoto e repetir a matriz Auth remota. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## WhatsApp
 
