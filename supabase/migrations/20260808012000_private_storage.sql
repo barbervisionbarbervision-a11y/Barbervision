@@ -32,7 +32,13 @@ values
     false,
     15728640,
     array['image/jpeg', 'image/png', 'image/webp']::text[]
-  );
+  )
+on conflict (id) do update
+set
+  name = excluded.name,
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 create function private.storage_path_valido(p_nome text)
 returns boolean
@@ -73,6 +79,13 @@ revoke all on function private.storage_path_valido(text) from public, anon, auth
 revoke all on function private.usuario_eh_dono_do_storage_path(text) from public, anon, authenticated;
 grant execute on function private.storage_path_valido(text) to authenticated, service_role;
 grant execute on function private.usuario_eh_dono_do_storage_path(text) to authenticated, service_role;
+
+-- O reset remoto preserva o schema storage. Remover as policies antigas
+-- permite reaplicar esta migration sem deixar o projeto parcialmente criado.
+drop policy if exists barbervision_storage_select_dono on storage.objects;
+drop policy if exists barbervision_storage_insert_dono on storage.objects;
+drop policy if exists barbervision_storage_update_dono on storage.objects;
+drop policy if exists barbervision_storage_delete_dono on storage.objects;
 
 create policy barbervision_storage_select_dono
 on storage.objects
