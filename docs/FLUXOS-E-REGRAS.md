@@ -237,7 +237,7 @@ Os UUIDs de procedência são registros históricos, sem FK destrutiva para `aut
 
 O filtro SQL de nomes de segredo examina somente chaves no nível superior de `eventos_auditoria.metadados`; objetos aninhados ainda precisam de sanitização/allowlist no comando. O `UPDATE` direto de `atribuicoes_cliente.usuario_id` foi revogado de `authenticated`, e `service_role` perdeu `UPDATE` na tabela. Falta uma RPC estreita, autorizada, idempotente e auditada para reatribuição.
 
-Em 23/08, core Supabase, lint SQL e pgTAP 192/192 passaram. Rollback 5–4, concorrência, JWT/Data API, Storage e E2E anterior permanecem evidências históricas; faltam o ensaio 8–4 e o E2E atualizado da outbox.
+O estado atual aplica doze migrations e passa 205/205 no pgTAP. Rollbacks/roll-forwards 8–4, 10–9 e da migration 11, concorrência, JWT/Data API, Storage e E2E atualizado da outbox permanecem evidências aprovadas.
 
 As compensações da Equipe conferem o estado por releitura autoritativa. O provisionamento inicial possui preflight, reutilização de Auth existente e retomada segura por UUID. Convites de funcionário usam outbox atômica, worker com lease/retry e reconciliação de vencidos; produção ainda precisa configurar seu agendador protegido. Transferência de dono e seletor multi-tenant permanecem lacunas.
 

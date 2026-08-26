@@ -294,14 +294,14 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 
 - [x] testar login, logout local/global, refresh e expiração;
 - [x] testar confirmação, recuperação e redefinição com links reais para o primeiro dono no hospedado;
-- [ ] testar matrícula e challenge TOTP do dono;
-- [ ] testar bootstrap AAL1 sem liberar dados da barbearia;
-- [ ] executar e testar convites, aceite, revogação, expiração, provisionamento e auditoria;
-- [ ] tornar o provisionamento inicial retomável com preflight, retomada segura por UUID e compensação documentada para “Auth criado/RPC falhou”;
-- [ ] validar `BARBERVISION_APP_URL` no provisionamento com o mesmo contrato central de origem segura e tratar URL inválida sem deixar onboarding órfão;
+- [x] testar matrícula e challenge TOTP do dono localmente; TOTP permanece opcional no produto;
+- [x] testar bootstrap AAL1 sem liberar dados da barbearia localmente;
+- [x] executar e testar convites, aceite, revogação, expiração, provisionamento e auditoria localmente; o lifecycle principal também foi comprovado no hospedado;
+- [x] tornar o provisionamento inicial retomável com preflight, retomada segura por UUID e compensação documentada para “Auth criado/RPC falhou”;
+- [x] validar `BARBERVISION_APP_URL` no provisionamento com o mesmo contrato central de origem segura e tratar URL inválida sem deixar onboarding órfão;
 - [x] conferir e registrar o resultado das RPCs compensatórias da Equipe antes de informar revogação ou falha persistida;
-- [ ] decidir/testar se a membership do primeiro dono nasce antes da confirmação e da definição da senha;
-- [ ] fazer a UI reler/usar o estado final de convite e não anunciar revogação quando a RPC o materializar como expirado;
+- [x] decidir e testar o fluxo retomável da membership do primeiro dono em torno da confirmação e definição de senha;
+- [x] fazer a UI reler/usar o estado final de convite e não anunciar revogação quando a RPC o materializar como expirado;
 - [x] implementar UX de suspensão, reativação e revogação, incluindo memberships não ativas e estado autoritativo;
 - [ ] criar/testar a RPC estreita de reatribuição sem restaurar `UPDATE` direto;
 - [ ] sanitizar e testar segredos em `metadados`, inclusive conteúdo aninhado;

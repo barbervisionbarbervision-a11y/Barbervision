@@ -183,11 +183,11 @@ Separar convite de membership:
 - convite possui tenant, e-mail, papel, estado, expiração e actor;
 - membership nasce/reativa somente no aceite válido;
 - aceite exige identidade autenticada, e-mail confirmado e correspondência exata;
-- constraints, locks e transições da RPC foram desenhados para controlar duplicidade, replay e expiração, mas ainda não foram testados em PostgreSQL real;
-- usuário já existente deve seguir fluxo de login e aceite pelo mesmo e-mail, porém esse caminho ainda não está comprovado ponta a ponta;
-- envio de e-mail usa outbox/retry server-only com enqueue transacional, lease, backoff, conclusão idempotente e reconciliação automática; ainda faltam scheduler/alertas hospedados e reexecução do E2E atualizado;
+- constraints, locks e transições da RPC controlam duplicidade, replay e expiração e passaram no PostgreSQL local, inclusive nas corridas concorrentes previstas;
+- usuário já existente segue login e aceite pelo mesmo e-mail; convite, ativação e identidade de funcionário foram comprovados ponta a ponta no hospedado;
+- envio de e-mail usa outbox/retry server-only com enqueue transacional, lease, backoff, conclusão idempotente e reconciliação automática; o E2E atualizado passou e ainda faltam scheduler/alertas hospedados;
 - usuário Auth já existente é resolvido por e-mail via RPC exclusiva de `service_role`, provisionado idempotentemente e pode receber acesso com `--enviar-acesso` sem novo convite Auth.
-- a revogação precisa reler ou receber da RPC o estado final: ao tocar um convite vencido, o banco pode marcá-lo `expirado`, mas a action atual sempre anuncia “Convite revogado”.
+- a revogação relê o estado final: ao tocar um convite vencido, a interface apresenta `expirado` em vez de anunciar incorretamente “Convite revogado”.
 - se a criação do cliente admin/URL ou o envio falha, a action executa a compensação e relê o estado por `id + barbearia_id`; ela só anuncia revogação, expiração ou falha persistida quando esse estado é confirmado. Erro/divergência é registrado sem PII e apresentado como estado não confirmado.
 
 ### Lifecycle
@@ -263,7 +263,7 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 - proveniência histórica preservada após exclusão da identidade Auth;
 - bloqueio de `UPDATE`, `DELETE` e `TRUNCATE` da auditoria e de reatribuição direta por `authenticated`/`service_role`;
 - metadados aninhados com chaves sensíveis recusados após o hardening correspondente;
-- outbox invisível, quando ela for implementada;
+- outbox invisível para `anon` e `authenticated`, com acesso restrito ao worker server-only;
 - concorrência com duas sessões simultâneas alterando donos, convite/aceite/revogação e atribuição/revogação de funcionário.
 
 ### Integração/E2E

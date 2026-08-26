@@ -149,7 +149,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 
 - [ ] Definir lifecycle completo de barbearia, perfil e membership; a migration nova cobre somente convites e funcionário.
 - [x] Serializar mutations de membership por lock do tenant no SQL versionado.
-- [ ] Provar com duas sessões concorrentes a proteção contra corrida de dois donos sendo rebaixados/revogados.
+- [x] Provar com duas sessões concorrentes a proteção contra corrida de dois donos sendo rebaixados/revogados.
 - [x] Bloquear mudança de `barbearia_id`/`usuario_id` e proteger a desativação/exclusão de perfil com dono ativo em fonte.
 - [x] Preservar UUIDs de proveniência como histórico sem FK destrutiva para Auth.
 - [ ] Definir recuperação administrativa quando o último dono estiver comprometido.
@@ -165,7 +165,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 
 # Passo 3 — autenticação real
 
-## P0 — contratos SQL aplicados transitoriamente, ainda sem validação comportamental
+## P0 — contratos SQL aplicados e validados
 
 - [x] Criar `public.convites_barbearia`.
 - [x] Normalizar e validar e-mail do convite.
@@ -183,9 +183,9 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Exigir historicamente AAL2 nas RPCs; a migration 10 tornou o helper compatível com AAL1 do dono ativo.
 - [x] Exigir e-mail confirmado e exatamente igual ao convite no aceite.
 - [x] Tornar aceite idempotente e resistente a replay em fonte.
-- [ ] Tratar usuário já existente e confirmado sem duplicar conta.
+- [x] Tratar usuário já existente e confirmado sem duplicar conta.
 - [x] Tornar o primeiro provisionamento retomável: prevalidar antes do convite Auth, reutilizar identidade por e-mail, aceitar retomada segura por UUID e emitir comando seguro quando o Auth nasce mas a RPC falha.
-- [ ] Validar `BARBERVISION_APP_URL` no script de provisionamento com a mesma regra HTTPS/loopback usada pela aplicação.
+- [x] Validar `BARBERVISION_APP_URL` no script de provisionamento com a mesma regra HTTPS/loopback usada pela aplicação.
 - [x] Impedir promoção a dono por RPC de funcionário comum; nenhuma RPC genérica de promoção foi exposta.
 
 ## P0 — lifecycle da equipe
@@ -292,19 +292,19 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 
 ## P0 — testes do passo 3
 
-- [x] Criar pgTAP específico de Auth assurance, onboarding, lifecycle e auditoria com `plan(109)`.
-- [ ] Executar a cobertura versionada de e-mail não confirmado.
-- [ ] Executar a cobertura versionada de owner AAL1 negado em tabelas e Storage.
-- [ ] Executar a cobertura versionada de owner AAL2 permitido no próprio tenant.
-- [ ] Testar metadata forjada sem efeito.
-- [ ] Testar convite cross-tenant, duplicado, expirado, revogado, replay e e-mail divergente.
+- [x] Criar pgTAP específico de Auth assurance, onboarding, lifecycle e auditoria, atualmente com `plan(112)`.
+- [x] Executar a cobertura versionada de e-mail não confirmado.
+- [x] Executar a cobertura versionada de owner AAL1 negado em tabelas e Storage.
+- [x] Executar a cobertura versionada de owner AAL2 permitido no próprio tenant.
+- [x] Testar metadata forjada sem efeito.
+- [x] Testar em SQL convite cross-tenant, duplicado, expirado, revogado, replay e e-mail divergente; repetir os links adversários no hospedado.
 - [ ] Testar corrida entre envio, aceite, revogação e expiração de convite.
-- [ ] Executar os cenários versionados de lifecycle permitido/proibido e replay.
+- [x] Executar os cenários versionados de lifecycle permitido/proibido e replay.
 - [ ] Testar corrida entre atribuição/reatribuição e revogação de funcionário.
-- [ ] Executar os cenários versionados de auditoria uma vez por transição efetiva e replay/no-op.
-- [ ] Testar append-only e ACLs de auditoria para `UPDATE`, `DELETE`, `TRUNCATE`, insert direto e metadados aninhados.
+- [x] Executar os cenários versionados de auditoria uma vez por transição efetiva e replay/no-op.
+- [x] Testar append-only e ACLs de auditoria para `UPDATE`, `DELETE`, `TRUNCATE` e insert direto; hardening de conteúdo aninhado arbitrário continua separado.
 - [x] Testar estrutura, ACL server-only, enqueue, lease, retry, conclusão idempotente, expiração e cancelamento da outbox em pgTAP.
-- [ ] Testar dois workers simultâneos reivindicando a outbox em conexões PostgreSQL reais.
+- [x] Testar dois workers simultâneos reivindicando a outbox em conexões PostgreSQL reais, sem duplicação.
 - [ ] Criar cenário funcional de banco para `provisionar_dono_controlado`; `marcar_convite_falhou` já está coberta no E2E pela rejeição real da Admin API.
 - [x] Criar runner com duas sessões concorrentes e uma conexão observadora para último dono e atribuição/revogação.
 - [x] Executar o runner em PostgreSQL descartável e guardar evidência de lock/resultado: duas corridas aprovadas em 22/08.
@@ -639,10 +639,10 @@ Ao concluir qualquer item:
 
 O Barber Vision só pode ser tratado como pronto para clientes reais quando, no mínimo:
 
-- [ ] Auth, convite, MFA e revogação estiverem funcionando e testados;
+- [x] Auth, convite, TOTP opcional e revogação funcionando e testados na jornada principal;
 - [ ] isolamento multi-tenant e Storage estiverem comprovados;
 - [ ] consentimento, privacidade, retenção e exclusão estiverem implementados;
-- [ ] o fluxo público estiver persistido com API estreita e antifraude básico;
+- [x] o fluxo público estiver persistido com API estreita, rate limit distribuído e Turnstile;
 - [ ] dados do painel vierem do banco sob RLS;
 - [ ] catálogo tiver direitos e revisão de conteúdo;
 - [ ] backups, logs, alertas, CI e resposta a incidentes existirem;

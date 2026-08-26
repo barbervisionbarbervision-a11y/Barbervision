@@ -296,7 +296,7 @@ Portanto, a identidade SSR já carrega tenant por desenho, mas “multi-tenant s
 6. dono confirmado e ativo pode alcançar layouts exclusivos; a migration `owner_mfa_optional` torna o step-up TOTP opcional sem remover RLS por tenant;
 7. login com senha, recuperação, redefinição, ativação, TOTP, logout local/global e templates locais existem no código.
 
-Esse caminho principal está validado localmente e o primeiro dono, callback e entrega hospedada de convite foram comprovados. Ainda faltam proteção distribuída contra abuso, scheduler, matriz remota completa, transferência de dono e seletor de tenant.
+Esse caminho principal está validado localmente e o primeiro dono, callback, entrega hospedada de convite e lifecycle completo do funcionário foram comprovados. Turnstile e rate limit distribuído protegem o cadastro público. Ainda faltam o scheduler da outbox, a matriz remota completa, transferência de dono e seletor de tenant.
 
 ### Modo demonstração sem Supabase
 
@@ -434,4 +434,4 @@ Ao substituir mocks por dados reais, evite fazer uma troca parcial que mantenha 
 
 ## Sequência canônica de validação
 
-Os gates locais de banco, concorrência, integração e E2E já possuem evidência. Em 24/08/2026, o schema remoto está aplicado e o Render está Live com health check 200. A sequência vigente é: configurar Auth/SMTP/templates; publicar e testar Cloudflare; executar a matriz remota; fechar reatribuição, transferência de dono e seleção multi-tenant; então implementar privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+Os gates locais de banco, concorrência, integração e E2E já possuem evidência. Em 26/08/2026, o banco remoto foi reconstruído sobre as doze migrations, o Render permaneceu Live e o lifecycle do funcionário foi revalidado. A sequência vigente é: publicar e testar o Worker/Cron Cloudflare da outbox; fechar templates e casos adversários de Auth; executar a matriz remota; fechar reatribuição, transferência de dono e seleção multi-tenant; então implementar privacidade. Consulte [Estado de validação](ESTADO-VALIDACAO.md).

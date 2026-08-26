@@ -333,7 +333,7 @@ As RPCs de onboarding/lifecycle e outbox existem em fonte e no banco local. As s
 - O harness JWT integrado passou com Auth real local, Data API/RLS, Storage com blob, refresh, token expirado, logout global e recuperação TOTP. Callback/e-mail hospedados têm evidência separada.
 - Em 22/08, a atualização do CLI 2.112.0 para 2.115.0 e a desativação explícita de Analytics/Vector opcionais eliminaram a corrida de health check sem expor o daemon Docker em `2375`.
 - `db:start` e `db:reset` encerram com exit `0`; doze migrations, seed atualizado e pgTAP 205/205 foram comprovados. Auth, Storage e Studio respondem e os containers necessários estão saudáveis.
-- Na auditoria de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estão ativos; Imgproxy, Analytics, Vector e Pooler estão intencionalmente desativados/não usados. Não há `.env.local` nem projeto remoto vinculado.
+- Na auditoria local de 22/08, PostgreSQL, API, Studio, Auth, Storage, Realtime, Mailpit e Edge Runtime estavam ativos; Imgproxy, Analytics, Vector e Pooler estavam intencionalmente desativados/não usados. Depois disso, o projeto remoto `ftwdfobgwxjmeickktmy` foi vinculado e reconstruído com sucesso.
 - A rodada histórica de 24/08 aplicou dez migrations e passou 192/192; o estado atual de 25/08 aplica doze migrations e passa 205/205. RLS/JWT, Data API, Storage real, recuperação TOTP opcional, lifecycle, concorrência e rollback/roll-forward 10–9 permanecem aprovados.
 
 ## Auth: arquivos e contratos
@@ -428,10 +428,10 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 ### P1
 
 - reautenticação para operações sensíveis;
-- rate limit/CAPTCHA contra abuso;
+- [concluído] rate limit distribuído e Turnstile protegem o cadastro público no hospedado;
 - preservar a releitura autoritativa das compensações de convite e ampliar sua cobertura adversária;
-- tornar o provisionamento inicial retomável e reconciliável entre Auth e banco, com preflight e validação estrita da URL;
-- decidir e testar o estado de onboarding entre confirmação do link, criação da membership e definição da senha;
+- [concluído] provisionamento inicial retomável e reconciliável entre Auth e banco, com preflight e validação estrita da URL;
+- [concluído] estado de onboarding entre confirmação do link, criação da membership e definição da senha decidido e testado;
 - [concluído] suspensão, reativação e revogação estão na UI; Playwright e validação hospedada provam corte imediato, retomada e revogação;
 - redução dos 18 warnings de lint;
 - manifesto reproduzível dos arquivos congelados do simulador.

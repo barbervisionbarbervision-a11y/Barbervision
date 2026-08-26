@@ -331,6 +331,6 @@ Antes de usuários reais:
 
 ## Próximos passos
 
-A sequência operacional canônica está no [Plano de execução](PLANO-DE-EXECUCAO.md) e no [Estado de validação](ESTADO-VALIDACAO.md). Em 24/08/2026, os testes locais e as migrations remotas já foram concluídos; o gate imediato é rotacionar a secret key exposta e terminar a validação hospedada de Render, Supabase e Cloudflare.
+A sequência operacional canônica está no [Plano de execução](PLANO-DE-EXECUCAO.md) e no [Estado de validação](ESTADO-VALIDACAO.md). Em 26/08/2026, a secret exposta já havia sido substituída, o banco remoto tinha sido reconstruído e o lifecycle hospedado estava aprovado. O gate imediato é publicar e validar o Worker/Cron Cloudflare da outbox.
 
 O simulador e os assets continuam congelados enquanto essa base é validada. Quando a frente visual voltar como gate anterior ao piloto, permanecem obrigatórios: comprovar origem/licença das fontes privadas; confirmar os nomes com barbeiro; preferir fotos frontais próprias; testar matriz consentida; criar gate de cabelo residual e regressão visual; medir aparelhos reais; e decidir o destino privado dos rollbacks.
