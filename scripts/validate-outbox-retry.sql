@@ -1,15 +1,7 @@
 -- Validação remota e não destrutiva do retry/backoff da outbox de convites.
--- Execute todo o arquivo no Supabase SQL Editor. A transação termina em
--- ROLLBACK, portanto nenhum convite, membro ou evento de teste é preservado.
-
-begin;
-
-create temporary table barbervision_retry_probe_result (
-  tentativa integer not null,
-  status_outbox text not null,
-  atraso_segundos integer,
-  status_convite text not null
-) on commit drop;
+-- Execute todo o arquivo no Supabase SQL Editor. A exceção VALIDACAO_OK no
+-- final é intencional: ela comprova o resultado e desfaz todos os dados do
+-- teste na mesma instrução, inclusive o convite e os eventos de auditoria.
 
 do $$
 declare
@@ -23,6 +15,7 @@ declare
   v_status_convite text;
   v_tentativa integer;
   v_esperado integer;
+  v_resultado text := '';
 begin
   select membro.barbearia_id, membro.usuario_id
     into v_barbearia_id, v_dono_id
@@ -92,10 +85,9 @@ begin
         v_tentativa, v_status, v_atraso, v_esperado, v_status_convite;
     end if;
 
-    insert into barbervision_retry_probe_result
-      (tentativa, status_outbox, atraso_segundos, status_convite)
-    values
-      (v_tentativa, v_status::text, v_atraso, v_status_convite);
+    v_resultado := v_resultado || format(
+      'tentativa %s: pendente/%ss; ', v_tentativa, v_atraso
+    );
   end loop;
 
   v_worker_id := gen_random_uuid();
@@ -126,15 +118,12 @@ begin
       v_status, v_status_convite;
   end if;
 
-  insert into barbervision_retry_probe_result
-    (tentativa, status_outbox, atraso_segundos, status_convite)
-  values
-    (5, v_status::text, null, v_status_convite);
+  v_resultado := v_resultado || 'tentativa 5: falhou';
+
+  -- Esta exceção é o resultado esperado e também força o rollback atômico do
+  -- bloco inteiro. Nenhum dado sintético sobrevive à validação.
+  raise exception using
+    errcode = 'P0001',
+    message = 'VALIDACAO_OK — retry/backoff confirmado — ' || v_resultado;
 end;
 $$;
-
-select tentativa, status_outbox, atraso_segundos, status_convite
-from barbervision_retry_probe_result
-order by tentativa;
-
-rollback;
