@@ -1,6 +1,6 @@
 # Operação, segurança e qualidade
 
-Estado reconciliado em **25/08/2026**. Evidência detalhada: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **26/08/2026**. Evidência detalhada: [Estado de validação](ESTADO-VALIDACAO.md).
 
 Este documento descreve o que pode ser executado hoje, os dois modos de operação do painel e os gates que ainda impedem um deploy com dados reais. O simulador de cabelo permanece congelado na versão de placement manual; esta revisão documental não altera seu comportamento.
 
@@ -21,8 +21,8 @@ Situação confirmada nesta revisão:
 - não há `.env.local`; serviços necessários do Supabase estão saudáveis e opcionais não usados estão desativados;
 - o Git está operacional e o commit baseline `7c34dab` foi confirmado;
 - convites, provisionamento, confirmação, recuperação e login foram exercitados no hospedado; lifecycle completo de funcionário e casos adversários ainda precisam de prova remota;
-- a sessão/papel do funcionário foi corrigida em `6a0ef4d`; a identidade exibida na equipe foi corrigida em `c67f9c4`, passou em lint/build e aguarda confirmação visual no Render;
-- o lint mais recente terminou com zero erros e 18 warnings; o build de produção passou após `c67f9c4`;
+- a sessão/papel do funcionário foi corrigida em `6a0ef4d`; a identidade exibida na equipe foi corrigida em `c67f9c4` e ambas foram confirmadas pelo usuário no Render;
+- em 26/08, lint quiet, testes unitários 6/6 e build de produção com 31 páginas passaram; o teste emite apenas o warning conhecido de `MODULE_TYPELESS_PACKAGE_JSON`;
 - reset das doze migrations e pgTAP 205/205 passam localmente; as evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/Data API, Storage com blob real e Auth/E2E com lifecycle permanecem válidas; o lint amplo do PostgreSQL 17 ainda inclui falsos positivos internos do pgTAP;
 - privacidade de selfies e primeiro fluxo vertical persistido ainda não começaram como implementação de produção.
 
@@ -259,7 +259,7 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 | Selfie sem consentimento/expiração | Alto | Implementar passo 4 antes de qualquer piloto |
 | Isolamento entre barbearias não exercitado | Alto | Rodar migrations, pgTAP e testes negativos cruzados |
 | Owner AAL1/AAL2 não testado | Alto | Testar matrícula, challenge, refresh e acesso aos dados |
-| Lifecycle remoto incompleto | Alto | Confirmar `c67f9c4` e testar suspensão, corte de sessão, reativação e revogação no Render |
+| Lifecycle remoto incompleto | Alto | Testar suspensão, corte de sessão, reativação, retorno de acesso e revogação no Render |
 | Regressão na confirmação de compensações da Equipe | Alto | Manter releitura autoritativa, logs sem PII e E2E de falha/expiração |
 | Regressão no provisionamento do primeiro dono | Alto | Preservar preflight, origem HTTPS/loopback, resolução server-only e replay por UUID |
 | Membership do dono antes da senha sem decisão | Alto | Definir threat model, estado intermediário, expiração e recuperação antes do E2E |

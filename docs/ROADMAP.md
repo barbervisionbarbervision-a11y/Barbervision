@@ -1,6 +1,6 @@
 # Roadmap técnico e de produto
 
-Estado reconciliado em **25/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha e jornada principal do funcionário foram comprovados no hospedado. A identidade da listagem de equipe foi corrigida em `c67f9c4` e aguarda confirmação visual; o lifecycle remoto completo e o scheduler Cloudflare ainda não foram validados. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **26/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha, jornada principal e identidade do funcionário foram comprovados no hospedado. O lifecycle remoto completo e o scheduler Cloudflare ainda não foram validados. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -348,11 +348,10 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Confirmar no Render o nome/e-mail do funcionário na equipe após `c67f9c4`.
-2. Completar suspensão, corte de sessão, reativação e revogação do funcionário no hospedado.
-3. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-4. Integrar à CI os gates locais já aprovados e executar a matriz adversária remota de Auth/outbox e isolamento.
-5. Fechar reatribuição, transferência de dono e seleção multi-tenant.
-6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Completar suspensão, corte de sessão, reativação, retorno de acesso e revogação do funcionário no hospedado.
+2. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+3. Integrar à CI os gates locais já aprovados e executar a matriz adversária remota de Auth/outbox e isolamento.
+4. Fechar reatribuição, transferência de dono e seleção multi-tenant.
+5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Referência oficial detalhada: [Plano de execução](PLANO-DE-EXECUCAO.md). Pendências rastreáveis: [pendências.md](../pend%C3%AAncias.md).

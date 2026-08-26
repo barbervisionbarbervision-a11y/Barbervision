@@ -1,6 +1,6 @@
 # Autenticação e sessões
 
-> Estado reconciliado em **25/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados. `6a0ef4d` corrigiu a seleção do acesso convidado; `c67f9c4` corrigiu a identidade exibida na equipe. A última correção passou em lint/build e aguarda confirmação visual no Render. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
+> Estado reconciliado em **26/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados. `6a0ef4d` corrigiu a seleção do acesso convidado e `c67f9c4` corrigiu a identidade exibida na equipe; ambas as correções foram confirmadas pelo usuário no Render. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Compatibilidade dos links hospedados
 

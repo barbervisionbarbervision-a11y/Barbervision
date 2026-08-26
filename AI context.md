@@ -2,7 +2,7 @@
 
 Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 
-> Última revisão integral: **25/08/2026**. Leia este arquivo, `README.md`, `pendências.md`, `docs/ESTADO-VALIDACAO.md`, `docs/PLANO-DE-EXECUCAO.md` e `AGENTS.md` antes de alterar o projeto. Presença de código — ou uma inicialização transitória — não equivale a funcionalidade validada.
+> Última revisão integral: **26/08/2026**. Leia este arquivo, `README.md`, `pendências.md`, `docs/ESTADO-VALIDACAO.md`, `docs/PLANO-DE-EXECUCAO.md` e `AGENTS.md` antes de alterar o projeto. Presença de código — ou uma inicialização transitória — não equivale a funcionalidade validada.
 
 ## Resumo em 30 segundos
 
@@ -13,7 +13,7 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2 foi revalidado localmente em 25/08 sobre as doze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. A migration 12 é uma limpeza operacional, limitada por UUID, tenant e e-mail `.invalid`, sem alteração de schema. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados no hospedado. Em `6a0ef4d`, a seleção da membership do convite foi corrigida e o usuário confirmou sessão/papel separados do dono. Em `c67f9c4`, a listagem da equipe passou a usar a identidade do convite aceito correspondente; lint e build passaram, mas a confirmação visual no Render ainda não foi informada. O Worker Cloudflare não foi publicado.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados no hospedado. Em `6a0ef4d`, a seleção da membership do convite foi corrigida e o usuário confirmou sessão/papel separados do dono. Em `c67f9c4`, a listagem da equipe passou a usar a identidade do convite aceito correspondente; o usuário confirmou no Render que o nome ficou correto. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
@@ -436,7 +436,7 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - redução dos 18 warnings de lint;
 - manifesto reproduzível dos arquivos congelados do simulador.
 
-## Validação reconciliada em 25/08/2026
+## Validação reconciliada em 26/08/2026
 
 ### Estado remoto comprovado
 
@@ -444,17 +444,18 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - Supabase hospedado: projeto `barbervision`, ref pública `ftwdfobgwxjmeickktmy`, região `sa-east-1`, estado `ACTIVE_HEALTHY` no momento da vinculação.
 - `supabase link` terminou com sucesso.
 - Historicamente, o primeiro `db push` aplicou oito migrations; o remoto agora possui as doze migrations oficiais, incluindo consentimento/rate limit e limpeza exata do cliente sintético.
-- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A seleção do acesso do funcionário foi corrigida em `6a0ef4d`; a identidade da linha de membro foi corrigida em `c67f9c4` e ainda requer confirmação visual no hospedado.
+- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A seleção do acesso do funcionário (`6a0ef4d`) e a identidade da linha de membro (`c67f9c4`) foram confirmadas pelo usuário no hospedado.
 - Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
 - Cloudflare: nenhum login, secret, deploy, Cron Trigger ou log remoto foi comprovado.
-- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. O usuário confirmou papel `Funcionário`, e-mail e contexto de sessão separados do dono após `6a0ef4d`. O nome exibido na listagem de equipe ainda reaproveitava o perfil antigo; `c67f9c4` passou a usar o convite aceito correspondente. Templates finais, confirmação remota desse ajuste, lifecycle completo e casos adversários de links ainda precisam de prova.
+- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. O usuário confirmou papel `Funcionário`, e-mail e contexto de sessão separados do dono após `6a0ef4d`, além do nome correto na equipe após `c67f9c4`. Templates finais, lifecycle completo e casos adversários de links ainda precisam de prova.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
 - `npm audit`: 0 vulnerabilidades em 14/08; não foi repetido nesta revisão;
 - `launcher.bat --check`: aprovado em 21/08; o atalho da Área de Trabalho permanece como evidência validada em 14/08;
 - documentos: UTF-8 válido, links locais e fences íntegros;
-- `npm.cmd run lint -- --quiet`, `npm.cmd run test:unit` (6/6) e `npm.cmd run build`: aprovados em 25/08/2026 após `6a0ef4d`;
+- `npm.cmd run lint -- --quiet`, `npm.cmd run test:unit` (6/6) e `npm.cmd run build`: repetidos e aprovados em 26/08/2026 após `c67f9c4`; build com 31 páginas, 6 handlers API e Proxy;
+- `test:unit` emite o warning não bloqueante `MODULE_TYPELESS_PACKAGE_JSON`; não transformar isso em falha de produto sem antes decidir a estratégia de módulos do pacote;
 - smoke HTTP: evidência histórica de 13/08/2026, com páginas públicas `200` e superfícies internas `307` para o modo seguro;
 - Git: repositório operacional, árvore limpa antes desta revisão e baseline `7c34dab` confirmado;
 - banco/Supabase: serviços necessários saudáveis; `db:start`, reset, lint e pgTAP 205/205 passam; opcionais não usados estão desativados e Storage foi validado anteriormente com JWT/blob real;
@@ -467,7 +468,7 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Confirmar no Render a identidade da equipe após `c67f9c4` e concluir suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
+1. Concluir no hospedado suspensão, corte de acesso/sessão, reativação, retorno de acesso e revogação do funcionário.
 2. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
 3. Testar links expirados, reutilizados e inválidos, além dos templates finais de confirmação, convite e recuperação.
 4. Completar reatribuição, transferência de dono e seleção multi-tenant.

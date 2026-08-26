@@ -1,6 +1,6 @@
 # Estado de validação
 
-> Baseline operacional reconciliada em **25/08/2026**. Este documento concentra evidências temporais. Os documentos de arquitetura e produto descrevem contratos; em caso de divergência sobre o que foi executado, prevalece este registro mais recente.
+> Baseline operacional reconciliada em **26/08/2026**. Este documento concentra evidências temporais. Os documentos de arquitetura e produto descrevem contratos; em caso de divergência sobre o que foi executado, prevalece este registro mais recente.
 
 ## Resumo executivo
 
@@ -22,11 +22,20 @@
 - O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu doze migrations.
 - A entrega hospedada de convite pelo Brevo foi comprovada. O callback de convite foi corrigido para a origem canônica do Render.
 - Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
-- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação, login e painel foram aprovados pelo usuário no hospedado. Em `6a0ef4d`, a sessão passou a selecionar a membership convidada correta e o usuário confirmou papel/contexto separados do dono. Em `c67f9c4`, a tela Equipe passou a exibir, para funcionários, nome e e-mail do convite aceito mais recente correspondente; lint e build passaram localmente, mas a confirmação visual desse commit no Render ainda está pendente.
+- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação, login e painel foram aprovados pelo usuário no hospedado. Em `6a0ef4d`, a sessão passou a selecionar a membership convidada correta e o usuário confirmou papel/contexto separados do dono. Em `c67f9c4`, a tela Equipe passou a exibir, para funcionários, nome e e-mail do convite aceito mais recente correspondente; o usuário confirmou visualmente a correção no Render.
 - Site URL e redirects de produção foram configurados no Supabase; signup direto permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real de convite foi comprovada.
 - O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. O reteste no tenant real `barbervision` retornou `201`; uma segunda chamada com o mesmo WhatsApp retornou o mesmo UUID, comprovando o upsert. O slug mock `barbearia-joao` retorna corretamente `404` porque não existe no remoto.
 - Em 25/08, o cadastro público ganhou consentimento versionado, Turnstile validado no servidor e limites distribuídos por rede e contato. A migration 11 e o commit `52c9cf2` estão hospedados; o smoke remoto confirmou `400` sem consentimento, `403` com token inválido e `201` no envio real, que avançou para selfie. O `429` permanece comprovado localmente, sem carga artificial no serviço gratuito.
 - Uma secret key Supabase apareceu em captura durante esse formulário. O usuário confirmou sua revogação e substituição em 24/08; nenhum valor foi reproduzido neste repositório.
+
+## Evidências de 26/08/2026
+
+| Verificação | Resultado | Interpretação |
+| --- | --- | --- |
+| confirmação do usuário após `c67f9c4` | “perfeito, agora foi” | nome do funcionário corrigido e confirmado visualmente na equipe hospedada |
+| `npm.cmd run lint -- --quiet` | exit `0` | nenhuma infração ESLint bloqueante |
+| `npm.cmd run test:unit` | exit `0`; 6/6 | segurança do cadastro e validação Turnstile preservadas; permanece warning não bloqueante de tipo de módulo |
+| `npm.cmd run build` | exit `0`; 31 páginas, 6 handlers API e Proxy | build Next.js 16.3.0 aprovado na baseline documental |
 
 ## Evidências de 25/08/2026
 
@@ -65,7 +74,7 @@
 | Recuperação hospedada, commit `1110236` | novo e-mail aceito; redefinição, login e painel aprovados pelo usuário | callback aceita `token_hash` ou `code` sem depender de origem local |
 | Convite e contexto de funcionário, commits `def60d3`, `e608d15` e `6a0ef4d` | e-mail, aceite, senha e login exercitados; identidade visual e membership correta confirmadas pelo usuário | jornada principal remota aprovada; papel/status continuam derivados do banco |
 | Validação após `6a0ef4d` | lint quiet aprovado, unitários 6/6, build aprovado e `git diff --check` limpo | correção compila e preserva os gates automatizados disponíveis |
-| Identidade da equipe, commit `c67f9c4` | funcionário usa nome/e-mail do convite aceito correspondente; dono mantém perfil; lint sem erros e build aprovados | correção local aprovada; confirmação visual no Render pendente |
+| Identidade da equipe, commit `c67f9c4` | funcionário usa nome/e-mail do convite aceito correspondente; dono mantém perfil; lint sem erros e build aprovados | correção confirmada visualmente pelo usuário no Render |
 | `npm.cmd run lint` e `npm.cmd run build` após MFA opcional | exit `0`; lint com 18 warnings e build com 31 páginas | alteração compila; warnings preexistentes permanecem |
 | `GET /barbeiro/login` após deploy `ab97b14` | conteúdo público contém a regra de autenticador opcional | deploy da alteração confirmado no Render |
 

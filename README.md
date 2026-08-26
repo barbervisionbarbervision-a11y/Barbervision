@@ -2,7 +2,7 @@
 
 Plataforma em desenvolvimento para barbearias apresentarem cortes ao cliente antes do atendimento, registrarem a jornada comercial e, futuramente, operarem clientes, equipe, catálogo, pós-venda e financeiro em um ambiente multiempresa.
 
-> Estado reconciliado em **25/08/2026**. O Render está publicado, o Supabase remoto recebeu doze migrations e o SMTP Brevo está operacional. Cadastro público protegido, primeiro dono, recuperação de senha, convite, ativação e login de funcionário foram comprovados no hospedado. `6a0ef4d` separou corretamente a sessão do funcionário e `c67f9c4` corrigiu a identidade exibida na equipe usando o convite aceito correspondente. O build local passou; a confirmação visual desse último ajuste no Render e o lifecycle remoto completo continuam pendentes. E-mail confirmado continua obrigatório; TOTP é opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
+> Estado reconciliado em **26/08/2026**. O Render está publicado, o Supabase remoto recebeu doze migrations e o SMTP Brevo está operacional. Cadastro público protegido, primeiro dono, recuperação de senha, convite, ativação e login de funcionário foram comprovados no hospedado. `6a0ef4d` separou corretamente a sessão do funcionário e `c67f9c4` corrigiu a identidade exibida na equipe usando o convite aceito correspondente; ambos foram confirmados pelo usuário no Render. O lifecycle remoto completo continua pendente. E-mail confirmado continua obrigatório; TOTP é opcional e recomendado. Veja [Estado de validação](docs/ESTADO-VALIDACAO.md).
 
 ## Estado atual
 
@@ -19,7 +19,7 @@ O simulador de cabelo está **congelado por decisão de produto**: a preparaçã
 |---|---|---|
 | 1. Segurança da demonstração | Concluído para a demo controlada | Em produção sem Auth, `/admin` permanece sempre bloqueado; uma flag explicitamente insegura pode liberar somente a demo de `/barbeiro/*`. |
 | 2. Supabase, tenant e RLS | Validado localmente e migrado no hospedado | Doze migrations; reset e pgTAP 205/205 passam, com evidências de concorrência, RLS via JWT e Storage com blob real. |
-| 3. Autenticação real | Jornada principal de dono e funcionário aprovada no hospedado | Confirmação, recuperação, convite, senha e login funcionam. Sessão e papel foram confirmados após `6a0ef4d`; `c67f9c4` corrigiu o nome/e-mail da listagem de equipe e aguarda confirmação visual no Render. Scheduler e lifecycle remoto completo ainda são gates. |
+| 3. Autenticação real | Jornada principal de dono e funcionário aprovada no hospedado | Confirmação, recuperação, convite, senha e login funcionam. Sessão/papel (`6a0ef4d`) e identidade na equipe (`c67f9c4`) foram confirmados no Render. Scheduler e lifecycle remoto completo ainda são gates. |
 | 4. Privacidade e consentimento | Não iniciado | Ainda faltam consentimento afirmativo, retenção, exclusão, termos e governança LGPD. |
 | 5. Fluxo vertical persistido | Não iniciado | A jornada pública continua em `sessionStorage`/`localStorage`; não cria simulação, agenda ou avaliação no banco. |
 | 6. Painel operacional real | Não iniciado | As telas de negócio ainda usam mocks e armazenamento do navegador. |
@@ -254,7 +254,7 @@ Veja o procedimento em [docs/OPERACAO.md](docs/OPERACAO.md).
 
 ## Próximos passos
 
-1. Confirmar no Render a identidade da equipe após `c67f9c4` e concluir o lifecycle do funcionário: suspender, confirmar corte de acesso/sessão, reativar e revogar.
+1. Concluir no hospedado o lifecycle do funcionário: suspender, confirmar corte de acesso/sessão, reativar, confirmar retorno e revogar.
 2. Publicar e validar o scheduler Cloudflare da outbox, incluindo `401`, retry e logs redigidos.
 3. Finalizar os modelos hospedados de convite e recuperação e testar links inválidos, reutilizados e expirados.
 4. Completar os comandos administrativos ainda ausentes: reatribuição transacional, transferência de dono e seletor multi-tenant.
