@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. Cadastro público protegido, primeiro dono, recuperação, convite, ativação e login de funcionário foram comprovados no hospedado; o cliente sintético foi removido. Em `6a0ef4d`, o usuário confirmou a seleção correta da membership, identidade e papel do funcionário. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **25/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. Cadastro público protegido, primeiro dono, recuperação, convite, ativação e login de funcionário foram comprovados no hospedado; o cliente sintético foi removido. `6a0ef4d` corrigiu a seleção da membership e `c67f9c4` corrigiu a identidade exibida na equipe; esta última passou localmente e aguarda confirmação visual no Render. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -26,7 +26,7 @@ O simulador de cabelo fica congelado durante os passos 2–5, salvo correção c
 
 Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operacional é única:
 
-1. Validar no hospedado suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
+1. Confirmar no Render a identidade corrigida em `c67f9c4` e validar suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
 2. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
 3. Executar os casos adversários restantes de Auth/outbox, incluindo links inválidos, reutilizados e expirados.
 4. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.

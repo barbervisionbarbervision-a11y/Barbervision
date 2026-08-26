@@ -1,6 +1,6 @@
 # Roadmap técnico e de produto
 
-Estado reconciliado em **25/08/2026**. Supabase e Render estão operacionais; cadastro público protegido e recuperação de senha foram comprovados no hospedado. O convite de funcionário corrigido ainda precisa de reteste e o scheduler Cloudflare não foi publicado. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **25/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha e jornada principal do funcionário foram comprovados no hospedado. A identidade da listagem de equipe foi corrigida em `c67f9c4` e aguarda confirmação visual; o lifecycle remoto completo e o scheduler Cloudflare ainda não foram validados. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -348,11 +348,11 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Retestar um convite novo de funcionário após `def60d3`; recuperação hospedada já foi aprovada.
-2. Integrar à CI os gates locais já aprovados e adicionar casos específicos para as constraints de e-mail da migration 9.
-3. Provar **Configurar depois** e ativação posterior de TOTP no ambiente hospedado.
-4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-5. Executar a matriz remota de Auth, TOTP opcional, convite/outbox, RLS e isolamento.
+1. Confirmar no Render o nome/e-mail do funcionário na equipe após `c67f9c4`.
+2. Completar suspensão, corte de sessão, reativação e revogação do funcionário no hospedado.
+3. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+4. Integrar à CI os gates locais já aprovados e executar a matriz adversária remota de Auth/outbox e isolamento.
+5. Fechar reatribuição, transferência de dono e seleção multi-tenant.
 6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Referência oficial detalhada: [Plano de execução](PLANO-DE-EXECUCAO.md). Pendências rastreáveis: [pendências.md](../pend%C3%AAncias.md).

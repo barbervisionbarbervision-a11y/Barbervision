@@ -1,6 +1,6 @@
 # Autenticação e sessões
 
-> Estado reconciliado em **25/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados. O commit `6a0ef4d` corrigiu a seleção do acesso convidado e o usuário confirmou identidade, papel e contexto de funcionário separados do dono. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
+> Estado reconciliado em **25/08/2026**: Auth, lifecycle e provisionamento retomável foram aprovados localmente. No hospedado, primeiro dono, SMTP, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados. `6a0ef4d` corrigiu a seleção do acesso convidado; `c67f9c4` corrigiu a identidade exibida na equipe. A última correção passou em lint/build e aguarda confirmação visual no Render. Evidência: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Compatibilidade dos links hospedados
 
@@ -200,6 +200,14 @@ Separar convite de membership:
 - toda alteração de owner adquire lock do tenant antes da mutation.
 
 A tela de equipe lista memberships ativas, suspensas e revogadas e expõe os comandos válidos por estado. Também não existe RPC estreita de reatribuição de cliente; o bloqueio do `UPDATE` direto é uma contenção temporária até esse comando ser desenhado e testado.
+
+### Identidade atual versus histórico de convite
+
+- `membros_barbearia` determina acesso, papel e estado atual (`ativo`, `suspenso` ou `revogado`).
+- `convites_barbearia` é histórico de onboarding; um convite aceito permanece `aceito` mesmo que a membership seja revogada depois.
+- Para um funcionário, a tela Equipe mostra nome/e-mail do convite aceito mais recente ligado àquela identidade e tenant, com fallback para `perfis` quando não houver convite compatível.
+- Para o dono, o nome continua vindo do perfil autoritativo.
+- Revogar um funcionário não deve reescrever o convite histórico como revogado; deve bloquear a membership e remover atribuições na transação prevista.
 
 ## Auditoria
 

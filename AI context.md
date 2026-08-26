@@ -13,13 +13,13 @@ Documento canônico para agentes de IA e futuras sessões de desenvolvimento.
 - O painel possui muitas telas, mas quase todos os dados de negócio ainda são mocks ou `localStorage`.
 - O passo 1, segurança da demo, está concluído para uma apresentação controlada.
 - O passo 2 foi revalidado localmente em 25/08 sobre as doze migrations: reset e seed, pgTAP 205/205 e rollback/roll-forward 11 passaram; concorrência, JWT/RLS, Storage e rollback/roll-forward 10–9 permanecem aprovados. A migration 12 é uma limpeza operacional, limitada por UUID, tenant e e-mail `.invalid`, sem alteração de schema. O PostgreSQL 17 reporta incompatibilidades internas da extensão pgTAP que precisam ser isoladas no comando de lint.
-- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados no hospedado. Em `6a0ef4d`, a seleção da membership do convite foi corrigida; o usuário confirmou nome, e-mail, papel e contexto separados do dono. O Worker Cloudflare não foi publicado.
+- O passo 3, Auth, tem jornada e outbox comprovadas localmente. O Supabase hospedado está vinculado e recebeu doze migrations; o Render está Live em `https://barbervision.onrender.com`; redirects e SMTP Brevo foram configurados. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação e login de funcionário foram comprovados no hospedado. Em `6a0ef4d`, a seleção da membership do convite foi corrigida e o usuário confirmou sessão/papel separados do dono. Em `c67f9c4`, a listagem da equipe passou a usar a identidade do convite aceito correspondente; lint e build passaram, mas a confirmação visual no Render ainda não foi informada. O Worker Cloudflare não foi publicado.
 - Uma `SUPABASE_SECRET_KEY` apareceu em captura de tela durante a configuração do Render em 23/08 e teve revogação/substituição confirmada pelo usuário em 24/08; nunca reutilizar ou registrar o valor exposto.
 - O bootstrap AAL1 → TOTP foi comprovado historicamente com JWT real e E2E. Desde a migration 10, o dono pode escolher **Configurar depois**; a tela de Segurança oferece ativação posterior.
 - Os passos 4, privacidade, e 5, fluxo persistido, não foram implementados.
 - O cadastro público coleta nome, e-mail e WhatsApp e chama `POST /api/clientes`. Em 24/08, o tenant real `barbervision` respondeu `201`; repetir o mesmo WhatsApp preservou o mesmo UUID. Em 25/08, a migration 11, aceite versionado, rate limit atômico distribuído e Turnstile server-side foram publicados no Render pelo commit `52c9cf2`. O smoke hospedado confirmou `400` sem consentimento, `403` com token inválido e o fluxo real retornou `201`, avançando para selfie.
 - `/barbeiro/criar-conta` existe e é acessada pelo botão `Começar agora` no login. O fluxo hospedado criou o primeiro dono, enviou o convite e chegou à ativação/MFA. Usa honeypot e limite básico por origem; ainda requer proteção distribuída mais forte antes do piloto.
-- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação. A recuperação hospedada foi corrigida em `1110236` e aprovada; o convite de funcionário passou a aceitar a membership em `def60d3`, a identidade visual foi exposta em `e608d15` e a escolha correta do acesso convidado foi concluída em `6a0ef4d`.
+- O primeiro e-mail Brevo revelou que o convite usava a origem interna `0.0.0.0:10000`. O fluxo foi corrigido para `/auth/complete`, a URL foi adicionada à allowlist e o callback passou a consumir a sessão no navegador, remover tokens da URL e seguir para ativação. A recuperação hospedada foi corrigida em `1110236` e aprovada; o convite de funcionário passou a aceitar a membership em `def60d3`, a identidade visual foi exposta em `e608d15`, a escolha correta do acesso convidado foi concluída em `6a0ef4d` e a identidade da linha de membro foi corrigida em `c67f9c4`.
 - Não usar dados reais de clientes antes de fechar os gates de Auth, privacidade e persistência.
 
 ## Intenção do produto confirmada
@@ -444,10 +444,10 @@ O slug público não resolve uma barbearia real, horários são mocks e o painel
 - Supabase hospedado: projeto `barbervision`, ref pública `ftwdfobgwxjmeickktmy`, região `sa-east-1`, estado `ACTIVE_HEALTHY` no momento da vinculação.
 - `supabase link` terminou com sucesso.
 - Historicamente, o primeiro `db push` aplicou oito migrations; o remoto agora possui as doze migrations oficiais, incluindo consentimento/rate limit e limpeza exata do cliente sintético.
-- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A correção de seleção do acesso de funcionário mais recente é `6a0ef4d`.
+- Render: serviço `Live` em `https://barbervision.onrender.com`; `/api/health` respondeu `HTTP 200`. A seleção do acesso do funcionário foi corrigida em `6a0ef4d`; a identidade da linha de membro foi corrigida em `c67f9c4` e ainda requer confirmação visual no hospedado.
 - Segurança: a secret key digitada no formulário apareceu em uma captura; o usuário confirmou sua revogação e substituição em 24/08. O novo valor não foi compartilhado nem registrado.
 - Cloudflare: nenhum login, secret, deploy, Cron Trigger ou log remoto foi comprovado.
-- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. O usuário confirmou que a sessão de funcionário mostra o nome/e-mail corretos, papel `Funcionário` e contexto separado do dono após `6a0ef4d`. Templates finais, lifecycle remoto e casos adversários de links ainda precisam de prova.
+- Redirects, SMTP Brevo, confirmação de e-mail, primeiro dono, recuperação, redefinição, convite, ativação, login e painel estão configurados/comprovados. O usuário confirmou papel `Funcionário`, e-mail e contexto de sessão separados do dono após `6a0ef4d`. O nome exibido na listagem de equipe ainda reaproveitava o perfil antigo; `c67f9c4` passou a usar o convite aceito correspondente. Templates finais, confirmação remota desse ajuste, lifecycle completo e casos adversários de links ainda precisam de prova.
 
 - `npm ls --depth=0`: aprovado;
 - `npm run lint`: 0 erros e 18 warnings;
@@ -467,7 +467,7 @@ O build sem variáveis Supabase prova somente o modo demonstrativo. Ele precisou
 
 ## Próxima sequência oficial
 
-1. Exercitar no hospedado suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
+1. Confirmar no Render a identidade da equipe após `c67f9c4` e concluir suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
 2. Publicar o Worker Cloudflare com os mesmos `BARBERVISION_APP_URL` e `BARBERVISION_CRON_SECRET`; validar cron, `401` adversário, retry e logs redigidos.
 3. Testar links expirados, reutilizados e inválidos, além dos templates finais de confirmação, convite e recuperação.
 4. Completar reatribuição, transferência de dono e seleção multi-tenant.

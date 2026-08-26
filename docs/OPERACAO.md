@@ -1,12 +1,12 @@
 # Operação, segurança e qualidade
 
-Estado reconciliado em **22/08/2026**. Evidência detalhada: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **25/08/2026**. Evidência detalhada: [Estado de validação](ESTADO-VALIDACAO.md).
 
 Este documento descreve o que pode ser executado hoje, os dois modos de operação do painel e os gates que ainda impedem um deploy com dados reais. O simulador de cabelo permanece congelado na versão de placement manual; esta revisão documental não altera seu comportamento.
 
 ## Resumo executivo
 
-O Barber Vision é uma aplicação Next.js 16 executável localmente. A jornada pública e quase todas as telas de negócio ainda são uma demonstração baseada em mocks, `sessionStorage` e `localStorage`. A integração Auth/SSR principal foi exercitada contra Supabase e Mailpit locais por harness JWT/Storage e Playwright; os gaps operacionais descritos abaixo ainda impedem uso real.
+O Barber Vision é uma aplicação Next.js 16 publicada no Render e executável localmente. A jornada pública e quase todas as telas de negócio ainda são uma demonstração baseada em mocks, `sessionStorage` e `localStorage`. A integração Auth/SSR principal foi exercitada localmente e a jornada principal de dono/funcionário foi comprovada no hospedado; os gaps operacionais descritos abaixo ainda impedem um piloto com dados reais.
 
 Situação confirmada nesta revisão:
 
@@ -20,8 +20,9 @@ Situação confirmada nesta revisão:
 - Auth, Storage e Studio respondem `200`; API, banco e serviços necessários permanecem saudáveis;
 - não há `.env.local`; serviços necessários do Supabase estão saudáveis e opcionais não usados estão desativados;
 - o Git está operacional e o commit baseline `7c34dab` foi confirmado;
-- convites e provisionamento têm código e contratos SQL cobertos por pgTAP, mas nenhuma jornada real foi executada/testada;
-- o lint foi repetido em 21/08 e terminou com zero erros e 18 warnings; o build aprovado continua sendo o de 14/08 e o smoke HTTP permanece evidência histórica de 13/08;
+- convites, provisionamento, confirmação, recuperação e login foram exercitados no hospedado; lifecycle completo de funcionário e casos adversários ainda precisam de prova remota;
+- a sessão/papel do funcionário foi corrigida em `6a0ef4d`; a identidade exibida na equipe foi corrigida em `c67f9c4`, passou em lint/build e aguarda confirmação visual no Render;
+- o lint mais recente terminou com zero erros e 18 warnings; o build de produção passou após `c67f9c4`;
 - reset das doze migrations e pgTAP 205/205 passam localmente; as evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/Data API, Storage com blob real e Auth/E2E com lifecycle permanecem válidas; o lint amplo do PostgreSQL 17 ainda inclui falsos positivos internos do pgTAP;
 - privacidade de selfies e primeiro fluxo vertical persistido ainda não começaram como implementação de produção.
 
@@ -245,7 +246,7 @@ O cabelo está aceito provisoriamente para a demonstração e não deve ser refa
 | Produtos | `localStorage` | Demonstração local |
 | Pós-venda/avaliação | `localStorage` | Demonstração local, não verificável |
 | Fechamento financeiro | `localStorage` | Gerencial fictício, não fiscal |
-| Auth Supabase | Cookies SSR | Código parcial, ambiente não validado |
+| Auth Supabase | Cookies SSR | Jornada principal validada localmente e no hospedado; lifecycle remoto completo pendente |
 | Clientes/tenant SQL | Supabase local validado | reset/lint/pgTAP/concorrência/JWT-RLS/Storage e jornada Auth principal aprovados |
 
 Não há sincronização, backup, trilha auditável, retenção ou recuperação para as persistências do navegador.
@@ -258,14 +259,14 @@ Não há sincronização, backup, trilha auditável, retenção ou recuperação
 | Selfie sem consentimento/expiração | Alto | Implementar passo 4 antes de qualquer piloto |
 | Isolamento entre barbearias não exercitado | Alto | Rodar migrations, pgTAP e testes negativos cruzados |
 | Owner AAL1/AAL2 não testado | Alto | Testar matrícula, challenge, refresh e acesso aos dados |
-| Convite/provisionamento não validados | Alto | Executar os contratos SQL e testar ciclo de vida, concorrência e e-mail |
+| Lifecycle remoto incompleto | Alto | Confirmar `c67f9c4` e testar suspensão, corte de sessão, reativação e revogação no Render |
 | Regressão na confirmação de compensações da Equipe | Alto | Manter releitura autoritativa, logs sem PII e E2E de falha/expiração |
 | Regressão no provisionamento do primeiro dono | Alto | Preservar preflight, origem HTTPS/loopback, resolução server-only e replay por UUID |
 | Membership do dono antes da senha sem decisão | Alto | Definir threat model, estado intermediário, expiração e recuperação antes do E2E |
 | Lifecycle de funcionário | Mitigado localmente | UX e E2E aprovados; preservar gates e observabilidade |
 | Reatribuição sem comando estreito | Alto | Criar RPC autorizada/idempotente/auditada e testes; não devolver `UPDATE` genérico |
 | Metadados aninhados podem escapar do filtro nominal | Alto | Sanitizar/allowlistar payloads no comando e testar profundidade |
-| E-mail/SMTP/redirects não validados | Alto | Configurar ambiente hospedado e testar links válidos/expirados |
+| Casos adversários de e-mail/redirect | Alto | SMTP e redirects principais estão operacionais; testar links inválidos, reutilizados e expirados |
 | Páginas Auth sobre mocks | Médio | Migrar um fluxo vertical antes do restante do painel |
 | 18 warnings de lint | Médio | Reduzir com cobertura sem tocar no simulador congelado |
 | Build depende do Google Fonts | Médio | Auto-hospedar Anton e Manrope para build offline/reproduzível |
