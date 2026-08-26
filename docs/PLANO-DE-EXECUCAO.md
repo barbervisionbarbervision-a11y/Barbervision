@@ -1,6 +1,6 @@
 # Plano de execução do Barber Vision
 
-> Revisão: **26/08/2026**. O Supabase remoto recebeu doze migrations e o Render está Live. Cadastro público protegido, primeiro dono, recuperação, convite, ativação e login de funcionário foram comprovados no hospedado; o cliente sintético foi removido. `6a0ef4d` corrigiu a seleção da membership e `c67f9c4` corrigiu a identidade exibida na equipe; ambas foram confirmadas pelo usuário no Render. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
+> Revisão: **26/08/2026**. O Supabase remoto foi reconstruído com as doze migrations e o Render está Live. Dono e funcionário foram recriados do zero; cadastro, recuperação, convite, ativação, login, identidade, suspensão, reativação e revogação foram comprovados no hospedado. Consulte [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -26,13 +26,13 @@ O simulador de cabelo fica congelado durante os passos 2–5, salvo correção c
 
 Os nove passos acima são fases de produto. Dentro da fase atual, a ordem operacional é única:
 
-1. Validar no Render suspensão, corte de acesso/sessão, reativação, retorno de acesso e revogação do funcionário.
-2. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
-3. Executar os casos adversários restantes de Auth/outbox, incluindo links inválidos, reutilizados e expirados.
+1. Publicar o scheduler Cloudflare e validar cron, `401` com segredo inválido, retry e logs redigidos.
+2. Executar os casos adversários restantes de Auth/outbox, incluindo links inválidos, reutilizados e expirados.
+3. Executar a matriz remota de isolamento entre dois tenants, papéis e AALs.
 4. Fechar reatribuição estreita, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir dados reais.
 
-Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das doze migrations e pgTAP 205/205 passaram localmente, incluindo rollback/roll-forward da migration 11. As evidências anteriores de concorrência, rollback/roll-forward 10–9, JWT/RLS, Storage real e Playwright permanecem válidas no escopo testado. Doze migrations estão aplicadas no Supabase hospedado; primeiro dono, callback, entrega de convite, cadastro idempotente, proteção antiabuso e limpeza do dado sintético foram comprovados remotamente.
+Evidências atuais: build, launcher e lint JS passaram; com CLI 2.115.0, reset das doze migrations e pgTAP 205/205 passaram localmente. Em 26/08, `db reset --linked` reaplicou as doze migrations no hospedado; `a12a756` tornou Storage reaplicável e o lint remoto terminou sem erros de schema. Dono, funcionário e lifecycle completo foram então recriados e comprovados no Render.
 
 ## Passo 1 — segurança da demonstração
 
@@ -130,11 +130,11 @@ Entregar login, confirmação, recuperação, TOTP do dono, convite e lifecycle 
 - `scripts/provision-owner.mjs` valida HTTPS e aceita HTTP somente em loopback antes de qualquer mutação;
 - as compensações e a revogação da tela Equipe passaram a reler o estado autoritativo por convite/tenant antes de apresentar uma conclusão; o E2E adversário ampliado passou com falha real da Admin API e convite vencido;
 - falta decidir e testar se a membership do primeiro dono pode nascer no provisionamento antes de confirmação de e-mail e definição da senha, incluindo recuperação de falhas entre essas etapas;
-- a action de revogação não relê o estado final e pode anunciar “revogado” quando o banco materializou `expirado`;
+- a action de revogação já relê o estado final; manter a regressão automatizada que diferencia `revogado` de `expirado`;
 - a corrida do último dono e a corrida atribuição/revogação passaram no banco local descartável em 22/08;
 - migrations `13000` e `20260813010000` tiveram rollback/roll-forward ensaiado com sucesso no banco local descartável;
-- nenhum fluxo foi executado com Supabase real;
-- redirects, SMTP, projeto hospedado e secrets não foram configurados;
+- os fluxos principais de dono, funcionário e lifecycle foram executados com Supabase real;
+- redirects, SMTP, projeto hospedado e secrets estão configurados; scheduler Cloudflare ainda não foi publicado;
 - proteção contra abuso e seletor multi-membership faltam; recuperação operacional de TOTP foi validada.
 - a tela Equipe lista memberships ativas, suspensas e revogadas e possui UX/E2E para todas as transições válidas de funcionário;
 - sanitização/allowlist de conteúdo aninhado de auditoria e testes contra segredos ainda faltam;
@@ -151,7 +151,7 @@ Entregar login, confirmação, recuperação, TOTP do dono, convite e lifecycle 
 
 ### Estado
 
-**Jornada principal operacional e aprovada localmente; hardening pendente.** Além dos contratos SQL, concorrência, rollback e integração JWT/Storage, o Playwright comprovou login, bootstrap AAL1, TOTP/AAL2, convite por Admin API, Mailpit, ativação de funcionário, recuperação de senha, revogação de convite e logout. Lifecycle completo de funcionário, falhas distribuídas e recuperação operacional continuam abertos.
+**Jornada principal e lifecycle de funcionário aprovados localmente e no hospedado; hardening pendente.** Além dos contratos SQL e Playwright, o ambiente real confirmou cadastro, recuperação, convite, ativação, identidade/papel, suspensão com bloqueio, reativação com retorno e revogação. Scheduler, matriz remota adversária e comandos administrativos continuam abertos.
 
 ## Passo 4 — privacidade e consentimento
 

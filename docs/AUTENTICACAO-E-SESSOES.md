@@ -8,7 +8,7 @@
 - `/auth/complete` consome no navegador sessões entregues no fragmento `#access_token`, remove os tokens da URL e aceita a membership quando existe `convite`;
 - recuperação aprovada no hospedado direciona para `/barbeiro/redefinir-senha`;
 - convites antigos emitidos antes de `def60d3` apontam para o callback anterior e devem ser revogados, não reutilizados;
-- um convite novo comprovou ativação, definição de senha e seleção correta da membership de funcionário no ambiente hospedado; lifecycle remoto e casos adversários ainda são gates.
+- um convite novo comprovou ativação, definição de senha e seleção correta da membership de funcionário no ambiente hospedado; após reset remoto, suspensão, bloqueio, reativação, retorno e revogação também foram confirmados. Casos adversários e scheduler ainda são gates.
 
 ## Objetivo
 
@@ -295,9 +295,9 @@ Não chamar uma RPC em nome do usuário com um cliente service-role quando a aut
 
 ## Próxima sequência canônica
 
-1. Exercitar no hospedado suspensão, corte de acesso/sessão, reativação e revogação de funcionário.
-2. Publicar e validar o scheduler hospedado da outbox, incluindo autenticação `401`, retry e logs redigidos.
-3. Ampliar os casos adversários de callback para links inválidos, reutilizados e expirados e finalizar os templates hospedados.
+1. Publicar e validar o scheduler hospedado da outbox, incluindo autenticação `401`, retry e logs redigidos.
+2. Ampliar os casos adversários de callback para links inválidos, reutilizados e expirados e finalizar os templates hospedados.
+3. Executar a matriz remota controlada entre dois tenants, papéis e AALs.
 4. Fechar gaps operacionais: reatribuição estreita, transferência de dono, seleção multi-tenant e decisão explícita sobre a membership do primeiro dono antes da senha.
 5. Preservar os gates locais já aprovados em toda nova migration: reset, `db:lint`, pgTAP 205/205, concorrência, JWT/RLS e Storage.
 6. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.

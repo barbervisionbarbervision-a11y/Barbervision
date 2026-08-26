@@ -18,7 +18,7 @@ Este arquivo separa o que existe em fonte do que foi executado e validado. Uma t
 |---|---|---|
 | 1 — Segurança da demo | Concluído para demo controlada | Manter a contenção enquanto não houver Auth comprovado |
 | 2 — Supabase, tenant e RLS | Doze migrations validadas localmente e aplicadas no hospedado | Isolar warnings internos do pgTAP no lint e integrar os gates à CI |
-| 3 — Auth real | Jornada principal e identidade de dono/funcionário comprovadas no hospedado | Provar lifecycle remoto completo, scheduler da outbox e casos adversários restantes |
+| 3 — Auth real | Jornada principal, identidade e lifecycle de funcionário comprovados no hospedado | Publicar scheduler da outbox e fechar casos adversários restantes |
 | 4 — Privacidade e consentimento | Não iniciado | Definir e implementar governança antes de persistir selfies |
 | 5 — Fluxo vertical persistido | Não iniciado | Modelar e persistir um único fluxo público seguro |
 | 6 — Painel operacional | Não iniciado | Remover mocks somente após o fluxo vertical |
@@ -83,9 +83,9 @@ Esses itens indicam presença de implementação, não validação ponta a ponta
 
 Execute nesta ordem:
 
-1. **P0 — concluir lifecycle remoto do funcionário**: suspender, confirmar corte de acesso/sessão, reativar, confirmar retorno e revogar no Render.
-2. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente, `401`, retry e logs redigidos.
-3. **P0 — fechar casos adversários de Auth**: finalizar templates e provar links inválidos, reutilizados e expirados.
+1. **P0 — publicar o scheduler Cloudflare**: configurar o Worker/cron da outbox com segredo próprio e comprovar processamento recorrente, `401`, retry e logs redigidos.
+2. **P0 — fechar casos adversários de Auth**: finalizar templates e provar links inválidos, reutilizados e expirados.
+3. **P0 — executar a matriz remota de isolamento**: dois tenants, papéis e AALs relevantes.
 4. **P0 — implementar privacidade, consentimento, retenção e exclusão** antes de persistir selfies ou usar pessoas reais.
 5. **P1 — completar comandos administrativos**: reatribuição transacional, transferência de dono e seleção multi-tenant.
 
@@ -199,6 +199,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Separar a identidade atual do membro do histórico de convites: funcionário usa o convite aceito mais recente correspondente, com fallback para o perfil; dono mantém o perfil autoritativo (`c67f9c4`).
 - [x] Preservar convite `aceito` como histórico após revogação da membership; o estado atual de acesso é o da linha em `membros_barbearia`.
 - [x] Confirmar visualmente no Render a identidade corrigida após `c67f9c4`; o usuário confirmou “perfeito, agora foi”.
+- [x] Resetar o Supabase hospedado, recriar dono e funcionário e validar o ciclo ativo → suspenso → reativado → revogado, incluindo corte e retorno de acesso (26/08/2026).
 - [ ] Implementar transferência/promoção de dono em fluxo separado com aceite AAL2 do alvo.
 - [x] Reforçar em fonte a proteção do último dono ativo e do perfil que ainda possui ownership.
 - [x] Usar lock por tenant antes de alterar membership.
@@ -235,7 +236,7 @@ Depois desses gates, implementar o fluxo vertical do passo 5 e só então migrar
 - [x] Testar refresh válido, access token expirado, logout local no Playwright e logout global invalidando refresh token de outra sessão.
 - [ ] Fazer `SairButton` funcionar também na tela de sem acesso quando o Supabase não estiver configurado, sem lançar erro no modo demo.
 - [x] Exibir falha explícita do logout global na tela de Segurança.
-- [ ] Testar suspensão com JWT ainda válido.
+- [x] Testar no hospedado suspensão com sessão existente, bloqueio de acesso, reativação, retorno de acesso e revogação.
 - [ ] Adicionar seletor de barbearia para múltiplas memberships.
 - [ ] Não escolher silenciosamente a membership mais antiga no produto final.
 

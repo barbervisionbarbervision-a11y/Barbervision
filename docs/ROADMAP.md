@@ -1,6 +1,6 @@
 # Roadmap técnico e de produto
 
-Estado reconciliado em **26/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha, jornada principal e identidade do funcionário foram comprovados no hospedado. O lifecycle remoto completo e o scheduler Cloudflare ainda não foram validados. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
+Estado reconciliado em **26/08/2026**. Supabase e Render estão operacionais; cadastro público protegido, recuperação de senha, jornada principal, identidade e lifecycle completo do funcionário foram comprovados no hospedado após reset remoto integral. O scheduler Cloudflare ainda não foi validado. Evidências completas: [Estado de validação](ESTADO-VALIDACAO.md).
 
 ## Objetivo
 
@@ -14,7 +14,7 @@ A sequência abaixo é obrigatória porque Auth isolado não protege dados locai
 | ---: | --- | --- | --- |
 | 1 | Segurança da demonstração | **Concluído para demo controlada** | Manter regressões e não usar dados reais |
 | 2 | Supabase, tenant, RLS e Storage | **Validado localmente** | Preservar os gates e integrar à CI |
-| 3 | Auth real, sessões e MFA | **Jornada principal E2E aprovada** | Completar lifecycle e fechar lacunas operacionais |
+| 3 | Auth real, sessões e MFA | **Jornada principal e lifecycle remoto aprovados** | Fechar scheduler e lacunas operacionais |
 | 4 | Privacidade e consentimento | **Não iniciado como produção** | Definir/aplicar consentimento, retenção e descarte |
 | 5 | Primeiro fluxo vertical persistido | **Não iniciado** | Persistir cliente → simulação/escolha → agendamento → avaliação |
 | 6 | Painel operacional real | **Não iniciado** | Migrar CRM, atribuições, busca, histórico e funil |
@@ -38,6 +38,7 @@ A sequência abaixo é obrigatória porque Auth isolado não protege dados locai
 - onze rollbacks presentes; rollback/roll-forward 8–4, 10–9 e migration 11 aprovados nas respectivas rodadas;
 - somente `.env.example`; não existe `.env.local`;
 - `db:start`, `db:reset` e `db:lint` encerraram com exit `0`; pgTAP 205/205 passou; concorrência, rollback 5–4, JWT/Data API, Storage e Auth/E2E anterior permanecem evidências históricas válidas no escopo testado;
+- reset remoto integral em 26/08 reaplicou as doze migrations; `a12a756` tornou a migration de Storage reaplicável e o lint remoto terminou sem erros de schema;
 - simulador manual congelado e não alterado.
 
 ## Passo 1 — segurança da demonstração
@@ -118,7 +119,7 @@ Estado: **validado localmente; primeiro dono e recuperação aprovados no hosped
 
 ### Lacunas bloqueadoras
 
-- Supabase hospedado, redirects, SMTP Brevo, primeiro dono e recuperação foram testados; falta fechar o convite novo de funcionário, isolamento remoto e os casos adversários;
+- Supabase hospedado, redirects, SMTP Brevo, primeiro dono, funcionário e lifecycle remoto foram testados; faltam a matriz de isolamento e os casos adversários;
 - as migrations de onboarding/lifecycle, leitura operacional, retomada e outbox estão aplicadas; pgTAP 133/133 do passo 3 passou;
 - envio de convite usa outbox durável com lease/retry e expiração reconciliada; E2E e dois workers concorrentes passaram, restando scheduler hospedado;
 - usuário Auth existente e retomada por UUID foram comprovados pelo script contra o ambiente local;
@@ -126,7 +127,7 @@ Estado: **validado localmente; primeiro dono e recuperação aprovados no hosped
 - o provisionamento não reutiliza o contrato central de URL segura; URL inválida pode interromper o script e origem insegura não loopback precisa ser rejeitada;
 - as compensações da Equipe e a revogação agora releem o estado autoritativo antes de responder; o E2E adversário cobre falha real da Admin API e convite vencido;
 - falta decidir/testar se a membership do primeiro dono deve existir antes da confirmação e da definição da senha;
-- revogação não relê o estado final e pode anunciar “revogado” quando a RPC materializou `expirado`;
+- a revogação já relê o estado final; preservar a regressão que diferencia `revogado` de `expirado`;
 - suspensão, reativação e revogação possuem UX e E2E com corte/retomada de sessão existente;
 - transferência/promoção de dono continua ausente;
 - bootstrap do dono em AAL1 foi comprovado com JWT e Playwright;
@@ -141,13 +142,11 @@ Estado: **validado localmente; primeiro dono e recuperação aprovados no hosped
 
 ### Sequência canônica para concluir a fundação
 
-1. Revogar o convite antigo de funcionário e emitir um novo após `def60d3`.
-2. Comprovar aceite, definição de senha, login, membership e isolamento do funcionário no hospedado.
-3. Provar **Configurar depois** e ativação posterior de TOTP; revisar templates e links adversários.
-4. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-5. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento.
-6. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
-7. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
+1. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+2. Provar **Configurar depois** e ativação posterior de TOTP; revisar templates e links adversários.
+3. Executar a matriz remota controlada de Auth, TOTP opcional, convite/outbox e isolamento.
+4. Fechar gaps administrativos: reatribuição estreita, transferência de dono e seleção multi-tenant.
+5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 
 Critério de conclusão: um dono e um funcionário são provisionados por caminhos controlados, confirmam e-mail, autenticam, respeitam MFA/papel/tenant e têm ciclo de vida testado, sem usar mocks como autoridade.
 
@@ -348,9 +347,9 @@ Uma funcionalidade só está pronta quando:
 
 ## Próximos passos imediatos
 
-1. Completar suspensão, corte de sessão, reativação, retorno de acesso e revogação do funcionário no hospedado.
-2. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
-3. Integrar à CI os gates locais já aprovados e executar a matriz adversária remota de Auth/outbox e isolamento.
+1. Publicar o Worker Cloudflare e validar cron, segredo inválido, retry e logs sem PII.
+2. Integrar à CI os gates locais já aprovados e executar a matriz adversária remota de Auth/outbox e isolamento.
+3. Finalizar templates e provar links inválidos, reutilizados e expirados.
 4. Fechar reatribuição, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade, consentimento, retenção e exclusão antes de persistir selfies ou clientes reais.
 

@@ -19,10 +19,10 @@
 - A suíte Playwright criou fixtures efêmeras e comprovou login do dono, bootstrap AAL1, enrollment/verify TOTP, AAL2, convite por Admin API, entrega no Mailpit, ativação do funcionário, recuperação de senha, revogação de convite e logout. A suíte passou em 29,9 s e removeu os fixtures ao final.
 - Durante o E2E foram corrigidos o efeito MFA incompatível com o replay do React Strict Mode, o QR `data:image/svg+xml` bloqueado pelo `next/image` e o redirecionamento do callback para usar a origem canônica validada da aplicação.
 - Em 23/08, a outbox de convites foi validada por reset, lint SQL e 21 asserções próprias. O E2E foi atualizado, mas não reexecutado porque a instância `next dev` aberta pelo usuário mantém o lock de `.next` e impede o webServer isolado do Playwright.
-- O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu doze migrations.
+- O GitHub privado acompanha `main`; o Supabase hospedado foi vinculado e recebeu doze migrations. Em 26/08, um reset remoto integral reaplicou todas elas; `a12a756` tornou a criação dos buckets/policies de Storage idempotente e o lint remoto terminou sem erros de schema.
 - A entrega hospedada de convite pelo Brevo foi comprovada. O callback de convite foi corrigido para a origem canônica do Render.
 - Em 24/08, TOTP passou a ser opcional: o dono pode configurar depois, sem perder o acesso ao painel. E-mail confirmado e isolamento por tenant permanecem obrigatórios.
-- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. Primeiro dono, confirmação, recuperação, redefinição, convite, ativação, login e painel foram aprovados pelo usuário no hospedado. Em `6a0ef4d`, a sessão passou a selecionar a membership convidada correta e o usuário confirmou papel/contexto separados do dono. Em `c67f9c4`, a tela Equipe passou a exibir, para funcionários, nome e e-mail do convite aceito mais recente correspondente; o usuário confirmou visualmente a correção no Render.
+- O Render está publicado em `https://barbervision.onrender.com`; o health check público respondeu HTTP 200. Após o reset, dono e funcionário foram recriados do zero. O usuário confirmou identidade/papel corretos e executou o ciclo ativo → suspenso → reativado → revogado; a suspensão bloqueou o acesso, a reativação o restaurou e a revogação foi concluída com sucesso.
 - Site URL e redirects de produção foram configurados no Supabase; signup direto permanece desabilitado, confirmação de e-mail habilitada e SMTP Brevo configurado. A entrega real de convite foi comprovada.
 - O cadastro público recebeu campo de e-mail, correção do parâmetro assíncrono do Next.js 16 e `POST /api/clientes`. O reteste no tenant real `barbervision` retornou `201`; uma segunda chamada com o mesmo WhatsApp retornou o mesmo UUID, comprovando o upsert. O slug mock `barbearia-joao` retorna corretamente `404` porque não existe no remoto.
 - Em 25/08, o cadastro público ganhou consentimento versionado, Turnstile validado no servidor e limites distribuídos por rede e contato. A migration 11 e o commit `52c9cf2` estão hospedados; o smoke remoto confirmou `400` sem consentimento, `403` com token inválido e `201` no envio real, que avançou para selfie. O `429` permanece comprovado localmente, sem carga artificial no serviço gratuito.
@@ -32,6 +32,11 @@
 
 | Verificação | Resultado | Interpretação |
 | --- | --- | --- |
+| `npx supabase db reset --linked --yes` | exit `0`; doze migrations reaplicadas | reconstrução integral do banco hospedado comprovada |
+| migration de Storage + commit `a12a756` | buckets com upsert e policies recriáveis | reset remoto tornou-se repetível sem conflito de bucket/policy |
+| `npx supabase db lint --linked --level warning` | nenhuma falha de schema | schema remoto aprovado após a reconstrução |
+| recriação limpa de dono e funcionário | cadastro, convite, ativação, senha e login aprovados | onboarding real não dependeu dos usuários antigos |
+| lifecycle remoto do funcionário | suspensão bloqueou; reativação restaurou; revogação concluiu | ciclo operacional completo aprovado no Render |
 | confirmação do usuário após `c67f9c4` | “perfeito, agora foi” | nome do funcionário corrigido e confirmado visualmente na equipe hospedada |
 | `npm.cmd run lint -- --quiet` | exit `0` | nenhuma infração ESLint bloqueante |
 | `npm.cmd run test:unit` | exit `0`; 6/6 | segurança do cadastro e validação Turnstile preservadas; permanece warning não bloqueante de tipo de módulo |
@@ -68,7 +73,7 @@
 | `npx.cmd supabase db push` da migration `20260824010000_clientes_email.sql` | aplicada sem erro | remoto passou a aceitar e-mail normalizado em clientes |
 | `npx.cmd supabase db push --dry-run` após a migration 10 | `Remote database is up to date`; nenhuma migration pendente | as dez migrations locais e remotas estão sincronizadas |
 | Cadastro público hospedado no slug `barbervision` | duas respostas `201`; UUID idêntico na criação e atualização | persistência e deduplicação por tenant/WhatsApp comprovadas com dado sintético |
-| Supabase Auth hospedado | Site URL, redirects, signup direto bloqueado, confirmação e SMTP Brevo configurados | dono, recuperação, convite, ativação, login e identidade de funcionário comprovados; templates finais e lifecycle remoto ainda pendentes |
+| Supabase Auth hospedado | Site URL, redirects, signup direto bloqueado, confirmação e SMTP Brevo configurados | dono, recuperação, convite, ativação, login, identidade e lifecycle completo de funcionário comprovados; templates finais ainda pendentes |
 | Cadastro do primeiro dono | botão `Começar agora`, página/API, criação de tenant e convite exercitados no hospedado | fluxo chegou à ativação e à escolha de MFA |
 | Callback público | falha inicial em `0.0.0.0:10000`; depois corrigido para `/auth/complete` e allowlist atualizada | origem interna eliminada do fluxo versionado |
 | Recuperação hospedada, commit `1110236` | novo e-mail aceito; redefinição, login e painel aprovados pelo usuário | callback aceita `token_hash` ou `code` sem depender de origem local |
@@ -127,7 +132,7 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 | ---: | --- | --- |
 | 1 | Concluído para demo controlada | preservar contenção e corrigir warnings sem regressão |
 | 2 | Doze migrations validadas localmente e sincronizadas no hospedado | restringir o lint às schemas do app e integrar os gates à CI |
-| 3 | Jornada local aprovada; redirects/SMTP e cadastro web do primeiro dono implementados | validar cadastro/e-mail hospedados, reforçar antiabuso e concluir Cloudflare/matriz remota |
+| 3 | Jornada principal e lifecycle de funcionário aprovados localmente e no hospedado | concluir Cloudflare, templates e matriz remota adversária |
 | 4 | Não iniciado como implementação de produção | fechar política de consentimento, retenção e descarte |
 | 5 | Não iniciado | persistir um fluxo público mínimo e seguro |
 | 6 | Não iniciado | substituir mocks após o fluxo vertical |
@@ -137,8 +142,8 @@ O primeiro build em ambiente sem rede falhou somente ao buscar Anton e Manrope n
 
 ## Próxima sequência segura
 
-1. Exercitar no hospedado suspensão, corte de acesso/sessão, reativação e revogação do funcionário.
-2. Publicar/testar o scheduler Cloudflare, incluindo segredo inválido (`401`), retry e logs redigidos.
-3. Finalizar templates e provar links inválidos, reutilizados e expirados.
+1. Publicar/testar o scheduler Cloudflare, incluindo segredo inválido (`401`), retry e logs redigidos.
+2. Finalizar templates e provar links inválidos, reutilizados e expirados.
+3. Executar a matriz remota controlada entre dois tenants, papéis e AALs.
 4. Completar reatribuição estreita, transferência de dono e seleção multi-tenant.
 5. Implementar privacidade e só então ampliar o fluxo persistido.
